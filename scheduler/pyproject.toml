@@ -1,0 +1,17 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-q",
+    "--tb=short",
+    "--strict-markers",
+    "-m", "not slow",
+]
+markers = [
+    "slow: scenario regression and other tests that solve the full default preset (deselect-by-default; run with `-m slow`)",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]

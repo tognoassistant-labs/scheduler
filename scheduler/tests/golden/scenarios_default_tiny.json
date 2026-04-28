@@ -1,0 +1,121 @@
+{
+  "fixture": {
+    "n_students": 120,
+    "seed": 7,
+    "preset": "default"
+  },
+  "solve_budget": {
+    "master_time": 15,
+    "student_time": 30
+  },
+  "scenarios": [
+    {
+      "name": "baseline",
+      "master_status": "OPTIMAL",
+      "student_status": "FEASIBLE",
+      "n_master_assignments": 58,
+      "n_students_placed": 120,
+      "n_unmet_rank1": 37,
+      "error": null,
+      "kpi": {
+        "fully_scheduled_pct": 100.0,
+        "required_fulfillment_pct": 100.0,
+        "first_choice_elective_pct": 69.16666666666667,
+        "section_balance_max_dev": 3,
+        "teacher_load_max_dev": 2,
+        "unscheduled_students": 0,
+        "unmet_requests": 37
+      }
+    },
+    {
+      "name": "cap_27",
+      "master_status": "OPTIMAL",
+      "student_status": "FEASIBLE",
+      "n_master_assignments": 58,
+      "n_students_placed": 120,
+      "n_unmet_rank1": 35,
+      "error": null,
+      "kpi": {
+        "fully_scheduled_pct": 100.0,
+        "required_fulfillment_pct": 100.0,
+        "first_choice_elective_pct": 70.83333333333333,
+        "section_balance_max_dev": 4,
+        "teacher_load_max_dev": 2,
+        "unscheduled_students": 0,
+        "unmet_requests": 35
+      }
+    },
+    {
+      "name": "loose_balance",
+      "master_status": "OPTIMAL",
+      "student_status": "FEASIBLE",
+      "n_master_assignments": 58,
+      "n_students_placed": 120,
+      "n_unmet_rank1": 21,
+      "error": null,
+      "kpi": {
+        "fully_scheduled_pct": 100.0,
+        "required_fulfillment_pct": 100.0,
+        "first_choice_elective_pct": 82.5,
+        "section_balance_max_dev": 6,
+        "teacher_load_max_dev": 2,
+        "unscheduled_students": 0,
+        "unmet_requests": 21
+      }
+    },
+    {
+      "name": "tight_balance",
+      "master_status": "OPTIMAL",
+      "student_status": "FEASIBLE",
+      "n_master_assignments": 58,
+      "n_students_placed": 120,
+      "n_unmet_rank1": 55,
+      "error": null,
+      "kpi": {
+        "fully_scheduled_pct": 100.0,
+        "required_fulfillment_pct": 100.0,
+        "first_choice_elective_pct": 54.166666666666664,
+        "section_balance_max_dev": 2,
+        "teacher_load_max_dev": 2,
+        "unscheduled_students": 0,
+        "unmet_requests": 55
+      }
+    },
+    {
+      "name": "electives_priority",
+      "master_status": "OPTIMAL",
+      "student_status": "FEASIBLE",
+      "n_master_assignments": 58,
+      "n_students_placed": 120,
+      "n_unmet_rank1": 36,
+      "error": null,
+      "kpi": {
+        "fully_scheduled_pct": 100.0,
+        "required_fulfillment_pct": 100.0,
+        "first_choice_elective_pct": 70.0,
+        "section_balance_max_dev": 4,
+        "teacher_load_max_dev": 2,
+        "unscheduled_students": 0,
+        "unmet_requests": 36
+      }
+    },
+    {
+      "name": "lexmin_mode",
+      "master_status": "OPTIMAL",
+      "student_status": "FEASIBLE",
+      "n_master_assignments": 58,
+      "n_students_placed": 120,
+      "n_unmet_rank1": 36,
+      "error": null,
+      "kpi": {
+        "fully_scheduled_pct": 100.0,
+        "required_fulfillment_pct": 100.0,
+        "first_choice_elective_pct": 70.0,
+        "section_balance_max_dev": 4,
+        "teacher_load_max_dev": 2,
+        "unscheduled_students": 0,
+        "unmet_requests": 36
+      }
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual envs
+.venv/
+venv/
+env/
+ENV/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Testing / cache
+.pytest_cache/
+.hypothesis/
+.coverage
+htmlcov/
+.tox/
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Solver intermediate exports — regenerated from xlsx + code on each run.
+# The CLIENT-FACING zips in bundle_for_columbus/ ARE versioned.
+scheduler/data/columbus_full_hs/
+scheduler/data/columbus_full_hs_v2/
+scheduler/data/columbus_full_hs_v3/
+scheduler/data/columbus_full_hs_v4/
+scheduler/data/columbus_synthetic_ms/
+scheduler/data/columbus_synthetic_ms_v2/
+scheduler/data/_client_bundle_v2/
+scheduler/data/_client_bundle_v3/
+scheduler/data/exports/
+scheduler/data/columbus/
+scheduler/data/columbus_exports/
+
+# Streamlit
+.streamlit/
