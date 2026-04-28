@@ -51,8 +51,37 @@ class Report:
 # CSV reading helpers
 
 def read_csv(path: Path) -> list[dict[str, str]]:
+    """Read a CSV, normalizing v4.1 column names back to legacy aliases.
+
+    v4.1 (2026-04-28) renamed columns to match the official PS import spec:
+        ps_sections.csv:    Course Number, Section Number, Teacher Number, Room, Expression
+        ps_enrollments.csv: Student_Number, Section_Number, Course_Number, Term_Number
+
+    Rather than rewrite every check, we add the legacy keys as aliases so the
+    same checks work on both v3 and v4.1 bundles.
+    """
     with path.open(encoding="utf-8-sig", newline="") as f:
-        return list(csv.DictReader(f))
+        rows = list(csv.DictReader(f))
+    aliases = [
+        # (legacy_name, [new_name_candidates_in_priority_order])
+        # SectionID prefers the engine-internal slug because v4.1 Section_Number
+        # is only unique per (course, term) — collisions across courses if used alone.
+        ("SectionID", ["Section_ID_Internal", "Section Number", "Section_Number"]),
+        ("CourseID", ["Course Number", "Course_Number"]),
+        ("TeacherID", ["Teacher Number", "Teacher_Number"]),
+        ("RoomID", ["Room"]),
+        ("Period", ["Expression"]),
+        ("StudentID", ["Student_Number"]),
+        ("TermID", ["Term_Number"]),
+    ]
+    for row in rows:
+        for legacy, candidates in aliases:
+            if legacy not in row or row.get(legacy, "") == "":
+                for cand in candidates:
+                    if row.get(cand):
+                        row[legacy] = row[cand]
+                        break
+    return rows
 
 
 # ---------------------------------------------------------------------------

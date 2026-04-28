@@ -1,19 +1,15 @@
 # Columbus — Bundle de horarios 2026-2027
 
 **Generado:** 2026-04-28
-**Versión:** v4 (datos canónicos PowerSchool + soft penalty para estudiantes sobreasignados)
+**Versión:** v3 (HC4 salón-por-profesor + formatos PS confirmados por IT 2026-04-26)
 
-> ✅ **IDs reales de PowerSchool**: A diferencia de v3, este bundle usa los IDs
-> canónicos del archivo oficial entregado por IT (`columbus_official_2026-2027.xlsx`):
-> `CourseNumber` (ej. `G0901`, `AP_CALCULUS_`), `Teacher.DCID`, `Room.DCID`, etc.
-> Listo para importación directa a PowerSchool sin find-and-replace.
-
-> ⚠️ **Cobertura no llega al 100%** — el archivo de requests del cliente contiene
-> estudiantes con más cursos solicitados (10) que slots académicos disponibles en
-> la semana (9). El motor usa **soft penalty** para asignar lo máximo posible
-> (~93-95% cobertura) y reporta los unmet requests en el archivo
-> `PROBLEMAS_DATOS_CLIENTE.md` (raíz del repo). Decisión cliente pendiente: aceptar
-> cobertura parcial o reducir requests en origen.
+> ⚠️ **Nota sobre IDs en este bundle**: Los `CourseID`, `TeacherID`, `RoomID`,
+> `StudentID` que aparecen en los CSVs son **slugs internos** generados por el
+> motor (ej. `T_ZUNIGA_JUL`, `R900A`, `AP_COMPUTER_`). Cuando IT envíe los
+> archivos prometidos con los IDs reales de PowerSchool y la estructura de
+> salida final, haremos un find-and-replace para producir los CSVs definitivos.
+> Mientras tanto, el bundle v3 sirve para validar la **estructura** del horario
+> (asignaciones, formato Period, salones por profesor) en sandbox.
 
 > _English version: [00_README_FIRST_en.md](00_README_FIRST_en.md)._
 
