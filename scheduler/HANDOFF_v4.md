@@ -1,6 +1,6 @@
-# Handoff v4 — 2026-04-28
+# Handoff — Estado al 2026-04-28 fin de día
 
-Continuación tras llenar contexto. Lee este archivo PRIMERO. No releas otros docs ni el `.jsonl` previo salvo que algo concreto te falte.
+**Lee este archivo PRIMERO.** No releas otros docs salvo que algo concreto te falte.
 
 ## Working dir
 
@@ -9,150 +9,143 @@ Continuación tras llenar contexto. Lee este archivo PRIMERO. No releas otros do
 ```
 
 Repo: `github.com/tognoassistant-labs/scheduler` (privado)
-Último commit en `main`: `d147214` (Initial clean commit: scheduler engine + v3 bundle)
+Último commit: `cee2590` — "v4.2: course_relationships (Simultaneous merge)"
 
-## Estado: v3 entregado, v4 en construcción
+## Estado actual
 
-**v3 (entregado al cliente)**: `data/_client_bundle_v3/` — HC4 ok, 92% estudiantes con ≥8 cursos, datos de PS heurísticos (no canónicos).
+| Versión | Fecha | Cobertura | Estado |
+|---|---|---|---|
+| v3 | 2026-04-26 | 92% | Entregado al cliente (slugs internos) |
+| v4 | 2026-04-28 mañana | 94.6% | Canonical PS data + soft penalty |
+| v4.1 | 2026-04-28 mediodía | 94.6% | PS import spec compliance |
+| **v4.2** | **2026-04-28 tarde** | **94.8%** | **Simultaneous merge — último entregado** |
+| v4.3 | PENDIENTE | objetivo 97%+ | Ver "Próximos pasos" abajo |
 
-**v4 (objetivo)**: usar el archivo oficial de PowerSchool del cliente. Este es el cambio clave. Sustituye el heurístico por el ingester canónico que lee 5 hojas reales de PS.
+Bundle entregable: `data/_client_bundle_v4/` (verify_bundle PASS).
 
-## Lo que está hecho en esta rama (sin commit)
+## Lo que se hizo en v4.2
 
-```
-M src/scheduler/master_solver.py     ← HC4 + home_room dentro de course_rooms
-M src/scheduler/models.py            ← Teacher.max_consecutive_classes: int|None
-M src/scheduler/ps_ingest.py         ← warning + per-teacher override (heurístico)
-M tests/test_ps_ingest.py            ← tests para per-teacher override + HC4
-?? src/scheduler/ps_ingest_official.py  ← NUEVO ingester canónico (452 líneas)
-?? ../reference/columbus_official_2026-2027.xlsx  ← data canónica del cliente
-?? data/columbus_full_hs_v5/, v6/    ← experimentos intermedios (puedes ignorar)
-```
+1. **Simultaneous course relationships** (6 de 7 del archivo del cliente):
+   - Spanish FL: Clara dicta G0902+G1204+G1205+G1206 en 1 sección física (no 4).
+   - Sofia: AP 2D+3D Art (1 combo), Drawing I+II (1), Sculpture I+II (1).
+   - Clara bajó 9→5 sections, Sofia 8→6.
+2. Modelo: `Section.linked_course_ids` + `Course.simul_group`.
+3. Ingester lee `reference/course_relationships.csv` (csv local con las 7 relaciones).
+4. Exporter emite N filas por sección combinada (1 por curso cubierto, sharing teacher/room/expression).
+5. verify_bundle dedupea por `Section_ID_Internal` para no falsa alarma.
 
-## El bug que se acaba de arreglar (semester double-count)
+## Próximos pasos (v4.3) — orden de impacto
 
-`ps_ingest_official.py` leía las asignaciones y las contaba todas, incluyendo cursos semestrales. Ortegon Valle tiene 4 AP Microeconomics (S1) + 4 AP Macroeconomics (S2) — esos son **los mismos 4 time slots** con contenido distinto por semestre, pero el modelo los trataba como 8 secciones simultáneas. Resultado: master INFEASIBLE en 0.9s.
+### 1. Term-paired sections (AP Micro/Macro de Ortegon)
 
-**Fix aplicado** (línea 298 en `ps_ingest_official.py`):
+**Objetivo:** recuperar las 8 secciones de Ortegon (4 Micro S1 + 4 Macro S2) que están omitidas hoy.
 
+**Estado del código:** preparado pero defer.
+- `Section.term_id` model field existe (None=year-long, "3601"=S1, "3602"=S2).
+- `Course.term_pair` model field existe.
+- Ingester ya tiene la lógica de TERM_CODE_TO_ID y la branch para emitirlas con term_id correcto, pero está comentada.
+- Master_solver tiene `_term_partition` helper y partitioning HC1/HC2 ya implementado.
+
+**Bug bloqueante:** cuando se emiten las 8 sections, el master da INFEASIBLE en 2s. Confirmado que NO es HC1, NO es HC2, NO es HC3 (ni con cap 8). El bug está en alguna interacción entre:
+- Global `scheme_count` balance constraint (master_solver línea ~257-260)
+- HC4 home_room pinning (todas las 9 academic de Ortegon → room 5)
+- min_distinct_schemes constraint (línea ~290)
+
+**Pista:** con 1+1 Micro/Macro funciona, con 3+3 funciona, con 4+4 falla. Probable que el balance estricto fuerce Micros y Macros a schemes distintos cuando deberían poder compartir.
+
+**Próximo intento:** contar pair_overlap en sumar global de scheme_count tratando S1+S2 como 1 cell efectiva.
+
+**Archivos a tocar:**
+- `src/scheduler/ps_ingest_official.py` líneas ~310-325 (descomentar el branch term_id)
+- `src/scheduler/master_solver.py` líneas ~250-265 (refinar scheme balance)
+
+### 2. Coplanning constraint (13 grupos)
+
+**Objetivo:** parejas/tríos de profesores deben compartir un esquema libre simultáneo (regla del doc Reglas Horarios HS 2026-04-22).
+
+**Datos:** `reference/rfi_1._STUDENTS_PER_COURSE_2026-2027.xlsx` hoja `CO PLANNING INFO`. 13 grupos prioritarios + más en orden de importancia.
+
+**Plan:**
+1. Crear helper `_read_coplanning_groups(xlsx_path)` en ingester que devuelva `list[list[str]]` de teacher_dcid_groups.
+2. Agregar `Dataset.coplanning_groups` o pasar como parámetro al solver.
+3. En `master_solver.py`, agregar constraint: para cada grupo, ∃ scheme tal que TODOS los teachers están libres en ese scheme.
+4. Empezar con HARD constraint; si causa INFEASIBLE, downgrade a SOFT con penalty.
+
+**Profesores "New X Teacher" en la hoja**: son placeholders del cliente (no contratados aún). Filtrarlos del grupo si no están en `ds.teachers`.
+
+### 3. Archivo nuevo de Juan (cursos por estudiante)
+
+**Sheet ID:** `1k_6BUOOAL2UEOjjfznYXVw9LY5NXFlABu8KxPFkr3h0`
+**Tamaño:** 60kb (≈ 60,000 chars de output) — leer por chunks con offset/limit.
+
+**Hipótesis:** sustituye o complementa la hoja `requests` del canónico con la lista autoritativa "qué debe ver cada estudiante". Confirmar primero contenido leyendo primeras filas.
+
+**Ruta sugerida:**
 ```python
-# Semester courses (SCHEDULETERMCODE='S1' or 'S2') are not yet modeled.
-# Skip them so the semester sections don't double-count against teachers'
-# max_load / HC4 / HC2.
-term_code = _safe_str(a.get("SCHEDULETERMCODE"))
-if term_code and term_code not in ("26-27", "2026-2027", ""):
-    continue
+mcp__bfd7cab6-..__read_file_content(fileId="1k_6BUOOAL2UEOjjfznYXVw9LY5NXFlABu8KxPFkr3h0")
+# → output too large, persistido en file
+# Read with offset+limit to scan structure
 ```
-
-**TODO real**: modelar semester properly via `Course.term` + `Section semester field`. Por ahora se omiten esas secciones — ~8 secciones perdidas en total, todas de Ortegon. El cliente está al tanto.
-
-## Siguiente paso concreto
-
-### 1. Verificar que master ya no es INFEASIBLE
-
-```python
-from pathlib import Path
-from src.scheduler.ps_ingest_official import build_dataset_from_official_xlsx
-from src.scheduler.master_solver import solve_master
-
-ds = build_dataset_from_official_xlsx(
-    Path('/Users/hector/Projects/handoff_2026-04-26_continuation/reference/columbus_official_2026-2027.xlsx')
-)
-print(f"{len(ds.students)} students, {len(ds.sections)} sections")
-master, _, m = solve_master(ds, time_limit_s=300.0)
-print(f"status: {m['status']}, assignments: {len(master)}")
-```
-
-Esperado tras el fix: `status: OPTIMAL`, ~250 assignments.
-
-### 2. Ejecutar student solver
-
-`from src.scheduler.student_solver import solve_students`
-
-### 3. Empaquetar v4
-
-Mismo formato que v3. Usar `scripts/build_client_bundle.py` (o el script que se haya usado para v3 — revisar `data/_client_bundle_v3/00_LEEME_PRIMERO.md`).
-
-### 4. Verificar bundle
-
-```bash
-python verify_bundle.py data/_client_bundle_v4/
-```
-
-### 5. Commit + push
-
-```bash
-git add src/scheduler/ps_ingest_official.py src/scheduler/master_solver.py \
-        src/scheduler/models.py src/scheduler/ps_ingest.py tests/test_ps_ingest.py
-git commit -m "v4: canonical PS ingester + semester skip + HC4 + per-teacher max_consec"
-git push origin main
-```
-
-## Estado al 2026-04-28 fin de sesión
-
-- ✅ v4 bundle generado y pusheado (commit `acf501e`)
-- ✅ Master OPTIMAL, student FEASIBLE 92.9% cobertura
-- ✅ Soft penalty implementado (resuelve estudiante 29096 sobreasignado)
-- ✅ `verify_bundle.py` PASS
-
-## Patch pendiente: v4.1 (formato PS import)
-
-Cliente compartió 2026-04-28 la spec oficial de PS import en
-`https://docs.google.com/spreadsheets/d/1wLKkgasaFAizabGcX1TWWI-tVc6mwyGBKZBds9aITQ0/edit`.
-
-Cambios necesarios al exporter (`exporter.py`) para v4.1:
-
-1. **Section_Number**: hoy emitimos `G0901.1`, `ADVHS01.16`. PS exige enteros puros sin alfa ni leading zeros. Regenerar como secuenciales por curso (101, 102, 103…).
-2. **TermID**: hoy vacío o `3600`. Cliente está confirmando si el campo espera numérico (`3600`/`3601`/`3602`) o texto (`26-27`/`S1`/`S2`). Esperar respuesta antes de hacer el patch.
-3. **Att_Mode_Code**: agregar columna con valor literal `ATT_ModeMeeting`.
-4. **Attendance_Type_Code**: agregar con valor `2` (cada bloque por separado, multi-meeting sections).
-5. **GradebookType**: agregar con valor `2` (PowerTeacher Pro).
-6. **Expression**: confirmar si lleva prefijo `P` o no (hoy emitimos `1(A)2(B)3(C)` sin P; spec muestra ejemplos con `P1(A)`).
-
-Archivo afectado: `src/scheduler/exporter.py` función `export_powerschool()`.
 
 ## Decisiones del cliente que están pegadas
 
-1. **Estudiante 29096 tiene 10 requests vs 9 slots**: ✅ Resuelto con soft penalty. Cobertura 92.9%. Cliente puede pedir 100% si reduce requests en origen.
-
-2. **Cursos semestrales (Ortegon S1/S2)**: ahora hay vía para modelarlos properly cuando confirmen TermID — agregar `Course.term: str | None` y exportar 4 sections con TermID=S1, 4 con TermID=S2. Recupera ~8 secciones perdidas.
-
-3. **TermID format** (NUEVO 2026-04-28): esperando respuesta cliente. Bloquea v4.1.
+1. **Estudiante 29096 con 10 requests**: ¿bajan a ≤9 en origen o aceptan cobertura parcial 94.8%?
+2. **Sofía/Gloria/Clara override max_consec**: ¿reducen carga en origen o mantienen override?
+3. **Demo 1-mayo**: ¿se muestra v4.2 actual o esperan v4.3 con term/coplanning?
 
 ## Reglas activas (no cambies sin pensarlo)
 
-- HC1 — teacher conflict
-- HC2 — room conflict (incluye home_room: ver fix en `master_solver.py`)
-- HC2b — advisory rooms distinct (`AddAllDifferent`)
-- HC3 — max consecutive classes = 4 (global)
-  - Per-teacher override = 5 para 3 docentes con ≥7 secciones académicas: Sofia, Gloria, Clara
-  - Modelado en `Teacher.max_consecutive_classes: int | None` (None = usar default)
-- HC4 — home_room por docente (LISTADO MAESTRO single-room ⇒ home_room_id)
+- HC1 — teacher conflict (term-aware partition implementado pero no activado)
+- HC2 — room conflict (idem)
+- HC2b — advisory rooms distinct
+- HC3 — max consecutive 4, override 5 per-teacher si ≥7 secciones
+- HC4 — home_room por profesor (LISTADO MAESTRO)
+
+## Reglas que NO existen aún (pendientes)
+
+- **Coplanning** (13 grupos) — datos disponibles, falta código.
+- **Term sharing** (Micro/Macro) — código preparado, falta arreglar scheme balance.
 
 ## Lo que NO hay que hacer
 
-- No agregar Hall-matching constraint en master_solver. Lo intentamos, arregla MS pero rompe HS. Ver `~/.claude/.../feedback_cohort_matching_caveat.md`.
-- No re-añadir auto-relax de max_consecutive a 5 global. El cliente reportó docentes con 5 bloques seguidos (Castañeda Día C). Override per-teacher es la solución correcta.
-- No commitear `.venv/` ni intermedios grandes. Está en `.gitignore`.
+- No agregar Hall-matching constraint en master. Lo intentamos antes; arregla MS pero rompe HS.
+- No re-añadir auto-relax de max_consecutive a 5 global.
+- No commitear `.venv/`, intermedios grandes, ni el archivo `course_relationships.csv` con datos sensibles del cliente.
+- No borrar `ps_ingest.py` (el heurístico) — los tests legacy lo usan.
 
-## Ortools
+## Files de referencia rápida
 
-Pinneado en `requirements.txt`: `ortools>=9.10,<9.13`. La 9.15 está rota en Apple Silicon (devuelve `MODEL_INVALID` en LP triviales).
+- `reference/columbus_official_2026-2027.xlsx` — canonical PS export (5 sheets)
+- `reference/course_relationships.csv` — 7 relaciones (Simultaneous + Term)
+- `reference/rfi_1._STUDENTS_PER_COURSE_2026-2027.xlsx` — tiene `CO PLANNING INFO` sheet
+- `PROBLEMAS_DATOS_CLIENTE.md` — registro detallado de los issues acumulados
 
-## Dependencias del flujo
+## Comandos útiles
+
+```bash
+# Re-build bundle v4.2 desde scratch (4-5 min):
+cd /Users/hector/Projects/handoff_2026-04-26_continuation/scheduler
+.venv/bin/python build_v4_bundle.py
+
+# Verify bundle:
+cd data/_client_bundle_v4 && python3 verify_bundle.py .
+
+# Quick ingest test sin solve:
+.venv/bin/python -c "
+from pathlib import Path
+from src.scheduler.ps_ingest_official import build_dataset_from_official_xlsx
+ds = build_dataset_from_official_xlsx(Path('../reference/columbus_official_2026-2027.xlsx'))
+print(f'students={len(ds.students)} sections={len(ds.sections)}')
+"
+```
+
+## Cómo arrancar la próxima sesión
 
 ```
-ps_ingest_official.py
-  └─ build_dataset_from_official_xlsx()
-       └─ master_solver.solve_master(ds)        ← HC1, HC2, HC2b, HC3, HC4
-            └─ student_solver.solve_students()  ← cobertura de requests
-                 └─ build_client_bundle()       ← v4 .zip
-                      └─ verify_bundle.py       ← integridad SHA256
+cd /Users/hector/Projects/handoff_2026-04-26_continuation/scheduler
+lee HANDOFF_v4.md
+
+continúa con v4.3 — primero arregla bug Term en master_solver:
+debug por qué con 4 Micro + 4 Macro de Ortegon el master da INFEASIBLE.
+Pista: probablemente scheme_count balance fuerza spread entre Micro/Macro.
 ```
-
-## Archivos canónicos vs heurísticos
-
-- **Canónico (v4 en adelante)**: `ps_ingest_official.py` lee `reference/columbus_official_2026-2027.xlsx` (5 hojas, IDs reales de PS).
-- **Heurístico (v3 y antes)**: `ps_ingest.py` lee 2 .xlsx del cliente con regex sobre nombres. Mantenido para tests legacy (`tests/test_ps_ingest.py`).
-
-No borres `ps_ingest.py` aún. Los tests reales lo usan y nos dan una baseline de regresión.
