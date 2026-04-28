@@ -143,8 +143,16 @@ def check_no_time_conflicts(tables: dict, report: Report) -> None:
 
 
 def check_no_teacher_conflicts(tables: dict, report: Report) -> None:
+    # v4.2: Simultaneous multi-level sections emit one row per covered course
+    # but share Section_ID_Internal (single physical section, multiple Course
+    # codes). Dedupe by (Section_ID_Internal) before counting.
+    seen_physical: set[str] = set()
     teacher_scheme_count: dict[tuple[str, str], int] = defaultdict(int)
     for row in tables["ps_sections"]:
+        sid = row.get("Section_ID_Internal") or row.get("SectionID") or ""
+        if sid in seen_physical:
+            continue
+        seen_physical.add(sid)
         teacher_scheme_count[(row["TeacherID"], row["Period"])] += 1
     over = [(tid_p, n) for tid_p, n in teacher_scheme_count.items() if n > 1 and tid_p[1] != "ADV"]
     report.check(
@@ -155,8 +163,13 @@ def check_no_teacher_conflicts(tables: dict, report: Report) -> None:
 
 
 def check_no_room_conflicts(tables: dict, report: Report) -> None:
+    seen_physical: set[str] = set()
     room_scheme_count: dict[tuple[str, str], int] = defaultdict(int)
     for row in tables["ps_sections"]:
+        sid = row.get("Section_ID_Internal") or row.get("SectionID") or ""
+        if sid in seen_physical:
+            continue
+        seen_physical.add(sid)
         room_scheme_count[(row["RoomID"], row["Period"])] += 1
     over = [(rid_p, n) for rid_p, n in room_scheme_count.items() if n > 1]
     report.check(

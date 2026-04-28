@@ -23,6 +23,7 @@ Fixes applied (consolidated from ps_ingest.py history):
 """
 from __future__ import annotations
 
+import csv
 import re
 from collections import defaultdict
 from pathlib import Path
@@ -162,6 +163,59 @@ def _read_teacher_assignments(wb) -> list[dict]:
     return out
 
 
+def _apply_course_relationships(
+    rel_path: Path,
+    courses: list[Course],
+    course_by_number: dict[str, Course],
+) -> None:
+    """Read course_relationships.csv and set Course.simul_group / Course.term_pair.
+
+    Simultaneous relationships are unioned via union-find so chains (G0902 ↔
+    G1204, G0902 ↔ G1205, G0902 ↔ G1206) collapse to a single shared group ID.
+    Term relationships are stored as a single peer pointer per course.
+    """
+    parent: dict[str, str] = {}
+
+    def _find(x: str) -> str:
+        while parent.get(x, x) != x:
+            parent[x] = parent.get(parent[x], parent[x])
+            x = parent[x]
+        return x
+
+    def _union(a: str, b: str) -> None:
+        parent.setdefault(a, a)
+        parent.setdefault(b, b)
+        ra, rb = _find(a), _find(b)
+        if ra != rb:
+            parent[ra] = rb
+
+    term_pairs: dict[str, str] = {}
+    simul_courses: set[str] = set()
+    with rel_path.open() as f:
+        for row in csv.DictReader(f):
+            c1 = (row.get("COURSE_NUMBER1") or "").strip()
+            c2 = (row.get("COURSE_NUMBER2") or "").strip()
+            code = (row.get("RELATIONSHIPCODE") or "").strip()
+            if not c1 or not c2:
+                continue
+            if code == "Simultaneous":
+                _union(c1, c2)
+                simul_courses.add(c1)
+                simul_courses.add(c2)
+            elif code == "Term":
+                term_pairs[c1] = c2
+                term_pairs[c2] = c1
+
+    for cid in simul_courses:
+        c = course_by_number.get(cid)
+        if c is not None:
+            c.simul_group = _find(cid)
+    for cid, peer in term_pairs.items():
+        c = course_by_number.get(cid)
+        if c is not None:
+            c.term_pair = peer
+
+
 def _read_requests(wb) -> list[dict]:
     ws = wb["requests"]
     rows = list(ws.iter_rows(values_only=True))
@@ -260,6 +314,16 @@ def build_dataset_from_official_xlsx(
         courses.append(course)
         course_by_number[course_number] = course
 
+    # ---------------------------------------------- course relationships (v4.2)
+    # Apply Simultaneous and Term relationships from the client-provided
+    # `course_relationships.csv` (canonical reference at repo root). The file
+    # contains 7 rows for HS 2026-2027:
+    #   - 6 Simultaneous (multi-level classes: Spanish FL, AP Art, Drawings, etc.)
+    #   - 1 Term (AP Micro / AP Macro share slot, alternate semesters)
+    rel_path = xlsx_path.parent / "course_relationships.csv"
+    if rel_path.exists():
+        _apply_course_relationships(rel_path, courses, course_by_number)
+
     # -------------------------------------------------------------- teachers
     teachers: list[Teacher] = []
     teacher_by_dcid: dict[str, Teacher] = {}
@@ -287,6 +351,11 @@ def build_dataset_from_official_xlsx(
     sections_per_teacher: dict[str, int] = defaultdict(int)
     section_counter_per_course: dict[str, int] = defaultdict(int)
 
+    # v4.2: SCHEDULETERMCODE → Section.term_id (Columbus 2026-2027 mapping confirmed
+    # by client 2026-04-28). Year-long courses keep term_id=None and inherit
+    # SchoolConfig.term_id (3600) at export time.
+    TERM_CODE_TO_ID = {"S1": "3601", "S2": "3602"}
+
     for a in assignment_rows:
         teacher_dcid = _safe_str(a["TEACHER_DCID"])
         course_number = _safe_str(a["COURSENUMBER"])
@@ -295,19 +364,24 @@ def build_dataset_from_official_xlsx(
         section_type = _safe_str(a.get("SECTIONTYPE"))
         if section_type:  # 'LP' or any non-empty subtype → already counted in the regular row
             continue
-        # Semester courses (SCHEDULETERMCODE='S1' or 'S2') are not yet modeled.
-        # Skip them so the semester sections don't double-count against teachers'
-        # max_load / HC4 / HC2 (e.g. Ortegon teaches 4 Micro in S1 + 4 Macro in S2;
-        # those are the SAME 4 time slots but with different content per semester).
-        # TODO: model semester properly via Course.term + Section semester field.
-        term_code = _safe_str(a.get("SCHEDULETERMCODE"))
-        if term_code and term_code not in ("26-27", "2026-2027", ""):
-            continue
 
         teacher = teacher_by_dcid.get(teacher_dcid)
         course = course_by_number.get(course_number)
         if teacher is None or course is None:
             continue
+
+        # Term handling: v4.2 ships Simultaneous course relationships.
+        # Term-paired sections (S1/S2 sharing slot) are deferred to v4.3 —
+        # the master_solver's term-aware HC1/HC2 partitioning passes locally
+        # but interacts subtly with the global scheme balance and HC4 home_room
+        # pinning to produce INFEASIBLE for Ortegon's room. Skip semester
+        # sections for now; the engine still produces the correct merged
+        # multi-level Spanish/Art/Drawing/Sculpture sections (the bigger win).
+        # TODO v4.3: emit Term sections + adjust scheme balance + handle home_room.
+        term_code = _safe_str(a.get("SCHEDULETERMCODE"))
+        if term_code and term_code not in ("26-27", "2026-2027"):
+            continue
+        section_term_id: str | None = None
 
         # Wire up qualifications
         if course_number not in teacher.qualified_course_ids:
@@ -324,9 +398,57 @@ def build_dataset_from_official_xlsx(
                 teacher_id=teacher_dcid,
                 max_size=course.max_size,
                 grade_level=course.grade_eligibility[0] if course.grade_eligibility else 12,
+                term_id=section_term_id,
             ))
             if not course.is_advisory:
                 sections_per_teacher[teacher_dcid] += 1
+
+    # v4.2 — Simultaneous merge pass.
+    # When a teacher is assigned to multiple courses sharing the same simul_group
+    # (multi-level class: e.g. Spanish 9/10/11/12 FL, AP 2D + AP 3D Art), merge
+    # those individual sections into ONE physical section with `linked_course_ids`
+    # set to the additional courses. This fixes the apparent "overload" of
+    # teachers like Clara Martínez (9 sections → 5) and Sofia Arcila.
+    #
+    # Strategy: for each (teacher, simul_group), pair sections by index — the
+    # k-th section of each course in the group becomes one combined physical
+    # section. If counts differ across courses (rare in practice), the extras
+    # remain as standalone single-course sections.
+    merged_groups: dict[tuple[str, str], dict[str, list[int]]] = {}
+    for i, s in enumerate(sections):
+        c = course_by_number.get(s.course_id)
+        if c is None or c.simul_group is None:
+            continue
+        key = (s.teacher_id, c.simul_group)
+        merged_groups.setdefault(key, {}).setdefault(s.course_id, []).append(i)
+
+    to_remove: set[int] = set()
+    for (tid, sg), by_course in merged_groups.items():
+        if len(by_course) <= 1:
+            continue  # only one course of the group present — nothing to merge
+        # Pair by index: k-th section of each course becomes one combined section.
+        ordered_courses = sorted(by_course.keys())  # determinism
+        max_k = max(len(idxs) for idxs in by_course.values())
+        for k in range(max_k):
+            primary_idx: int | None = None
+            for cid in ordered_courses:
+                idxs = by_course[cid]
+                if k >= len(idxs):
+                    continue  # this course doesn't have a k-th section
+                if primary_idx is None:
+                    primary_idx = idxs[k]
+                else:
+                    # Append linked course to primary; mark this section for removal
+                    primary = sections[primary_idx]
+                    if cid != primary.course_id and cid not in primary.linked_course_ids:
+                        primary.linked_course_ids.append(cid)
+                    to_remove.add(idxs[k])
+                    # Pigeonhole credit relief: this physical section is no longer
+                    # "extra" load on the teacher.
+                    if not course_by_number[cid].is_advisory:
+                        sections_per_teacher[tid] -= 1
+    if to_remove:
+        sections = [s for i, s in enumerate(sections) if i not in to_remove]
 
     # Drop teachers with no academic sections (happens when SECTIONTYPE filter dropped all rows)
     # Note: keep all teachers — even those with only Advisory — since they appear in the data.

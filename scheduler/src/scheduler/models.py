@@ -56,6 +56,20 @@ class Course(BaseModel):
     # (or concurrently scheduled — depending on policy) before this one.
     # Validation only warns since transcript history isn't part of the canonical Dataset.
     prerequisite_course_ids: list[str] = Field(default_factory=list)
+    # Course relationships from `course_relationships.csv` (client spec 2026-04-28):
+    #
+    # `simul_group`: identifier shared by courses that must be dictated simultaneously
+    #   in the same physical section (multi-level class). Example: G0902 + G1204 +
+    #   G1205 + G1206 (Spanish 9/10/11/12 Foreign Language) all share simul_group="SPANISH_FL".
+    #   When a teacher has assignments to multiple courses with the same simul_group,
+    #   the ingester merges them into ONE Section with `linked_course_ids` populated.
+    #
+    # `term_pair`: course_id of the term-paired counterpart. Example: I1213 (Micro)
+    #   has term_pair="I1212" (Macro). They share slots but in different semesters.
+    #   The ingester emits sections with `Section.term_id` set to "3601" (S1) or
+    #   "3602" (S2). Year-long courses keep term_id=None and use SchoolConfig.term_id (3600).
+    simul_group: str | None = None
+    term_pair: str | None = None
 
 
 class Teacher(BaseModel):
@@ -98,6 +112,19 @@ class Section(BaseModel):
     # Locks (v2 §13 human approval): if set, master solver must respect.
     locked_scheme: int | Literal["ADVISORY"] | None = None
     locked_room_id: str | None = None
+    # v4.2 — course relationships:
+    #
+    # `linked_course_ids`: additional courses also covered by this physical
+    #   section (Simultaneous relationship). Example: a Spanish multi-level
+    #   section with course_id="G0902" might have linked_course_ids=["G1204",
+    #   "G1205", "G1206"]. A student requesting any of those courses can be
+    #   assigned to this section (subject to grade eligibility).
+    # `term_id`: explicit term override for Term-paired sections.
+    #   None  = year-long, use SchoolConfig.term_id (3600).
+    #   "3601" = S1, "3602" = S2 (Columbus 2026-2027 mapping).
+    #   Same-slot sections in different term_ids do NOT conflict.
+    linked_course_ids: list[str] = Field(default_factory=list)
+    term_id: str | None = None
 
     @model_validator(mode="after")
     def _normalize(self) -> "Section":

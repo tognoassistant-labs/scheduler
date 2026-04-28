@@ -16,6 +16,7 @@ from Columbus IT:
 from __future__ import annotations
 
 import csv
+from collections import defaultdict
 from pathlib import Path
 
 from .models import Dataset, MasterAssignment, SchoolConfig, StudentAssignment
@@ -59,25 +60,30 @@ def _expression(slots: list[tuple[str, int]]) -> str:
     return "".join(parts)
 
 
-def _build_section_number_map(ds: Dataset) -> dict[str, str]:
-    """Map internal section_id (e.g. 'G0901.1', 'ADVHS01.16') to PS-compatible
-    numeric Section_Number per the official import spec (2026-04-28):
+def _build_section_number_map(ds: Dataset) -> dict[tuple[str, str], str]:
+    """Map (section_id, course_id) → PS-compatible numeric Section_Number per the
+    official import spec (2026-04-28):
 
       "Section Number must be a 'real number' with no alpha characters and
        no leading zeros. A section number must be unique per course, school
        and term."
 
-    We assign sequential numbers per (course, term) starting at 101. The
-    starting offset matches the example in the PS spec ("101"). Stable
+    For Simultaneous multi-level sections (Section.linked_course_ids non-empty),
+    each linked course gets its OWN Section_Number — they may collide numerically
+    across courses (course A section 101 and course B section 101 are distinct
+    PS rows because Section_Number is unique per course, not globally).
+
+    Counters per course start at 101 to match the PS spec example. Stable
     ordering: by appearance in ds.sections.
     """
     counter_per_course: dict[str, int] = {}
-    section_num_by_id: dict[str, str] = {}
+    section_num: dict[tuple[str, str], str] = {}
     for s in ds.sections:
-        next_n = counter_per_course.get(s.course_id, 100) + 1
-        counter_per_course[s.course_id] = next_n
-        section_num_by_id[s.section_id] = str(next_n)
-    return section_num_by_id
+        for cid in [s.course_id] + list(s.linked_course_ids):
+            next_n = counter_per_course.get(cid, 100) + 1
+            counter_per_course[cid] = next_n
+            section_num[(s.section_id, cid)] = str(next_n)
+    return section_num
 
 
 def export_powerschool(
@@ -125,35 +131,52 @@ def export_powerschool(
                 continue
             t = teachers_by_id.get(s.teacher_id)
             r = rooms_by_id.get(m.room_id)
-            c = courses_by_id.get(s.course_id)
             slots_str = ";".join(f"{d}{b}" for d, b in m.slots)
-            w.writerow([
-                school_id,
-                s.course_id,
-                sect_num[s.section_id],            # numeric Section Number
-                term_id,
-                s.teacher_id,
-                m.room_id,
-                _expression(m.slots),
-                "2",                                # Attendance_Type_Code: 2=each meeting separately
-                "ATT_ModeMeeting",                  # Att_Mode_Code: literal per spec
-                s.max_size,
-                "2",                                # GradebookType: 2=PowerTeacher Pro
-                # Review-only:
-                c.name if c else "",
-                t.name if t else "",
-                r.name if r else "",
-                s.section_id,                       # internal id for back-reference
-                slots_str,
-            ])
+            # v4.2 — Term sections (Section.term_id set) override the school's
+            # default TermID (3600) with their own (3601=S1, 3602=S2).
+            section_term_id = s.term_id if s.term_id else term_id
+            # v4.2 — Simultaneous: emit ONE row per covered course (primary +
+            # each linked course). All rows share Teacher/Room/Expression so
+            # PS sees them as physically the same class with multiple course
+            # codes attached.
+            covered_courses = [s.course_id] + list(s.linked_course_ids)
+            for cid in covered_courses:
+                c = courses_by_id.get(cid)
+                w.writerow([
+                    school_id,
+                    cid,
+                    sect_num[(s.section_id, cid)],     # numeric per-course Section Number
+                    section_term_id,
+                    s.teacher_id,
+                    m.room_id,
+                    _expression(m.slots),
+                    "2",                                # Attendance_Type_Code: 2=each meeting separately
+                    "ATT_ModeMeeting",                  # Att_Mode_Code: literal per spec
+                    s.max_size,
+                    "2",                                # GradebookType: 2=PowerTeacher Pro
+                    # Review-only:
+                    c.name if c else "",
+                    t.name if t else "",
+                    r.name if r else "",
+                    s.section_id,                       # internal id for back-reference
+                    slots_str,
+                ])
 
     # 2. ps_enrollments.csv — matches PS Enrollments import spec:
     #    Student_Number, Course_Number, Section_Number, Term_Number, SchoolID,
     #    + optional Dateenrolled / DateLeft (left blank = PS uses term defaults).
-    # Section_ID_Internal is review-only — DELETE before import. It is here so
-    # auditors can cross-reference against ps_sections / horario_estudiantes
-    # using the engine slug (e.g. ADVHS01.16) before the numeric Section_Number
-    # rewrite obscures it.
+    # Section_ID_Internal is review-only — DELETE before import.
+    #
+    # v4.2 — Each enrollment is emitted using the student's REQUESTED course
+    # number, not the section's primary course_id. This is essential for
+    # combined multi-level sections (e.g. a Spanish FL section covers G0902 +
+    # G1204 + G1205 + G1206; a 9th-grader requesting G0902 must enroll under
+    # course G0902, while a 12th-grader requesting G1206 enrolls under G1206
+    # — even though both are in the same physical section).
+    request_by_student: dict[str, set[str]] = defaultdict(set)
+    for st in ds.students:
+        for r in st.requested_courses:
+            request_by_student[st.student_id].add(r.course_id)
     with (out_dir / "ps_enrollments.csv").open("w", newline="") as f:
         w = csv.writer(f)
         w.writerow([
@@ -166,13 +189,19 @@ def export_powerschool(
                 sect = sections_by_id.get(sid)
                 if sect is None:
                     continue
+                # Determine which course this enrollment fulfills for this student.
+                covered = [sect.course_id] + list(sect.linked_course_ids)
+                requested = request_by_student.get(sa.student_id, set())
+                # Pick the requested course this section covers (first match).
+                fulfilled_cid = next((cid for cid in covered if cid in requested), sect.course_id)
+                section_term_id = sect.term_id if sect.term_id else term_id
                 w.writerow([
                     sa.student_id,
-                    sect.course_id,
-                    sect_num[sid],
+                    fulfilled_cid,
+                    sect_num[(sid, fulfilled_cid)],
                     "",                              # Dateenrolled: blank → PS uses term start
                     "",                              # DateLeft: blank → PS uses term end
-                    term_id,
+                    section_term_id,
                     school_id,
                     sid,                             # internal slug (delete before import)
                 ])
@@ -181,16 +210,18 @@ def export_powerschool(
     with (out_dir / "ps_master_schedule.csv").open("w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["Day", "Block", "Period", "SectionNumber", "Section_ID_Internal",
-                    "CourseID", "TeacherID", "RoomID"])
+                    "CourseID", "LinkedCourseIDs", "TeacherID", "RoomID", "TermID"])
         for s in ds.sections:
             m = master_by_sect.get(s.section_id)
             if m is None:
                 continue
+            section_term_id = s.term_id if s.term_id else term_id
             for (day, block) in m.slots:
                 w.writerow([
                     day, block, _expression(m.slots),
-                    sect_num[s.section_id], s.section_id,
-                    s.course_id, s.teacher_id, m.room_id,
+                    sect_num[(s.section_id, s.course_id)], s.section_id,
+                    s.course_id, "|".join(s.linked_course_ids),
+                    s.teacher_id, m.room_id, section_term_id,
                 ])
 
     # Field-mapping documentation

@@ -1,0 +1,8 @@
+SCHOOLID,YEARID,COURSE_NUMBER1,COURSE_NAME1,COURSE_NUMBER2,RELATED_COURSE_NAME,RELATIONSHIPTYPE,RELATIONSHIPCODE
+13000,36,OC1313,AP 2-D Art and Design,I1215,AP 3-D Art and Design,Block,Simultaneous
+13000,36,I1213,AP Microeconomics,I1212,AP Macroeconomics,Block,Term
+13000,36,OC1307,Drawing I,OC1311,Drawing II,Block,Simultaneous
+13000,36,OC1306,Sculpture I,OC1312,Sculpture II,Block,Simultaneous
+13000,36,G1204,Spanish 10 (Foreign Language),G0902,Spanish 9 (Foreign Language),Block,Simultaneous
+13000,36,G1205,Spanish 11 (Foreign Language),G0902,Spanish 9 (Foreign Language),Block,Simultaneous
+13000,36,G1206,Spanish 12 (Foreign Language),G0902,Spanish 9 (Foreign Language),Block,Simultaneous

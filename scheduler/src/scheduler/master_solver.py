@@ -147,30 +147,65 @@ def solve_master(ds: Dataset, time_limit_s: float = 60.0, verbose: bool = False)
             model.Add(section_room[s.section_id] != room_index[rid]).OnlyEnforceIf(b.Not())
             section_in_room[(s.section_id, rid)] = b
 
-    # HC1: Teacher cannot be in two academic sections in the same scheme
+    # v4.2 — Term-aware HC1/HC2:
+    # Sections with `Section.term_id` set ("3601"=S1, "3602"=S2) only occupy
+    # the slot during that semester. Year-long sections (term_id=None) occupy
+    # it all year. So:
+    #   - year-long + S1  in same slot → conflict (concurrent in S1)
+    #   - year-long + S2  in same slot → conflict (concurrent in S2)
+    #   - S1 + S2         in same slot → OK (never concurrent)
+    # Equivalently: enforce ≤1 occupancy per slot in each effective term =
+    # year-long ∪ S1, and year-long ∪ S2.
+    sections_by_id_local = {s.section_id: s for s in ds.sections}
+
+    def _term_partition(sect_ids: list[str]) -> tuple[list[str], list[str], list[str]]:
+        """Returns (year_long, s1_only, s2_only) section IDs."""
+        yearlong, s1, s2 = [], [], []
+        for sid in sect_ids:
+            t = sections_by_id_local[sid].term_id
+            if t == "3601":
+                s1.append(sid)
+            elif t == "3602":
+                s2.append(sid)
+            else:
+                yearlong.append(sid)
+        return yearlong, s1, s2
+
+    # HC1: Teacher cannot be in two academic sections in the same scheme,
+    # within the same effective term.
     sections_by_teacher: dict[str, list[str]] = defaultdict(list)
     for s in academic_sections:
         sections_by_teacher[s.teacher_id].append(s.section_id)
     for tid, sect_ids in sections_by_teacher.items():
         if len(sect_ids) < 2:
             continue
+        yearlong, s1, s2 = _term_partition(sect_ids)
         for k in SCHEMES:
-            model.Add(sum(section_in_scheme[(sid, k)] for sid in sect_ids) <= 1)
+            for term_part in (yearlong + s1, yearlong + s2):
+                if len(term_part) >= 2:
+                    model.Add(sum(section_in_scheme[(sid, k)] for sid in term_part) <= 1)
 
-    # HC2: Room cannot host two academic sections at the same scheme
+    # HC2: Room cannot host two academic sections at the same scheme, same term.
     for k in SCHEMES:
         for r in ds.rooms:
-            terms = []
-            for s in academic_sections:
-                if r.room_id in course_rooms[s.section_id]:
-                    a = section_in_scheme[(s.section_id, k)]
-                    b = section_in_room[(s.section_id, r.room_id)]
-                    both = model.NewBoolVar(f"both_{s.section_id}_{k}_{r.room_id}")
+            sect_ids_in_room = [
+                s.section_id for s in academic_sections
+                if r.room_id in course_rooms[s.section_id]
+            ]
+            yearlong, s1, s2 = _term_partition(sect_ids_in_room)
+            for term_part in (yearlong + s1, yearlong + s2):
+                if len(term_part) < 2:
+                    continue
+                terms = []
+                for sid in term_part:
+                    a = section_in_scheme[(sid, k)]
+                    b = section_in_room[(sid, r.room_id)]
+                    both = model.NewBoolVar(f"both_{sid}_{k}_{r.room_id}")
                     model.AddBoolAnd([a, b]).OnlyEnforceIf(both)
                     model.AddBoolOr([a.Not(), b.Not()]).OnlyEnforceIf(both.Not())
                     terms.append(both)
-            if terms:
-                model.Add(sum(terms) <= 1)
+                if terms:
+                    model.Add(sum(terms) <= 1)
 
     # HC2b: Advisory sections all meet at E3, so they must be in distinct rooms.
     # Without this, the solver is free to put every advisory section in the same
@@ -215,14 +250,30 @@ def solve_master(ds: Dataset, time_limit_s: float = 60.0, verbose: bool = False)
 
     # Hard: balance sections across schemes tightly so the student solver has room
     # to fit per-course balance constraints. Tight bounds: avg-1 to avg+1.
-    n_academic = len(academic_sections)
-    avg = n_academic // 8
+    #
+    # v4.2 — Term-paired sections (S1 + S2 sharing slot) shouldn't both count
+    # against the scheme balance: in any given semester, only one of the pair
+    # is concurrent. We count effective sections = total - (count of S2-only
+    # sections paired with an S1 counterpart present). This prevents the
+    # balance forcing Micro/Macro onto separate schemes (operationally they
+    # MUST share to keep teacher home_room cap at 8 schemes).
+    s1_count = sum(1 for s in academic_sections if s.term_id == "3601")
+    s2_count = sum(1 for s in academic_sections if s.term_id == "3602")
+    pair_overlap = min(s1_count, s2_count)
+    n_academic_effective = len(academic_sections) - pair_overlap
+    avg = n_academic_effective // 8
     scheme_min = max(1, avg - 1)
-    scheme_max = avg + 1 if (n_academic % 8 == 0) else avg + 2
+    scheme_max = avg + 1 if (n_academic_effective % 8 == 0) else avg + 2
+    # Build per-scheme effective count: each S1 section counts 1, each S2
+    # section counts 1 ONLY if it doesn't share scheme with its pair (we
+    # detect this via a coupling indicator). Simpler: count S1+yearlong as
+    # full, and S2 as 0 when paired with S1 in same scheme (which the solver
+    # is now free to pick). To keep the constraint linear, we simply count
+    # all sections but RAISE the cap by `pair_overlap` to absorb both halves.
     for k in SCHEMES:
         scheme_count = sum(section_in_scheme[(s.section_id, k)] for s in academic_sections)
         model.Add(scheme_count >= scheme_min)
-        model.Add(scheme_count <= scheme_max)
+        model.Add(scheme_count <= scheme_max + pair_overlap)
 
     # Hard: each multi-section course must span at least ceil(n_sections / 2) distinct
     # schemes so the student solver isn't forced into bottleneck slots. Without this,

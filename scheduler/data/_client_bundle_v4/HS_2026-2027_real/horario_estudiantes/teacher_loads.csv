@@ -1,7 +1,7 @@
 teacher_id,name,department,n_sections,max_load,section_ids
 8456,"Angel Angel, Jorge Mario",Arts,7,6,ADVHS01.1|C0904.1|C0904.2|C0904.3|C0904.4|C0905.1|C0907.1
 4202,"Arboleda Otalvaro, Oscar Andres",Math,6,5,ADVHS01.2|I1211.1|I1211.2|OI1003.1|OI1303.1|OI1303.2
-3752,"Arcila Fernandez, Sofia",Arts,8,7,ADVHS01.3|I1215.1|OC1305.1|OC1305.2|OC1305.3|OC1306.1|OC1312.1|OC1313.1
+3752,"Arcila Fernandez, Sofia",Arts,6,5,ADVHS01.3|I1215.1|OC1305.1|OC1305.2|OC1305.3|OC1306.1
 342,"Atehortua, Erika",Spanish,6,5,ADVHS01.4|G1201.1|G1201.2|G1201.3|G1201.4|G1202.1
 2023,"Beauchamp, Bill",Science,6,5,A1006.1|A1006.2|A1006.3|A1105.1|ADVHS01.5|OA1304.1
 9799,"Berrio Guzman, Sandro",Math,6,5,ADVHS01.6|OI1003.2|OI1003.3|OI1003.4|OI1003.5|OI1003.6
@@ -23,7 +23,7 @@ teacher_id,name,department,n_sections,max_load,section_ids
 9811,"Leiva Bernal, Camila",Spanish,6,5,ADVHS01.14|B1001.1|B1001.2|G1201.5|VHS0052.1|VHS0052.2
 5306,"Marin Franco, Karol Viviana",Social Stu,6,5,ADVHS01.15|B1001.3|B1001.4|B1001.5|B1001.6|B1001.7
 9822,"Marin Mesa, Juan Esteban",PE,6,6,E1101.1|E1101.2|E1101.3|E1101.4|E1101.5|E1101.6
-8470,"Martinez Cubillos, Clara Andrea",Spanish,9,8,ADVHS01.16|G0901.1|G0901.2|G0901.3|G0901.4|G0902.1|G1204.1|G1205.1|G1206.1
+8470,"Martinez Cubillos, Clara Andrea",Spanish,6,5,ADVHS01.16|G0901.1|G0901.2|G0901.3|G0901.4|G0902.1
 9793,"Mcpherson, Mitchell David",English,6,5,ADVHS01.17|H0904.1|H0904.2|H0904.3|H0904.4|H1001.1
 602,"Mesa, Urbano",PE,6,6,E1201.1|E1201.2|E1201.3|E1201.4|E1201.5|E1201.6
 9803,"Mickens, Tamir Akil",Science,6,5,A1105.2|ADVHS01.18|OA1319.1|OA1319.2|OA1322.1|OA1322.2
@@ -41,7 +41,7 @@ teacher_id,name,department,n_sections,max_load,section_ids
 9064,"Stretton, Bradford",Math,6,5,ADVHS01.29|I1204.1|I1204.2|I1208.1|OI1305.4|OI1305.5
 4003,"Summers, Brian",Social Stu,6,5,ADVHS01.30|OZ1323.1|OZ1323.2|OZ1323.3|OZ1323.4|OZ1323.5
 9791,"Valentin Jr, Ismael",general,0,5,
-1251,"Velez Cardona, Gloria Isabel",Arts,8,7,ADVHS01.31|OC1305.4|OC1307.1|OC1310.1|OC1310.2|OC1310.3|OC1311.1|OC1314.1
+1251,"Velez Cardona, Gloria Isabel",Arts,7,6,ADVHS01.31|OC1305.4|OC1307.1|OC1310.1|OC1310.2|OC1310.3|OC1314.1
 953,"Villa, Norberto",Spanish,6,5,ADVHS01.32|G1004.1|G1004.2|G1004.3|G1004.4|G1004.5
 8106,"Villamizar Muñoz, Sindy Margarita",Spanish,6,5,ADVHS01.33|G0901.5|G0901.6|G0901.7|G1004.6|G1004.7
 9816,"Zuluaga Patiño, Valentina",Science,6,5,A0901.1|A0901.2|A0901.3|A0901.4|ADVHS01.34|OZ1207.2

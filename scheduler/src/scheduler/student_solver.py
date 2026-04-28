@@ -64,9 +64,15 @@ def solve_students(
 
     master_by_sect: dict[str, MasterAssignment] = {m.section_id: m for m in master}
 
+    # v4.2 — sections_by_course indexes a section under BOTH its primary
+    # course_id and each linked_course_id. This makes a single combined
+    # multi-level section visible to students who request any of the linked
+    # courses (e.g. one Spanish FL section covers G0902, G1204, G1205, G1206).
     sections_by_course: dict[str, list[str]] = defaultdict(list)
     for s in ds.sections:
         sections_by_course[s.course_id].append(s.section_id)
+        for linked in s.linked_course_ids:
+            sections_by_course[linked].append(s.section_id)
 
     courses_by_id = {c.course_id: c for c in ds.courses}
     sections_by_id = {s.section_id: s for s in ds.sections}
@@ -79,12 +85,20 @@ def solve_students(
                 sect = sections_by_id[sid]
                 if sect.teacher_id in st.restricted_teacher_ids:
                     continue
-                x[(st.student_id, sid)] = model.NewBoolVar(f"x_{st.student_id}_{sid}")
+                # Same key for multiple requests touching same section is fine —
+                # NewBoolVar dict insertion is idempotent on key.
+                if (st.student_id, sid) not in x:
+                    x[(st.student_id, sid)] = model.NewBoolVar(f"x_{st.student_id}_{sid}")
 
+    # student_course_sections is keyed by (student, requested_course) so that
+    # the per-request constraint sees ALL sections covering that course,
+    # including combined multi-level sections via linked_course_ids.
     student_course_sections: dict[tuple[str, str], list[str]] = defaultdict(list)
-    for (sid_stu, sec_id), _ in x.items():
-        course_id = sections_by_id[sec_id].course_id
-        student_course_sections[(sid_stu, course_id)].append(sec_id)
+    for st in ds.students:
+        for r in st.requested_courses:
+            for sid in sections_by_course.get(r.course_id, []):
+                if (st.student_id, sid) in x:
+                    student_course_sections[(st.student_id, r.course_id)].append(sid)
 
     # HC: required = exactly 1 section (soft via slack); rank-1 elective = at most 1; rank-2 elective = at most 1
     # Soft slack lets us handle students who are over-assigned (e.g. 10 mandatory

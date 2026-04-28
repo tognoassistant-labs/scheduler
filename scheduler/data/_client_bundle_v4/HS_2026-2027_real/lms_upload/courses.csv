@@ -1,72 +1,66 @@
 sourcedId,status,dateLastModified,schoolYearSourcedId,title,courseCode,grades,orgSourcedId,subjects,subjectCodes
-course-OJ1204,active,2026-04-28T14:52:24.000Z,term-2026-2027,Creative Design,OJ1204,"9,10,11,12",school-columbus-high-school,Technology,Technology
-course-OC1307,active,2026-04-28T14:52:24.000Z,term-2026-2027,Drawing I,OC1307,"9,10,11,12",school-columbus-high-school,Arts,Arts
-course-OC1311,active,2026-04-28T14:52:24.000Z,term-2026-2027,Drawing II,OC1311,"9,10,11,12",school-columbus-high-school,Arts,Arts
-course-A1204,active,2026-04-28T14:52:24.000Z,term-2026-2027,Environmental Science,A1204,"9,10,11,12",school-columbus-high-school,Science,Science
-course-H1001,active,2026-04-28T14:52:24.000Z,term-2026-2027,English 10,H1001,10,school-columbus-high-school,English,English
-course-H0904,active,2026-04-28T14:52:24.000Z,term-2026-2027,English 9,H0904,9,school-columbus-high-school,English,English
-course-OJ1203,active,2026-04-28T14:52:24.000Z,term-2026-2027,Entrepreneurship Business Technology,OJ1203,"9,10,11,12",school-columbus-high-school,Technology,Technology
-course-G1203,active,2026-04-28T14:52:24.000Z,term-2026-2027,Español & Literatura 11,G1203,11,school-columbus-high-school,Spanish,Spanish
-course-G1201,active,2026-04-28T14:52:24.000Z,term-2026-2027,Español & Literatura 12,G1201,12,school-columbus-high-school,Spanish,Spanish
-course-G0901,active,2026-04-28T14:52:24.000Z,term-2026-2027,Español & Literatura 9,G0901,9,school-columbus-high-school,Spanish,Spanish
-course-OI1303,active,2026-04-28T14:52:24.000Z,term-2026-2027,Financial Math,OI1303,"9,10,11,12",school-columbus-high-school,Math,Math
-course-J0903,active,2026-04-28T14:52:24.000Z,term-2026-2027,FRC 9,J0903,9,school-columbus-high-school,Technology,Technology
-course-I1003,active,2026-04-28T14:52:24.000Z,term-2026-2027,Geometry,I1003,"9,10,11,12",school-columbus-high-school,Math,Math
-course-L1302,active,2026-04-28T14:52:24.000Z,term-2026-2027,Introduction to Law,L1302,"9,10,11,12",school-columbus-high-school,Social Stu,Social Stu
-course-OH1501,active,2026-04-28T14:52:24.000Z,term-2026-2027,Journalism Higher Level,OH1501,"9,10,11,12",school-columbus-high-school,English,English
-course-OH1401,active,2026-04-28T14:52:24.000Z,term-2026-2027,Journalism Intermediate Level,OH1401,"9,10,11,12",school-columbus-high-school,English,English
-course-L1304,active,2026-04-28T14:52:24.000Z,term-2026-2027,Life Purpose,L1304,"9,10,11,12",school-columbus-high-school,Social Stu,Social Stu
-course-OC1305,active,2026-04-28T14:52:24.000Z,term-2026-2027,Painting I,OC1305,"9,10,11,12",school-columbus-high-school,Arts,Arts
-course-OC1310,active,2026-04-28T14:52:24.000Z,term-2026-2027,Painting II,OC1310,"9,10,11,12",school-columbus-high-school,Arts,Arts
-course-L1303,active,2026-04-28T14:52:24.000Z,term-2026-2027,Pensar nuestro tiempo,L1303,"9,10,11,12",school-columbus-high-school,Social Stu,Social Stu
-course-E1001,active,2026-04-28T14:52:24.000Z,term-2026-2027,Physical Education and Health 10,E1001,10,school-columbus-high-school,PE,PE
-course-E1101,active,2026-04-28T14:52:24.000Z,term-2026-2027,Physical Education and Health 11,E1101,11,school-columbus-high-school,PE,PE
-course-E1201,active,2026-04-28T14:52:24.000Z,term-2026-2027,Physical Education and Health 12,E1201,12,school-columbus-high-school,PE,PE
-course-E0901,active,2026-04-28T14:52:24.000Z,term-2026-2027,Physical Education and Health 9,E0901,9,school-columbus-high-school,PE,PE
-course-A1105,active,2026-04-28T14:52:24.000Z,term-2026-2027,Physics 11,A1105,11,school-columbus-high-school,Science,Science
-course-OC1306,active,2026-04-28T14:52:24.000Z,term-2026-2027,Sculpture I,OC1306,"9,10,11,12",school-columbus-high-school,Arts,Arts
-course-OC1312,active,2026-04-28T14:52:24.000Z,term-2026-2027,Sculpture II,OC1312,"9,10,11,12",school-columbus-high-school,Arts,Arts
-course-B1001,active,2026-04-28T14:52:24.000Z,term-2026-2027,Social Sciences 10,B1001,10,school-columbus-high-school,Social Stu,Social Stu
-course-B0901,active,2026-04-28T14:52:24.000Z,term-2026-2027,Social Studies 9,B0901,9,school-columbus-high-school,Social Stu,Social Stu
-course-G1204,active,2026-04-28T14:52:24.000Z,term-2026-2027,Spanish 10 (Foreign Language),G1204,10,school-columbus-high-school,Spanish,Spanish
-course-G1205,active,2026-04-28T14:52:24.000Z,term-2026-2027,Spanish 11 (Foreign Language),G1205,11,school-columbus-high-school,Spanish,Spanish
-course-G1206,active,2026-04-28T14:52:24.000Z,term-2026-2027,Spanish 12 (Foreign Language),G1206,12,school-columbus-high-school,Spanish,Spanish
-course-G0902,active,2026-04-28T14:52:24.000Z,term-2026-2027,Spanish 9 (Foreign Language),G0902,9,school-columbus-high-school,Spanish,Spanish
-course-VHS0052,active,2026-04-28T14:52:24.000Z,term-2026-2027,"Spanish Film, Art, and Literature",VHS0052,"9,10,11,12",school-columbus-high-school,Spanish,Spanish
-course-J1203,active,2026-04-28T14:52:24.000Z,term-2026-2027,Tech. and Innovation for Social Change,J1203,"9,10,11,12",school-columbus-high-school,Technology,Technology
-course-J0901,active,2026-04-28T14:52:24.000Z,term-2026-2027,Technology 9,J0901,9,school-columbus-high-school,Technology,Technology
-course-B1006,active,2026-04-28T14:52:24.000Z,term-2026-2027,Cultural Studies,B1006,"9,10,11,12",school-columbus-high-school,Social Stu,Social Stu
-course-C0907,active,2026-04-28T14:52:24.000Z,term-2026-2027,Band Level III,C0907,"9,10,11,12",school-columbus-high-school,Arts,Arts
-course-ADVHS01,active,2026-04-28T14:52:24.000Z,term-2026-2027,Advisory HS,ADVHS01,"9,10,11,12",school-columbus-high-school,general,general
-course-I0903,active,2026-04-28T14:52:24.000Z,term-2026-2027,Algebra I 9,I0903,9,school-columbus-high-school,Math,Math
-course-OI1003,active,2026-04-28T14:52:24.000Z,term-2026-2027,Algebra II,OI1003,"9,10,11,12",school-columbus-high-school,Math,Math
-course-OZ1207,active,2026-04-28T14:52:24.000Z,term-2026-2027,Anatomy and Physiology,OZ1207,"9,10,11,12",school-columbus-high-school,Science,Science
-course-OC1313,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP 2-D Art and Design,OC1313,"9,10,11,12",school-columbus-high-school,Arts,Arts
-course-I1215,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP 3-D Art and Design,I1215,"9,10,11,12",school-columbus-high-school,Arts,Arts
-course-OA1304,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Biology,OA1304,"9,10,11,12",school-columbus-high-school,Science,Science
-course-I1204,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Calculus AB,I1204,"9,10,11,12",school-columbus-high-school,Math,Math
-course-I1208,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Calculus BC,I1208,"9,10,11,12",school-columbus-high-school,Math,Math
-course-OA1317,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Chemistry,OA1317,"9,10,11,12",school-columbus-high-school,Science,Science
-course-OZ1313,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Computer Science A,OZ1313,"9,10,11,12",school-columbus-high-school,Technology,Technology
-course-OJ1306,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Computer Science Principles,OJ1306,"9,10,11,12",school-columbus-high-school,Technology,Technology
-course-OC1314,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Drawing,OC1314,"9,10,11,12",school-columbus-high-school,Arts,Arts
-course-H1206,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP English Language & Composition,H1206,"9,10,11,12",school-columbus-high-school,English,English
-course-H1201B,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP English Literature and Composition,H1201B,"9,10,11,12",school-columbus-high-school,English,English
-course-OA1318,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Environmental Science,OA1318,"9,10,11,12",school-columbus-high-school,Science,Science
-course-OZ1323,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Human Geography,OZ1323,"9,10,11,12",school-columbus-high-school,Social Stu,Social Stu
-course-OA1319,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Physics 1,OA1319,"9,10,11,12",school-columbus-high-school,Science,Science
-course-OA1322,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Physics 2,OA1322,"9,10,11,12",school-columbus-high-school,Science,Science
-course-I1211,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Precalculus,I1211,"9,10,11,12",school-columbus-high-school,Math,Math
-course-L1301,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Psychology,L1301,"9,10,11,12",school-columbus-high-school,Social Stu,Social Stu
-course-OB1532,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Research,OB1532,"9,10,11,12",school-columbus-high-school,Technology,Technology
-course-I1214,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Seminar,I1214,"9,10,11,12",school-columbus-high-school,English,English
-course-G1004,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Spanish Language and Culture,G1004,"9,10,11,12",school-columbus-high-school,Spanish,Spanish
-course-G1202,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Spanish Literature and Culture,G1202,"9,10,11,12",school-columbus-high-school,Spanish,Spanish
-course-OB1520,active,2026-04-28T14:52:24.000Z,term-2026-2027,AP Statistics,OB1520,"9,10,11,12",school-columbus-high-school,Math,Math
-course-OH1306,active,2026-04-28T14:52:24.000Z,term-2026-2027,Art of Fiction Higher Level,OH1306,"9,10,11,12",school-columbus-high-school,English,English
-course-OH1305,active,2026-04-28T14:52:24.000Z,term-2026-2027,Art of Fiction Intermediate Level,OH1305,"9,10,11,12",school-columbus-high-school,English,English
-course-C0904,active,2026-04-28T14:52:24.000Z,term-2026-2027,Band Level I,C0904,"9,10,11,12",school-columbus-high-school,Arts,Arts
-course-C0905,active,2026-04-28T14:52:24.000Z,term-2026-2027,Band Level II,C0905,"9,10,11,12",school-columbus-high-school,Arts,Arts
-course-A0901,active,2026-04-28T14:52:24.000Z,term-2026-2027,Biology 9,A0901,9,school-columbus-high-school,Science,Science
-course-OI1305,active,2026-04-28T14:52:24.000Z,term-2026-2027,Calculus,OI1305,"9,10,11,12",school-columbus-high-school,Math,Math
-course-A1006,active,2026-04-28T14:52:24.000Z,term-2026-2027,Chemistry 10,A1006,10,school-columbus-high-school,Science,Science
+course-OJ1204,active,2026-04-28T15:50:16.000Z,term-2026-2027,Creative Design,OJ1204,"9,10,11,12",school-columbus-high-school,Technology,Technology
+course-OC1307,active,2026-04-28T15:50:16.000Z,term-2026-2027,Drawing I,OC1307,"9,10,11,12",school-columbus-high-school,Arts,Arts
+course-A1204,active,2026-04-28T15:50:16.000Z,term-2026-2027,Environmental Science,A1204,"9,10,11,12",school-columbus-high-school,Science,Science
+course-H1001,active,2026-04-28T15:50:16.000Z,term-2026-2027,English 10,H1001,10,school-columbus-high-school,English,English
+course-H0904,active,2026-04-28T15:50:16.000Z,term-2026-2027,English 9,H0904,9,school-columbus-high-school,English,English
+course-OJ1203,active,2026-04-28T15:50:16.000Z,term-2026-2027,Entrepreneurship Business Technology,OJ1203,"9,10,11,12",school-columbus-high-school,Technology,Technology
+course-G1203,active,2026-04-28T15:50:16.000Z,term-2026-2027,Español & Literatura 11,G1203,11,school-columbus-high-school,Spanish,Spanish
+course-G1201,active,2026-04-28T15:50:16.000Z,term-2026-2027,Español & Literatura 12,G1201,12,school-columbus-high-school,Spanish,Spanish
+course-G0901,active,2026-04-28T15:50:16.000Z,term-2026-2027,Español & Literatura 9,G0901,9,school-columbus-high-school,Spanish,Spanish
+course-OI1303,active,2026-04-28T15:50:16.000Z,term-2026-2027,Financial Math,OI1303,"9,10,11,12",school-columbus-high-school,Math,Math
+course-J0903,active,2026-04-28T15:50:16.000Z,term-2026-2027,FRC 9,J0903,9,school-columbus-high-school,Technology,Technology
+course-I1003,active,2026-04-28T15:50:16.000Z,term-2026-2027,Geometry,I1003,"9,10,11,12",school-columbus-high-school,Math,Math
+course-L1302,active,2026-04-28T15:50:16.000Z,term-2026-2027,Introduction to Law,L1302,"9,10,11,12",school-columbus-high-school,Social Stu,Social Stu
+course-OH1501,active,2026-04-28T15:50:16.000Z,term-2026-2027,Journalism Higher Level,OH1501,"9,10,11,12",school-columbus-high-school,English,English
+course-OH1401,active,2026-04-28T15:50:16.000Z,term-2026-2027,Journalism Intermediate Level,OH1401,"9,10,11,12",school-columbus-high-school,English,English
+course-L1304,active,2026-04-28T15:50:16.000Z,term-2026-2027,Life Purpose,L1304,"9,10,11,12",school-columbus-high-school,Social Stu,Social Stu
+course-OC1305,active,2026-04-28T15:50:16.000Z,term-2026-2027,Painting I,OC1305,"9,10,11,12",school-columbus-high-school,Arts,Arts
+course-OC1310,active,2026-04-28T15:50:16.000Z,term-2026-2027,Painting II,OC1310,"9,10,11,12",school-columbus-high-school,Arts,Arts
+course-L1303,active,2026-04-28T15:50:16.000Z,term-2026-2027,Pensar nuestro tiempo,L1303,"9,10,11,12",school-columbus-high-school,Social Stu,Social Stu
+course-E1001,active,2026-04-28T15:50:16.000Z,term-2026-2027,Physical Education and Health 10,E1001,10,school-columbus-high-school,PE,PE
+course-E1101,active,2026-04-28T15:50:16.000Z,term-2026-2027,Physical Education and Health 11,E1101,11,school-columbus-high-school,PE,PE
+course-E1201,active,2026-04-28T15:50:16.000Z,term-2026-2027,Physical Education and Health 12,E1201,12,school-columbus-high-school,PE,PE
+course-E0901,active,2026-04-28T15:50:16.000Z,term-2026-2027,Physical Education and Health 9,E0901,9,school-columbus-high-school,PE,PE
+course-A1105,active,2026-04-28T15:50:16.000Z,term-2026-2027,Physics 11,A1105,11,school-columbus-high-school,Science,Science
+course-OC1306,active,2026-04-28T15:50:16.000Z,term-2026-2027,Sculpture I,OC1306,"9,10,11,12",school-columbus-high-school,Arts,Arts
+course-B1001,active,2026-04-28T15:50:16.000Z,term-2026-2027,Social Sciences 10,B1001,10,school-columbus-high-school,Social Stu,Social Stu
+course-B0901,active,2026-04-28T15:50:16.000Z,term-2026-2027,Social Studies 9,B0901,9,school-columbus-high-school,Social Stu,Social Stu
+course-G0902,active,2026-04-28T15:50:16.000Z,term-2026-2027,Spanish 9 (Foreign Language),G0902,9,school-columbus-high-school,Spanish,Spanish
+course-VHS0052,active,2026-04-28T15:50:16.000Z,term-2026-2027,"Spanish Film, Art, and Literature",VHS0052,"9,10,11,12",school-columbus-high-school,Spanish,Spanish
+course-J1203,active,2026-04-28T15:50:16.000Z,term-2026-2027,Tech. and Innovation for Social Change,J1203,"9,10,11,12",school-columbus-high-school,Technology,Technology
+course-J0901,active,2026-04-28T15:50:16.000Z,term-2026-2027,Technology 9,J0901,9,school-columbus-high-school,Technology,Technology
+course-B1006,active,2026-04-28T15:50:16.000Z,term-2026-2027,Cultural Studies,B1006,"9,10,11,12",school-columbus-high-school,Social Stu,Social Stu
+course-C0907,active,2026-04-28T15:50:16.000Z,term-2026-2027,Band Level III,C0907,"9,10,11,12",school-columbus-high-school,Arts,Arts
+course-ADVHS01,active,2026-04-28T15:50:16.000Z,term-2026-2027,Advisory HS,ADVHS01,"9,10,11,12",school-columbus-high-school,general,general
+course-I0903,active,2026-04-28T15:50:16.000Z,term-2026-2027,Algebra I 9,I0903,9,school-columbus-high-school,Math,Math
+course-OI1003,active,2026-04-28T15:50:16.000Z,term-2026-2027,Algebra II,OI1003,"9,10,11,12",school-columbus-high-school,Math,Math
+course-OZ1207,active,2026-04-28T15:50:16.000Z,term-2026-2027,Anatomy and Physiology,OZ1207,"9,10,11,12",school-columbus-high-school,Science,Science
+course-I1215,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP 3-D Art and Design,I1215,"9,10,11,12",school-columbus-high-school,Arts,Arts
+course-OA1304,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Biology,OA1304,"9,10,11,12",school-columbus-high-school,Science,Science
+course-I1204,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Calculus AB,I1204,"9,10,11,12",school-columbus-high-school,Math,Math
+course-I1208,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Calculus BC,I1208,"9,10,11,12",school-columbus-high-school,Math,Math
+course-OA1317,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Chemistry,OA1317,"9,10,11,12",school-columbus-high-school,Science,Science
+course-OZ1313,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Computer Science A,OZ1313,"9,10,11,12",school-columbus-high-school,Technology,Technology
+course-OJ1306,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Computer Science Principles,OJ1306,"9,10,11,12",school-columbus-high-school,Technology,Technology
+course-OC1314,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Drawing,OC1314,"9,10,11,12",school-columbus-high-school,Arts,Arts
+course-H1206,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP English Language & Composition,H1206,"9,10,11,12",school-columbus-high-school,English,English
+course-H1201B,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP English Literature and Composition,H1201B,"9,10,11,12",school-columbus-high-school,English,English
+course-OA1318,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Environmental Science,OA1318,"9,10,11,12",school-columbus-high-school,Science,Science
+course-OZ1323,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Human Geography,OZ1323,"9,10,11,12",school-columbus-high-school,Social Stu,Social Stu
+course-OA1319,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Physics 1,OA1319,"9,10,11,12",school-columbus-high-school,Science,Science
+course-OA1322,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Physics 2,OA1322,"9,10,11,12",school-columbus-high-school,Science,Science
+course-I1211,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Precalculus,I1211,"9,10,11,12",school-columbus-high-school,Math,Math
+course-L1301,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Psychology,L1301,"9,10,11,12",school-columbus-high-school,Social Stu,Social Stu
+course-OB1532,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Research,OB1532,"9,10,11,12",school-columbus-high-school,Technology,Technology
+course-I1214,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Seminar,I1214,"9,10,11,12",school-columbus-high-school,English,English
+course-G1004,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Spanish Language and Culture,G1004,"9,10,11,12",school-columbus-high-school,Spanish,Spanish
+course-G1202,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Spanish Literature and Culture,G1202,"9,10,11,12",school-columbus-high-school,Spanish,Spanish
+course-OB1520,active,2026-04-28T15:50:16.000Z,term-2026-2027,AP Statistics,OB1520,"9,10,11,12",school-columbus-high-school,Math,Math
+course-OH1306,active,2026-04-28T15:50:16.000Z,term-2026-2027,Art of Fiction Higher Level,OH1306,"9,10,11,12",school-columbus-high-school,English,English
+course-OH1305,active,2026-04-28T15:50:16.000Z,term-2026-2027,Art of Fiction Intermediate Level,OH1305,"9,10,11,12",school-columbus-high-school,English,English
+course-C0904,active,2026-04-28T15:50:16.000Z,term-2026-2027,Band Level I,C0904,"9,10,11,12",school-columbus-high-school,Arts,Arts
+course-C0905,active,2026-04-28T15:50:16.000Z,term-2026-2027,Band Level II,C0905,"9,10,11,12",school-columbus-high-school,Arts,Arts
+course-A0901,active,2026-04-28T15:50:16.000Z,term-2026-2027,Biology 9,A0901,9,school-columbus-high-school,Science,Science
+course-OI1305,active,2026-04-28T15:50:16.000Z,term-2026-2027,Calculus,OI1305,"9,10,11,12",school-columbus-high-school,Math,Math
+course-A1006,active,2026-04-28T15:50:16.000Z,term-2026-2027,Chemistry 10,A1006,10,school-columbus-high-school,Science,Science
