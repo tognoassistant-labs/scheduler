@@ -178,17 +178,24 @@ class TestMultiGradeIngest:
         assert len(cross_grade) >= 5, f"expected ≥5 cross-grade courses, got {len(cross_grade)}"
 
     @real_data
-    def test_full_hs_keeps_strict_max_consecutive(self, capsys):
-        """Per client confirmation 2026-04-26, the cap is 4. Auto-relax was
-        reverted 2026-04-28 in favor of an explicit warning naming the
-        overloaded teachers; operators decide whether to reduce loads or pass
-        `HardConstraints(max_consecutive_classes=5)` explicitly.
+    def test_full_hs_keeps_strict_max_consecutive_with_per_teacher_override(self, capsys):
+        """Per client confirmation 2026-04-26, the global cap is 4. The 3
+        teachers with ≥7 academic sections (pigeonhole-infeasible at strict 4)
+        get a per-teacher override to 5 via `Teacher.max_consecutive_classes=5`.
+        Updated 2026-04-28 from a global override after client reported other
+        teachers with 5 consecutive blocks (Castañeda Día C).
         """
         ds = build_dataset_from_columbus(DEMAND_FILE, SCHEDULE_FILE, grade=[9, 10, 11, 12])
         assert ds.config.hard.max_consecutive_classes == 4
         captured = capsys.readouterr()
         assert "carry ≥7 academic sections" in captured.err
-        assert "Mitigation options" in captured.err
+        assert "per-teacher max_consecutive_classes=5" in captured.err
+        # Exactly 3 teachers should have the override applied
+        overridden = [t for t in ds.teachers if t.max_consecutive_classes == 5]
+        assert len(overridden) == 3, f"expected exactly 3 teacher overrides, got {len(overridden)}"
+        # All other teachers should have None (use default 4)
+        non_overridden = [t for t in ds.teachers if t.max_consecutive_classes is None]
+        assert len(non_overridden) == len(ds.teachers) - 3
 
     @real_data
     def test_grade_12_only_keeps_default_max_consecutive(self):

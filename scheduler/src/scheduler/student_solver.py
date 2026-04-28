@@ -86,7 +86,13 @@ def solve_students(
         course_id = sections_by_id[sec_id].course_id
         student_course_sections[(sid_stu, course_id)].append(sec_id)
 
-    # HC: required = exactly 1 section; rank-1 elective = at most 1; rank-2 elective = at most 1; total electives ≤ 1
+    # HC: required = exactly 1 section (soft via slack); rank-1 elective = at most 1; rank-2 elective = at most 1
+    # Soft slack lets us handle students who are over-assigned (e.g. 10 mandatory
+    # requests vs 9 academic slots) without going INFEASIBLE. Slacks are penalized
+    # heavily in the objective — the solver minimizes them, so only structurally
+    # impossible requests end up unfulfilled.
+    required_slacks: list[cp_model.BoolVar] = []
+    required_slack_meta: list[tuple[str, str]] = []  # (student_id, course_id) for each slack
     for st in ds.students:
         rank1_courses = {r.course_id for r in st.requested_courses if r.rank == 1}
         rank2_courses = {r.course_id for r in st.requested_courses if r.rank == 2}
@@ -97,7 +103,11 @@ def solve_students(
             if not options:
                 continue
             if cid in required_courses:
-                model.Add(sum(x[(st.student_id, s)] for s in options) == 1)
+                slack = model.NewBoolVar(f"slack_{st.student_id}_{cid}")
+                # sum + slack == 1: either we assign one section, OR slack=1 (unmet)
+                model.Add(sum(x[(st.student_id, s)] for s in options) + slack == 1)
+                required_slacks.append(slack)
+                required_slack_meta.append((st.student_id, cid))
             else:
                 model.Add(sum(x[(st.student_id, s)] for s in options) <= 1)
 
@@ -216,6 +226,14 @@ def solve_students(
     else:
         model.Add(grouping_obj == 0)
 
+    # 4. Required-course coverage: count of unmet required requests (slacks=1)
+    n_slack_max = max(1, len(required_slacks))
+    unmet_required_obj = model.NewIntVar(0, n_slack_max, "unmet_required_obj")
+    if required_slacks:
+        model.Add(unmet_required_obj == sum(required_slacks))
+    else:
+        model.Add(unmet_required_obj == 0)
+
     # === Solve ===
     solver = cp_model.CpSolver()
     solver.parameters.num_search_workers = 4
@@ -223,13 +241,23 @@ def solve_students(
         solver.parameters.log_search_progress = False  # set True if you want raw progress
 
     if mode == "single":
-        # Single-pass weighted-sum: maximize electives + groupings, minimize balance spread,
-        # subject to the hard balance cap from above.
+        # Single-pass weighted-sum: maximize electives + groupings, minimize balance spread
+        # AND minimize unmet required requests (heavily weighted so coverage dominates).
         soft = ds.config.soft
+        # Coverage weight is dominant: a single unmet required request is worse
+        # than ANY combination of electives/groupings/balance. Use 10000x the
+        # max possible payoff from those.
+        coverage_weight = max(
+            10000,
+            10 * (soft.first_choice_electives * n_elective_max
+                  + soft.grouping_codes * n_grouping_max
+                  + soft.balance_class_sizes * (spread_cap * max(1, len(spread_terms))))
+        )
         weighted = (
             soft.first_choice_electives * electives_obj
             + soft.grouping_codes * grouping_obj
             - soft.balance_class_sizes * balance_obj
+            - coverage_weight * unmet_required_obj
         )
         model.Maximize(weighted)
         solver.parameters.max_time_in_seconds = time_limit_s
@@ -242,7 +270,8 @@ def solve_students(
             if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
                 print(f"  electives={solver.Value(electives_obj)}/{n_elective_max}, "
                       f"balance_spread={solver.Value(balance_obj)}, "
-                      f"groupings={solver.Value(grouping_obj)}/{n_grouping_max}")
+                      f"groupings={solver.Value(grouping_obj)}/{n_grouping_max}, "
+                      f"unmet_required={solver.Value(unmet_required_obj)}/{len(required_slacks)}")
     else:
         # Two-phase lex-min: electives → groupings (balance is hard).
         # Allocate 60% / 40% of total budget.

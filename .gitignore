@@ -37,6 +37,8 @@ scheduler/data/columbus_full_hs/
 scheduler/data/columbus_full_hs_v2/
 scheduler/data/columbus_full_hs_v3/
 scheduler/data/columbus_full_hs_v4/
+scheduler/data/columbus_full_hs_v5/
+scheduler/data/columbus_full_hs_v6/
 scheduler/data/columbus_synthetic_ms/
 scheduler/data/columbus_synthetic_ms_v2/
 scheduler/data/_client_bundle_v2/

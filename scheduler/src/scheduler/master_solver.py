@@ -179,29 +179,39 @@ def solve_master(ds: Dataset, time_limit_s: float = 60.0, verbose: bool = False)
     if advisory_sections:
         model.AddAllDifferent([advisory_room[s.section_id] for s in advisory_sections])
 
-    # HC3: No teacher > max_consecutive_classes consecutive classes per day
-    max_cons = ds.config.hard.max_consecutive_classes
-    if max_cons < len(BLOCKS):
-        for tid, sect_ids in sections_by_teacher.items():
-            if not sect_ids:
-                continue
-            for day in DAYS:
-                # For each block in this day, indicator = teacher teaches in that (day, block)
-                block_busy: dict[int, cp_model.BoolVar] = {}
-                for block in BLOCKS:
-                    scheme = slot_to_scheme.get((day, block))
-                    if scheme is None:
-                        block_busy[block] = model.NewConstant(0)  # advisory cell
-                        continue
-                    indicators = [section_in_scheme[(sid, scheme)] for sid in sect_ids]
-                    busy = model.NewBoolVar(f"busy_{tid}_{day}_{block}")
-                    model.AddMaxEquality(busy, indicators)
-                    block_busy[block] = busy
-                # Sliding window of size max_cons + 1
-                window = max_cons + 1
-                for start in range(1, len(BLOCKS) - window + 2):
-                    window_blocks = list(range(start, start + window))
-                    model.Add(sum(block_busy[b] for b in window_blocks) <= max_cons)
+    # HC3: No teacher > max_consecutive_classes consecutive classes per day.
+    # Per-teacher override (added 2026-04-28): if Teacher.max_consecutive_classes
+    # is set, use that value instead of the school-wide default. Used for the
+    # 3 real Columbus teachers carrying ≥7 academic sections where strict 4 is
+    # pigeonhole-infeasible; everyone else stays at 4 per the Reglas Horarios HS
+    # doc 2026-04-22.
+    default_max_cons = ds.config.hard.max_consecutive_classes
+    for tid, sect_ids in sections_by_teacher.items():
+        if not sect_ids:
+            continue
+        teacher = teachers_by_id.get(tid)
+        max_cons = (teacher.max_consecutive_classes
+                    if teacher is not None and teacher.max_consecutive_classes is not None
+                    else default_max_cons)
+        if max_cons >= len(BLOCKS):
+            continue  # cap ≥ blocks/day → no constraint to enforce for this teacher
+        for day in DAYS:
+            # For each block in this day, indicator = teacher teaches in that (day, block)
+            block_busy: dict[int, cp_model.BoolVar] = {}
+            for block in BLOCKS:
+                scheme = slot_to_scheme.get((day, block))
+                if scheme is None:
+                    block_busy[block] = model.NewConstant(0)  # advisory cell
+                    continue
+                indicators = [section_in_scheme[(sid, scheme)] for sid in sect_ids]
+                busy = model.NewBoolVar(f"busy_{tid}_{day}_{block}")
+                model.AddMaxEquality(busy, indicators)
+                block_busy[block] = busy
+            # Sliding window of size max_cons + 1
+            window = max_cons + 1
+            for start in range(1, len(BLOCKS) - window + 2):
+                window_blocks = list(range(start, start + window))
+                model.Add(sum(block_busy[b] for b in window_blocks) <= max_cons)
 
     # Hard: balance sections across schemes tightly so the student solver has room
     # to fit per-course balance constraints. Tight bounds: avg-1 to avg+1.

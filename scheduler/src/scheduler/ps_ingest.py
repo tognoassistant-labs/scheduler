@@ -658,8 +658,24 @@ def build_dataset_from_columbus(
         cid = course_id_by_name.get(r.course_name)
         if cid is None or cid not in valid_course_ids:
             continue  # silently drop requests for dropped (orphan) courses
-        is_required = not r.is_alternative and "Required" in r.course_group_name
-        rank = 2 if r.is_alternative else 1
+        # 2026-04-28: client B6 + follow-up confirmed: in HS for 2026-2027 the only
+        # course-level "required" course is PE. All other requests are "variable"
+        # — meaning the engine should still treat them as MANDATORY to assign
+        # (each student must get the courses they requested), even though the
+        # course itself is not required by curriculum. Marking them is_required=True
+        # makes the student_solver enforce "assign exactly 1" (was: "at most 1"
+        # for non-curricular-required, which left ~250 enrollments unmet across
+        # 27% of students).
+        # The student_solver has been adjusted to use a SOFT-penalty fallback
+        # when this constraint cannot be satisfied (instead of returning
+        # INFEASIBLE outright). See `student_solver.py` for the soft formulation.
+        is_2026_2027 = "2026-2027" in (year or "")
+        if is_2026_2027:
+            is_required = True
+            rank = 1
+        else:
+            is_required = not r.is_alternative and "Required" in r.course_group_name
+            rank = 2 if r.is_alternative else 1
         students_map[sid].requested_courses.append(CourseRequest(
             student_id=sid, course_id=cid, is_required=is_required, rank=rank,
         ))
@@ -715,17 +731,19 @@ def build_dataset_from_columbus(
     if overloaded_teachers:
         import sys
         print(
-            f"WARNING: {len(overloaded_teachers)} teacher(s) carry ≥7 academic sections; "
-            f"strict max_consecutive_classes=4 may be infeasible. Offenders:",
+            f"INFO: {len(overloaded_teachers)} teacher(s) carry ≥7 academic sections; "
+            f"setting per-teacher max_consecutive_classes=5 (default 4 stays for everyone else):",
             file=sys.stderr,
         )
         for name, n in overloaded_teachers:
-            print(f"  - {name}: {n} sections", file=sys.stderr)
-        print(
-            "Mitigation options: (a) coordinate with school to reduce one teacher's "
-            "load to ≤6 sections; (b) pass HardConstraints(max_consecutive_classes=5).",
-            file=sys.stderr,
-        )
+            print(f"  - {name}: {n} sections (override applied)", file=sys.stderr)
+        # Apply per-teacher override (added 2026-04-28 after client reported
+        # other teachers also got 5 consecutive blocks — global override was too
+        # generous; only the truly pigeonhole-impossible cases get the relax).
+        overloaded_names = {name for name, _ in overloaded_teachers}
+        for t in teachers:
+            if t.name in overloaded_names:
+                t.max_consecutive_classes = 5
 
     # PowerSchool field values per Columbus IT confirmation 2026-04-26:
     # - SchoolID: number, MS=12000, HS=13000

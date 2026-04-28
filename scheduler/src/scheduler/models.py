@@ -66,6 +66,11 @@ class Teacher(BaseModel):
     max_load: int = 5  # sections per cycle
     min_prep_periods: int = 1
     home_room_id: str | None = None
+    # Per-teacher override of HardConstraints.max_consecutive_classes. None = use
+    # the school-wide default. Use this for the rare case of a teacher whose
+    # academic load is structurally infeasible at the global cap (e.g. 7+
+    # sections in a 5×8 rotation requires max_consec ≥ 5 by pigeonhole).
+    max_consecutive_classes: int | None = None
     # Preferences (v2 §6.2 — soft objectives in master solver)
     preferred_course_ids: list[str] = Field(default_factory=list)
     avoid_course_ids: list[str] = Field(default_factory=list)
