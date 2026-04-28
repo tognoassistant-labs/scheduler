@@ -88,11 +88,36 @@ git commit -m "v4: canonical PS ingester + semester skip + HC4 + per-teacher max
 git push origin main
 ```
 
+## Estado al 2026-04-28 fin de sesión
+
+- ✅ v4 bundle generado y pusheado (commit `acf501e`)
+- ✅ Master OPTIMAL, student FEASIBLE 92.9% cobertura
+- ✅ Soft penalty implementado (resuelve estudiante 29096 sobreasignado)
+- ✅ `verify_bundle.py` PASS
+
+## Patch pendiente: v4.1 (formato PS import)
+
+Cliente compartió 2026-04-28 la spec oficial de PS import en
+`https://docs.google.com/spreadsheets/d/1wLKkgasaFAizabGcX1TWWI-tVc6mwyGBKZBds9aITQ0/edit`.
+
+Cambios necesarios al exporter (`exporter.py`) para v4.1:
+
+1. **Section_Number**: hoy emitimos `G0901.1`, `ADVHS01.16`. PS exige enteros puros sin alfa ni leading zeros. Regenerar como secuenciales por curso (101, 102, 103…).
+2. **TermID**: hoy vacío o `3600`. Cliente está confirmando si el campo espera numérico (`3600`/`3601`/`3602`) o texto (`26-27`/`S1`/`S2`). Esperar respuesta antes de hacer el patch.
+3. **Att_Mode_Code**: agregar columna con valor literal `ATT_ModeMeeting`.
+4. **Attendance_Type_Code**: agregar con valor `2` (cada bloque por separado, multi-meeting sections).
+5. **GradebookType**: agregar con valor `2` (PowerTeacher Pro).
+6. **Expression**: confirmar si lleva prefijo `P` o no (hoy emitimos `1(A)2(B)3(C)` sin P; spec muestra ejemplos con `P1(A)`).
+
+Archivo afectado: `src/scheduler/exporter.py` función `export_powerschool()`.
+
 ## Decisiones del cliente que están pegadas
 
-1. **Estudiante 29096 tiene 10 requests vs 9 slots**: necesita decisión sobre soft penalty para fulfillment parcial. Bloqueante para subir cobertura del 92% a >95%.
+1. **Estudiante 29096 tiene 10 requests vs 9 slots**: ✅ Resuelto con soft penalty. Cobertura 92.9%. Cliente puede pedir 100% si reduce requests en origen.
 
-2. **Cursos semestrales**: confirmar con cliente que omitir Ortegon S1/S2 está bien para la demo del 1-mayo. Modelar properly va a Track B post-MVP.
+2. **Cursos semestrales (Ortegon S1/S2)**: ahora hay vía para modelarlos properly cuando confirmen TermID — agregar `Course.term: str | None` y exportar 4 sections con TermID=S1, 4 con TermID=S2. Recupera ~8 secciones perdidas.
+
+3. **TermID format** (NUEVO 2026-04-28): esperando respuesta cliente. Bloquea v4.1.
 
 ## Reglas activas (no cambies sin pensarlo)
 
