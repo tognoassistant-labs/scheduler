@@ -113,7 +113,7 @@ El repo contiene:
 
 - `scheduler/src/scheduler/` — código fuente Python del motor (CP-SAT)
 - `scheduler/tests/` — 109 tests automatizados que validan correctness de cada cambio
-- `bundle_for_columbus/` — los zips entregables (v2 y v3) con sus hashes SHA256
+- `scheduler/data/_client_bundle_v4/` — el bundle entregable: CSVs para PowerSchool, OneRoster (LMS) y reportes humanos. Subdirectorios `HS_2026-2027_real/` (datos reales del Colegio) y `MS_2026-2027_synthetic_PoC/` (PoC sintético de Middle School)
 - `docs/` — specs, decisiones internas, log de skills/lessons
 - `reference/` — los xlsx originales de Columbus que usamos como input
 
