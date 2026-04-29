@@ -68,9 +68,18 @@ def solve_master(ds: Dataset, time_limit_s: float = 60.0, verbose: bool = False)
     course_rooms: dict[str, list[str]] = {}
     for s in academic_sections:
         c = ds.course_by_id(s.course_id)
+        # Tier 1: right type AND fits the section
         compat = [r.room_id for r in ds.rooms if r.room_type == c.required_room_type and r.capacity >= s.max_size]
+        # Tier 2: any room that fits the section
         if not compat:
             compat = [r.room_id for r in ds.rooms if r.capacity >= s.max_size]
+        # Tier 3: school-approved over-fill (max_size > all rooms). Right type, accept squeeze.
+        # Happens e.g. when CONSTRAINTS bumps AP Research to 26 but rooms cap at 25.
+        if not compat:
+            compat = [r.room_id for r in ds.rooms if r.room_type == c.required_room_type]
+        # Tier 4: ultimate fallback — any room. Last resort to keep model feasible.
+        if not compat:
+            compat = [r.room_id for r in ds.rooms]
         if s.locked_room_id is not None and s.locked_room_id not in compat:
             compat = list(compat) + [s.locked_room_id]
         teacher = teachers_by_id.get(s.teacher_id)

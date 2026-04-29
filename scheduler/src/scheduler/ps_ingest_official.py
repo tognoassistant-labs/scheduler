@@ -445,12 +445,63 @@ def _read_teacher_avoid_xlsx(
     return matched
 
 
-def _audit_teacher_assignment_constraints(assignment_rows: list[dict]) -> None:
-    """Free-text CONSTRAINTS column on teacher_assignments — log only.
+# Pattern for auto-enforced max-class-size override:
+#   "Numero Maximo de estudiantes es 26", "max class size 26", "Max 26 students"
+_MAX_SIZE_REGEX = re.compile(
+    r"(?:numero\s+maximo|max(?:imo)?(?:\s+(?:class\s+size|de\s+estudiantes|students))?)"
+    r"[^\d]*(\d+)",
+    re.IGNORECASE,
+)
 
-    These are natural-language instructions ("max 26 students", "schedule when
-    Tamir is free", etc.) that we can't auto-enforce yet. Surface them so the
-    operator sees what manual rules the school has expressed.
+
+def _apply_teacher_assignment_constraints(
+    assignment_rows: list[dict],
+    courses: list[Course],
+    course_by_number: dict[str, Course],
+) -> None:
+    """Parse CONSTRAINTS column on teacher_assignments and apply structured rules.
+
+    Auto-enforced today:
+      - "max class size = N" pattern → bump Course.max_size if N > current.
+
+    Conditional / free-text rules ("schedule when Tamir is free", etc.) are
+    surfaced as [INFO] only — they require manual interpretation.
+    """
+    items = [(_safe_str(a.get("TEACHER_DCID")), _safe_str(a.get("LASTFIRST")),
+              _safe_str(a.get("COURSENUMBER")), _safe_str(a.get("CONSTRAINTS")))
+             for a in assignment_rows
+             if _safe_str(a.get("CONSTRAINTS"))]
+    if not items:
+        return
+
+    auto_applied: list[tuple[str, str, int, int]] = []  # (course, teacher, old_max, new_max)
+    free_text: list[tuple[str, str, str, str]] = []
+    for dcid, name, course_id, ctext in items:
+        m = _MAX_SIZE_REGEX.search(ctext)
+        if m:
+            new_max = int(m.group(1))
+            course = course_by_number.get(course_id)
+            if course is not None and new_max > course.max_size:
+                auto_applied.append((course_id, name, course.max_size, new_max))
+                course.max_size = new_max
+                continue
+        free_text.append((course_id, name, dcid, ctext))
+
+    if auto_applied:
+        print(f"[INFO] CONSTRAINTS auto-applied: {len(auto_applied)} max-size overrides:")
+        for cid, tname, old, new in auto_applied:
+            print(f"    {cid} ({tname}): max_size {old} → {new}")
+    if free_text:
+        print(f"[INFO] CONSTRAINTS free-text (not auto-enforced): {len(free_text)} rules:")
+        for cid, tname, dcid, ctext in free_text:
+            print(f"    {cid} / {tname} ({dcid}): {ctext}")
+
+
+def _audit_teacher_assignment_constraints(assignment_rows: list[dict]) -> None:
+    """Backward-compat shim — delegates to the structured applier.
+
+    Kept as a free-function so callers that only want logging (no Course
+    mutations) still work; today the call site uses the applier directly.
     """
     items = [(_safe_str(a.get("TEACHER_DCID")), _safe_str(a.get("LASTFIRST")),
               _safe_str(a.get("COURSENUMBER")), _safe_str(a.get("CONSTRAINTS")))
@@ -591,6 +642,11 @@ def build_dataset_from_official_xlsx(
         teachers.append(teacher)
         teacher_by_dcid[dcid] = teacher
         teacher_by_lastfirst[lastfirst] = teacher
+
+    # ----------------------- CONSTRAINTS column (auto-applies max-size overrides)
+    # Must run BEFORE section creation so new sections inherit the bumped
+    # Course.max_size. Free-text rules are still surfaced as [INFO].
+    _apply_teacher_assignment_constraints(assignment_rows, courses, course_by_number)
 
     # ---------------------------------------------------- sections (from assignments)
     sections: list[Section] = []
@@ -830,8 +886,8 @@ def build_dataset_from_official_xlsx(
         wb, students_map, teacher_by_lastfirst, name_to_id
     )
 
-    # CONSTRAINTS column on teacher_assignments — surface as info, not enforced.
-    _audit_teacher_assignment_constraints(assignment_rows)
+    # CONSTRAINTS column was already applied above (max-size overrides) and
+    # the free-text rules logged at that time. Nothing else to do here.
 
     print(
         f"[INFO] ingested {len(coplanning_groups)} co-planning groups, "

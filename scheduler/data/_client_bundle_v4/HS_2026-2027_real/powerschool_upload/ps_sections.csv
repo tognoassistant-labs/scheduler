@@ -44,7 +44,7 @@ SchoolID,Course Number,Section Number,TermID,Teacher Number,Room,Expression,Atte
 13000,E0901,104,3600,5609,79,2(B)4(E)5(C),2,ATT_ModeMeeting,130,2,Physical Education and Health 9,"Betancur, Anibal",COLISEO 1,E0901.4,B2;E4;C5
 13000,E0901,105,3600,5609,79,2(C)4(A)5(D),2,ATT_ModeMeeting,130,2,Physical Education and Health 9,"Betancur, Anibal",COLISEO 1,E0901.5,C2;A4;D5
 13000,E0901,106,3600,5609,79,1(C)3(A)4(D),2,ATT_ModeMeeting,130,2,Physical Education and Health 9,"Betancur, Anibal",COLISEO 1,E0901.6,C1;A3;D4
-13000,OB1532,101,3600,3961,13,2(B)4(E)5(C),2,ATT_ModeMeeting,25,2,AP Research,"Butterworth, Emily R",913,OB1532.1,B2;E4;C5
+13000,OB1532,101,3600,3961,13,2(B)4(E)5(C),2,ATT_ModeMeeting,26,2,AP Research,"Butterworth, Emily R",913,OB1532.1,B2;E4;C5
 13000,E1001,101,3600,6602,351,2(A)3(D)5(B),2,ATT_ModeMeeting,130,2,Physical Education and Health 10,"Castañeda Alvarez, Jiovana Andrea",COLISEO 2,E1001.1,A2;D3;B5
 13000,E1001,102,3600,6602,351,1(A)2(D)4(B),2,ATT_ModeMeeting,130,2,Physical Education and Health 10,"Castañeda Alvarez, Jiovana Andrea",COLISEO 2,E1001.2,A1;D2;B4
 13000,E1001,103,3600,6602,351,1(E)3(C)5(A),2,ATT_ModeMeeting,130,2,Physical Education and Health 10,"Castañeda Alvarez, Jiovana Andrea",COLISEO 2,E1001.3,E1;C3;A5
@@ -133,7 +133,7 @@ SchoolID,Course Number,Section Number,TermID,Teacher Number,Room,Expression,Atte
 13000,E1201,106,3600,602,353,1(C)3(A)4(D),2,ATT_ModeMeeting,130,2,Physical Education and Health 12,"Mesa, Urbano",COLISEO 4,E1201.6,C1;A3;D4
 13000,A1105,102,3600,9803,28,1(A)2(D)4(B),2,ATT_ModeMeeting,25,2,Physics 11,"Mickens, Tamir Akil",932,A1105.2,A1;D2;B4
 13000,ADVHS01,118,3600,9803,24,3(E),2,ATT_ModeMeeting,25,2,Advisory HS,"Mickens, Tamir Akil",930A,ADVHS01.18,E3
-13000,OA1319,101,3600,9803,28,2(B)4(E)5(C),2,ATT_ModeMeeting,25,2,AP Physics 1,"Mickens, Tamir Akil",932,OA1319.1,B2;E4;C5
+13000,OA1319,101,3600,9803,28,1(B)2(E)4(C),2,ATT_ModeMeeting,25,2,AP Physics 1,"Mickens, Tamir Akil",932,OA1319.1,B1;E2;C4
 13000,OA1319,102,3600,9803,28,2(C)4(A)5(D),2,ATT_ModeMeeting,25,2,AP Physics 1,"Mickens, Tamir Akil",932,OA1319.2,C2;A4;D5
 13000,OA1322,101,3600,9803,28,2(A)3(D)5(B),2,ATT_ModeMeeting,25,2,AP Physics 2,"Mickens, Tamir Akil",932,OA1322.1,A2;D3;B5
 13000,OA1322,102,3600,9803,28,1(C)3(A)4(D),2,ATT_ModeMeeting,25,2,AP Physics 2,"Mickens, Tamir Akil",932,OA1322.2,C1;A3;D4
@@ -147,8 +147,8 @@ SchoolID,Course Number,Section Number,TermID,Teacher Number,Room,Expression,Atte
 13000,L1301,101,3600,364,20,1(B)2(E)4(C),2,ATT_ModeMeeting,25,2,AP Psychology,"Naranjo, Felipe",926,L1301.1,B1;E2;C4
 13000,L1301,102,3600,364,20,2(B)4(E)5(C),2,ATT_ModeMeeting,25,2,AP Psychology,"Naranjo, Felipe",926,L1301.2,B2;E4;C5
 13000,L1301,103,3600,364,20,2(C)4(A)5(D),2,ATT_ModeMeeting,25,2,AP Psychology,"Naranjo, Felipe",926,L1301.3,C2;A4;D5
-13000,L1304,103,3600,364,20,1(E)3(C)5(A),2,ATT_ModeMeeting,25,2,Life Purpose,"Naranjo, Felipe",926,L1304.3,E1;C3;A5
-13000,L1304,104,3600,364,20,1(A)2(D)4(B),2,ATT_ModeMeeting,25,2,Life Purpose,"Naranjo, Felipe",926,L1304.4,A1;D2;B4
+13000,L1304,103,3600,364,20,1(A)2(D)4(B),2,ATT_ModeMeeting,25,2,Life Purpose,"Naranjo, Felipe",926,L1304.3,A1;D2;B4
+13000,L1304,104,3600,364,20,1(E)3(C)5(A),2,ATT_ModeMeeting,25,2,Life Purpose,"Naranjo, Felipe",926,L1304.4,E1;C3;A5
 13000,ADVHS01,121,3600,10153,21,3(E),2,ATT_ModeMeeting,25,2,Advisory HS,"Ortegon Valle, Andres Dario",927,ADVHS01.21,E3
 13000,B0901,104,3600,10153,5,2(B)4(E)5(C),2,ATT_ModeMeeting,25,2,Social Studies 9,"Ortegon Valle, Andres Dario",905,B0901.4,B2;E4;C5
 13000,I1212,101,3602,10153,5,1(D)3(B)5(E),2,ATT_ModeMeeting,25,2,AP Macroeconomics,"Ortegon Valle, Andres Dario",905,I1212.1,D1;B3;E5
@@ -163,8 +163,8 @@ SchoolID,Course Number,Section Number,TermID,Teacher Number,Room,Expression,Atte
 13000,I1003,101,3600,10853,152,2(A)3(D)5(B),2,ATT_ModeMeeting,25,2,Geometry,"Quiroga Posada, Mauricio",931A,I1003.1,A2;D3;B5
 13000,I1003,102,3600,10853,152,2(B)4(E)5(C),2,ATT_ModeMeeting,25,2,Geometry,"Quiroga Posada, Mauricio",931A,I1003.2,B2;E4;C5
 13000,OI1305,101,3600,10853,152,1(B)2(E)4(C),2,ATT_ModeMeeting,25,2,Calculus,"Quiroga Posada, Mauricio",931A,OI1305.1,B1;E2;C4
-13000,OI1305,102,3600,10853,152,1(D)3(B)5(E),2,ATT_ModeMeeting,25,2,Calculus,"Quiroga Posada, Mauricio",931A,OI1305.2,D1;B3;E5
-13000,OI1305,103,3600,10853,152,2(C)4(A)5(D),2,ATT_ModeMeeting,25,2,Calculus,"Quiroga Posada, Mauricio",931A,OI1305.3,C2;A4;D5
+13000,OI1305,102,3600,10853,152,2(C)4(A)5(D),2,ATT_ModeMeeting,25,2,Calculus,"Quiroga Posada, Mauricio",931A,OI1305.2,C2;A4;D5
+13000,OI1305,103,3600,10853,152,1(D)3(B)5(E),2,ATT_ModeMeeting,25,2,Calculus,"Quiroga Posada, Mauricio",931A,OI1305.3,D1;B3;E5
 13000,ADVHS01,123,3600,5108,19,3(E),2,ATT_ModeMeeting,25,2,Advisory HS,"Restrepo Pineda, Johana",925,ADVHS01.23,E3
 13000,G1201,106,3600,5108,15,2(B)4(E)5(C),2,ATT_ModeMeeting,25,2,Español & Literatura 12,"Restrepo Pineda, Johana",921,G1201.6,B2;E4;C5
 13000,G1203,101,3600,5108,15,2(C)4(A)5(D),2,ATT_ModeMeeting,25,2,Español & Literatura 11,"Restrepo Pineda, Johana",921,G1203.1,C2;A4;D5
