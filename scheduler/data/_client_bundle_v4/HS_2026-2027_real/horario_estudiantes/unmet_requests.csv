@@ -1,234 +1,293 @@
 student_id,course_id,course_name,is_required
-29057,A1006,Chemistry 10,False
 29057,E1001,Physical Education and Health 10,True
-29037,E1001,Physical Education and Health 10,True
-26041,OI1305,Calculus,False
-27090,E1201,Physical Education and Health 12,True
-29174,A1006,Chemistry 10,False
-29174,E1001,Physical Education and Health 10,True
-28070,I1211,AP Precalculus,False
-27023,OA1322,AP Physics 2,False
+29037,A1006,Chemistry 10,False
+27090,OH1501,Journalism Higher Level,False
+29174,OZ1323,AP Human Geography,False
+28110,G1203,Español & Literatura 11,False
+30056,H0904,English 9,False
 27023,OB1532,AP Research,False
 30051,I0903,Algebra I 9,False
-30080,E0901,Physical Education and Health 9,True
-27015,L1304,Life Purpose,False
-28158,OB1520,AP Statistics,False
-28158,I1204,AP Calculus AB,False
-30105,G0901,Español & Literatura 9,False
-30105,I0903,Algebra I 9,False
-30090,B0901,Social Studies 9,False
+30080,H0904,English 9,False
+29043,A1006,Chemistry 10,False
+27015,OA1304,AP Biology,False
+28158,OA1319,AP Physics 1,False
+30105,B0901,Social Studies 9,False
+30105,J0903,FRC 9,False
+30107,H0904,English 9,False
+30090,H0904,English 9,False
 30090,I0903,Algebra I 9,False
+30090,J0903,FRC 9,False
+27066,L1303,Pensar nuestro tiempo,False
 28177,OH1305,Art of Fiction Intermediate Level,False
 28177,VHS0052,"Spanish Film, Art, and Literature",False
-27104,I1204,AP Calculus AB,False
-28020,I1204,AP Calculus AB,False
+27104,OH1501,Journalism Higher Level,False
+28094,G1203,Español & Literatura 11,False
+28020,OA1319,AP Physics 1,False
 30026,C0904,Band Level I,False
 30026,I0903,Algebra I 9,False
-30075,B0901,Social Studies 9,False
+30104,H0904,English 9,False
+30012,J0903,FRC 9,False
+30050,I0903,Algebra I 9,False
+27180,L1304,Life Purpose,False
 30169,J0903,FRC 9,False
-30032,H0904,English 9,False
-29118,E1001,Physical Education and Health 10,True
-29118,OJ1306,AP Computer Science Principles,False
-29038,H1206,AP English Language & Composition,False
+30032,I0903,Algebra I 9,False
+29118,H1001,English 10,False
+29038,B1006,Cultural Studies,False
 29108,OJ1204,Creative Design,False
-28113,OH1305,Art of Fiction Intermediate Level,False
 28160,C0905,Band Level II,False
-27141,G1201,Español & Literatura 12,False
+28095,OH1305,Art of Fiction Intermediate Level,False
+28095,VHS0052,"Spanish Film, Art, and Literature",False
+28038,L1302,Introduction to Law,False
+27141,A1204,Environmental Science,False
 27116,OC1314,AP Drawing,False
-28090,OH1305,Art of Fiction Intermediate Level,False
-29007,E1001,Physical Education and Health 10,True
-29156,B1006,Cultural Studies,False
-27041,OC1306,Sculpture I,False
-28169,L1304,Life Purpose,False
+27116,I1204,AP Calculus AB,False
+29007,OZ1323,AP Human Geography,False
+28121,VHS0052,"Spanish Film, Art, and Literature",False
+27041,OA1319,AP Physics 1,False
+28169,OH1305,Art of Fiction Intermediate Level,False
 29020,OJ1204,Creative Design,False
 28142,OH1305,Art of Fiction Intermediate Level,False
 28104,OH1305,Art of Fiction Intermediate Level,False
 27058,L1302,Introduction to Law,False
 28093,L1302,Introduction to Law,False
-29036,I1214,AP Seminar,False
-27120,J1203,Tech. and Innovation for Social Change,False
+27140,OH1501,Journalism Higher Level,False
+29149,OZ1323,AP Human Geography,False
+27120,OA1317,AP Chemistry,False
 27103,L1303,Pensar nuestro tiempo,False
-27103,OB1532,AP Research,False
+27027,L1302,Introduction to Law,False
 29103,E1001,Physical Education and Health 10,True
+28097,H1206,AP English Language & Composition,False
 28112,OH1305,Art of Fiction Intermediate Level,False
-29041,A1006,Chemistry 10,False
-30120,G0901,Español & Literatura 9,False
-30120,OC1305,Painting I,False
 29056,C0905,Band Level II,False
-28181,OH1305,Art of Fiction Intermediate Level,False
-29145,B1006,Cultural Studies,False
+27007,L1302,Introduction to Law,False
+27007,OH1305,Art of Fiction Intermediate Level,False
+30047,H0904,English 9,False
 30047,J0903,FRC 9,False
-30014,B0901,Social Studies 9,False
-29040,B1006,Cultural Studies,False
+30114,I0903,Algebra I 9,False
+30014,I0903,Algebra I 9,False
+29040,E1001,Physical Education and Health 10,True
 29137,C0905,Band Level II,False
+29120,B1001,Social Sciences 10,False
 27019,L1302,Introduction to Law,False
-29039,B1006,Cultural Studies,False
-30136,OC1305,Painting I,False
+30124,I0903,Algebra I 9,False
+30124,J0903,FRC 9,False
+27152,G1203,Español & Literatura 11,False
+29010,E1001,Physical Education and Health 10,True
+28044,OH1401,Journalism Intermediate Level,False
+30136,J0903,FRC 9,False
+30005,J0903,FRC 9,False
+27018,OB1520,AP Statistics,False
 27071,L1303,Pensar nuestro tiempo,False
-28047,H1206,AP English Language & Composition,False
-27005,I1208,AP Calculus BC,False
-28163,C0905,Band Level II,False
-30092,J0903,FRC 9,False
+28047,OI1303,Financial Math,False
+29083,OZ1323,AP Human Geography,False
+27005,G1201,Español & Literatura 12,False
+28163,OH1401,Journalism Intermediate Level,False
+28139,G1203,Español & Literatura 11,False
+30092,B0901,Social Studies 9,False
+30182,I0903,Algebra I 9,False
 30182,J0903,FRC 9,False
-27010,A1204,Environmental Science,False
-27014,OB1520,AP Statistics,False
-29119,A1006,Chemistry 10,False
-27142,OB1520,AP Statistics,False
-29080,A1006,Chemistry 10,False
-28050,I1204,AP Calculus AB,False
+27010,OH1501,Journalism Higher Level,False
+27014,G1202,AP Spanish Literature and Culture,False
+27106,OI1303,Financial Math,False
+27142,J1203,Tech. and Innovation for Social Change,False
+28036,OH1401,Journalism Intermediate Level,False
+29080,E1001,Physical Education and Health 10,True
+28050,H1201B,AP English Literature and Composition,False
 29008,OJ1204,Creative Design,False
-30003,J0903,FRC 9,False
-30008,OC1305,Painting I,False
+28061,G1203,Español & Literatura 11,False
 30031,I0903,Algebra I 9,False
-30066,J0903,FRC 9,False
-27160,I1204,AP Calculus AB,False
-28137,OA1304,AP Biology,False
+30066,E0901,Physical Education and Health 9,True
+30072,J0903,FRC 9,False
+26023,OH1501,Journalism Higher Level,False
+28137,OH1401,Journalism Intermediate Level,False
 29172,OJ1204,Creative Design,False
-27006,OH1501,Journalism Higher Level,False
-28166,I1204,AP Calculus AB,False
-27057,G1203,Español & Literatura 11,False
-28135,C0904,Band Level I,False
+27098,J1203,Tech. and Innovation for Social Change,False
+28031,VHS0052,"Spanish Film, Art, and Literature",False
+28140,G1203,Español & Literatura 11,False
+28166,VHS0052,"Spanish Film, Art, and Literature",False
 29046,OJ1204,Creative Design,False
-29027,A1006,Chemistry 10,False
-27035,OB1532,AP Research,False
+26106,E1201,Physical Education and Health 12,True
+29027,OJ1306,AP Computer Science Principles,False
+29050,OI1003,Algebra II,False
+29071,OZ1323,AP Human Geography,False
 27025,G1202,AP Spanish Literature and Culture,False
 29052,OJ1204,Creative Design,False
-29034,G1004,AP Spanish Language and Culture,False
+29034,OZ1323,AP Human Geography,False
 29153,OJ1204,Creative Design,False
 28054,OH1305,Art of Fiction Intermediate Level,False
+28054,VHS0052,"Spanish Film, Art, and Literature",False
+28054,OA1319,AP Physics 1,False
 30079,B0901,Social Studies 9,False
-30111,J0903,FRC 9,False
-30125,J0903,FRC 9,False
-27085,G1202,AP Spanish Literature and Culture,False
-28178,VHS0052,"Spanish Film, Art, and Literature",False
-30109,I0903,Algebra I 9,False
+28046,OZ1323,AP Human Geography,False
+29018,OZ1323,AP Human Geography,False
+27085,E1201,Physical Education and Health 12,True
+30153,H0904,English 9,False
+30064,I0903,Algebra I 9,False
+30089,I0903,Algebra I 9,False
 29135,OJ1306,AP Computer Science Principles,False
+29090,OC1305,Painting I,False
+27059,OI1303,Financial Math,False
 28111,I1204,AP Calculus AB,False
+29066,H1001,English 10,False
 28028,I1204,AP Calculus AB,False
-30081,J0903,FRC 9,False
-30022,B0901,Social Studies 9,False
-30009,J0903,FRC 9,False
-30029,I0903,Algebra I 9,False
-27088,OH1305,Art of Fiction Intermediate Level,False
+30006,J0903,FRC 9,False
+30065,B0901,Social Studies 9,False
+30148,E0901,Physical Education and Health 9,True
 28051,OH1305,Art of Fiction Intermediate Level,False
-27108,I1204,AP Calculus AB,False
 27108,OA1317,AP Chemistry,False
-28034,C0905,Band Level II,False
-28024,I1214,AP Seminar,False
-28014,I1204,AP Calculus AB,False
-28065,OH1305,Art of Fiction Intermediate Level,False
-100052,C0904,Band Level I,False
-29110,I1214,AP Seminar,False
-29067,E1001,Physical Education and Health 10,True
+28034,I1214,AP Seminar,False
+28014,VHS0052,"Spanish Film, Art, and Literature",False
+28105,VHS0052,"Spanish Film, Art, and Literature",False
+100052,H1206,AP English Language & Composition,False
+28083,OH1305,Art of Fiction Intermediate Level,False
+28083,VHS0052,"Spanish Film, Art, and Literature",False
+29110,A1006,Chemistry 10,False
+29077,OZ1323,AP Human Geography,False
 29125,OJ1306,AP Computer Science Principles,False
-28058,H1201B,AP English Literature and Composition,False
 28058,OA1319,AP Physics 1,False
-29124,H1001,English 10,False
+29124,OJ1204,Creative Design,False
+29023,OZ1323,AP Human Geography,False
 27123,OB1532,AP Research,False
-29087,B1006,Cultural Studies,False
-27086,OH1306,Art of Fiction Higher Level,False
-28162,OB1520,AP Statistics,False
+30121,H0904,English 9,False
+29087,B1001,Social Sciences 10,False
+27086,J1203,Tech. and Innovation for Social Change,False
+29142,A1006,Chemistry 10,False
 30127,I0903,Algebra I 9,False
 30127,J0903,FRC 9,False
+27127,L1304,Life Purpose,False
+26040,OH1501,Journalism Higher Level,False
 28176,VHS0052,"Spanish Film, Art, and Literature",False
-28118,L1301,AP Psychology,False
-28074,VHS0052,"Spanish Film, Art, and Literature",False
-28161,OH1305,Art of Fiction Intermediate Level,False
-27043,OB1532,AP Research,False
+28074,L1302,Introduction to Law,False
+28015,C0904,Band Level I,False
+27008,OZ1207,Anatomy and Physiology,False
+28161,VHS0052,"Spanish Film, Art, and Literature",False
+28161,OA1319,AP Physics 1,False
+26009,OH1501,Journalism Higher Level,False
 27079,OB1532,AP Research,False
 28041,VHS0052,"Spanish Film, Art, and Literature",False
-28103,OC1307,Drawing I,False
-29085,H1001,English 10,False
-30033,J0903,FRC 9,False
-28017,I1211,AP Precalculus,False
-30034,C0904,Band Level I,False
-28003,OC1307,Drawing I,False
-29012,A1006,Chemistry 10,False
+28103,VHS0052,"Spanish Film, Art, and Literature",False
+30117,J0903,FRC 9,False
+29049,A1006,Chemistry 10,False
+30154,B0901,Social Studies 9,False
+29159,OZ1207,Anatomy and Physiology,False
+28098,OA1319,AP Physics 1,False
+28003,VHS0052,"Spanish Film, Art, and Literature",False
 29012,C0905,Band Level II,False
-27028,I1204,AP Calculus AB,False
 27028,OB1532,AP Research,False
-28170,OH1305,Art of Fiction Intermediate Level,False
-27139,A1204,Environmental Science,False
+29138,B1006,Cultural Studies,False
 29138,C0905,Band Level II,False
-27046,OI1303,Financial Math,False
-27129,I1204,AP Calculus AB,False
+28039,G1203,Español & Literatura 11,False
+27046,L1301,AP Psychology,False
 27151,L1303,Pensar nuestro tiempo,False
 27151,OZ1313,AP Computer Science A,False
-27001,OA1318,AP Environmental Science,False
+30139,I0903,Algebra I 9,False
 27001,OB1532,AP Research,False
-29004,C0905,Band Level II,False
-29115,E1001,Physical Education and Health 10,True
+29069,I1214,AP Seminar,False
+27093,J1203,Tech. and Innovation for Social Change,False
 26024,OA1322,AP Physics 2,False
+28109,OH1305,Art of Fiction Intermediate Level,False
 27101,OZ1313,AP Computer Science A,False
-27061,A1204,Environmental Science,False
-27169,OH1305,Art of Fiction Intermediate Level,False
+27061,L1303,Pensar nuestro tiempo,False
+28073,H1206,AP English Language & Composition,False
+27060,L1302,Introduction to Law,False
+27169,OI1303,Financial Math,False
+28026,OH1401,Journalism Intermediate Level,False
+29131,H1001,English 10,False
+30166,I0903,Algebra I 9,False
 29045,OJ1306,AP Computer Science Principles,False
-30097,B0901,Social Studies 9,False
+29157,OZ1323,AP Human Geography,False
+30097,OC1305,Painting I,False
+27038,L1302,Introduction to Law,False
 27113,H1201B,AP English Literature and Composition,False
 27113,OB1532,AP Research,False
 30001,J0903,FRC 9,False
-28144,I1211,AP Precalculus,False
+28144,OJ1306,AP Computer Science Principles,False
 28157,C0905,Band Level II,False
-28157,I1204,AP Calculus AB,False
-29100,J0903,FRC 9,False
+27024,OA1319,AP Physics 1,False
+30176,H0904,English 9,False
 29136,OJ1306,AP Computer Science Principles,False
-26154,A1204,Environmental Science,False
-28032,A1006,Chemistry 10,False
+28117,H1201B,AP English Literature and Composition,False
+27078,OH1501,Journalism Higher Level,False
+28029,G1203,Español & Literatura 11,False
+29065,A1006,Chemistry 10,False
+28055,OH1401,Journalism Intermediate Level,False
+28043,OJ1203,Entrepreneurship Business Technology,False
 28030,OH1305,Art of Fiction Intermediate Level,False
-29074,I1214,AP Seminar,False
-29070,I1211,AP Precalculus,False
+28030,VHS0052,"Spanish Film, Art, and Literature",False
+29074,OZ1323,AP Human Geography,False
+28001,L1302,Introduction to Law,False
 29091,OJ1204,Creative Design,False
+29061,OZ1323,AP Human Geography,False
 28100,L1302,Introduction to Law,False
-29126,I1214,AP Seminar,False
-27077,OI1305,Calculus,False
-28146,I1204,AP Calculus AB,False
-29019,A1006,Chemistry 10,False
+28100,L1301,AP Psychology,False
+27179,L1302,Introduction to Law,False
+27077,OB1532,AP Research,False
 29019,OJ1204,Creative Design,False
-30045,J0903,FRC 9,False
-27009,I1211,AP Precalculus,False
+28147,G1203,Español & Literatura 11,False
+29092,C0905,Band Level II,False
+30045,B0901,Social Studies 9,False
+27009,OA1319,AP Physics 1,False
+27063,OA1318,AP Environmental Science,False
 27063,OB1532,AP Research,False
-28057,C0904,Band Level I,False
-29088,I1214,AP Seminar,False
-29164,E1001,Physical Education and Health 10,True
+28136,H1206,AP English Language & Composition,False
+27032,OA1317,AP Chemistry,False
 29028,OJ1204,Creative Design,False
 28101,L1302,Introduction to Law,False
-27126,A1204,Environmental Science,False
+27126,OH1501,Journalism Higher Level,False
+30042,I0903,Algebra I 9,False
 27002,OC1314,AP Drawing,False
-27124,I1208,AP Calculus BC,False
+27124,C0907,Band Level III,False
 27048,OA1317,AP Chemistry,False
-27172,I1208,AP Calculus BC,False
+27172,H1206,AP English Language & Composition,False
 27172,OB1532,AP Research,False
-29098,I1214,AP Seminar,False
-27036,I1204,AP Calculus AB,False
-29076,B1006,Cultural Studies,False
-30122,I0903,Algebra I 9,False
-27020,L1301,AP Psychology,False
-29079,A1006,Chemistry 10,False
-29158,A1006,Chemistry 10,False
+27112,J1203,Tech. and Innovation for Social Change,False
+27089,I1204,AP Calculus AB,False
+27068,OB1532,AP Research,False
+27036,L1302,Introduction to Law,False
+29032,G1004,AP Spanish Language and Culture,False
+30103,J0903,FRC 9,False
+28042,H1201B,AP English Literature and Composition,False
+28045,OH1401,Journalism Intermediate Level,False
+27020,OA1317,AP Chemistry,False
+29079,OZ1323,AP Human Geography,False
+29158,OC1314,AP Drawing,False
+30100,I0903,Algebra I 9,False
 27109,OC1314,AP Drawing,False
+28072,OH1401,Journalism Intermediate Level,False
+28035,H1206,AP English Language & Composition,False
 26012,OC1314,AP Drawing,False
+28066,OH1401,Journalism Intermediate Level,False
+27083,OC1305,Painting I,False
 28063,OH1305,Art of Fiction Intermediate Level,False
 28063,VHS0052,"Spanish Film, Art, and Literature",False
+28010,OH1401,Journalism Intermediate Level,False
+28088,OA1304,AP Biology,False
 29053,OJ1204,Creative Design,False
 29107,OJ1204,Creative Design,False
-27132,OA1322,AP Physics 2,False
 30141,J0903,FRC 9,False
-28071,I1204,AP Calculus AB,False
-28011,OB1520,AP Statistics,False
-28107,L1301,AP Psychology,False
+28071,H1201B,AP English Literature and Composition,False
+28071,OA1319,AP Physics 1,False
+28011,C0905,Band Level II,False
+28002,OZ1207,Anatomy and Physiology,False
 28174,L1301,AP Psychology,False
-30061,E0901,Physical Education and Health 9,True
-30101,I0903,Algebra I 9,False
+28049,OH1305,Art of Fiction Intermediate Level,False
+30101,B0901,Social Studies 9,False
+30101,C0904,Band Level I,False
+27147,I1204,AP Calculus AB,False
+29132,C0905,Band Level II,False
 28062,H1201B,AP English Literature and Composition,False
 28077,OJ1204,Creative Design,False
-28040,I1204,AP Calculus AB,False
+27095,J1203,Tech. and Innovation for Social Change,False
+28040,OA1319,AP Physics 1,False
+29072,H1001,English 10,False
 27107,OH1501,Journalism Higher Level,False
+30011,E0901,Physical Education and Health 9,True
+30004,I0903,Algebra I 9,False
 27146,H1201B,AP English Literature and Composition,False
 27096,H1201B,AP English Literature and Composition,False
 28076,H1201B,AP English Literature and Composition,False
 28076,G1202,AP Spanish Literature and Culture,False
-30052,I0903,Algebra I 9,False
+28076,OA1319,AP Physics 1,False
 28165,I1215,AP 3-D Art and Design,False
-27110,L1302,Introduction to Law,False
+28165,OH1401,Journalism Intermediate Level,False
 27119,J1203,Tech. and Innovation for Social Change,False
-27118,H1201B,AP English Literature and Composition,False
