@@ -256,11 +256,32 @@ def solve_students(
     else:
         model.Add(grouping_obj == 0)
 
-    # 4. Required-course coverage: count of unmet required requests (slacks=1)
+    # 4. Required-course coverage: weighted count of unmet required requests.
+    #
+    # School policy 2026-04-29: prioritize satisfying older grades first
+    # ("primero los de 12, luego los de 11, luego los de 10, por último los
+    # de 9"). We implement this by weighting each unmet slack by a per-grade
+    # factor. Weights are heavy enough that the solver always prefers to
+    # satisfy a higher-grade student over a lower one in the typical case
+    # (single-swap), without overflowing int64 when multiplied by the
+    # downstream `coverage_weight` (~10^4). Strict lex across all 4 grades
+    # would need weights up to 10^16 which exceeds int64 once multiplied;
+    # this configuration is "very strong bias" not pure lex.
+    GRADE_PRIORITY_WEIGHTS = {12: 10**6, 11: 10**4, 10: 10**2, 9: 1}
+    grade_by_student = {s.student_id: s.grade for s in ds.students}
+
+    weighted_slack_terms: list[cp_model.LinearExpr] = []
+    upper_bound = 0
+    for slack, (sid, _) in zip(required_slacks, required_slack_meta):
+        g = grade_by_student.get(sid, 9)
+        w = GRADE_PRIORITY_WEIGHTS.get(g, 1)
+        weighted_slack_terms.append(slack * w)
+        upper_bound += w
+
     n_slack_max = max(1, len(required_slacks))
-    unmet_required_obj = model.NewIntVar(0, n_slack_max, "unmet_required_obj")
-    if required_slacks:
-        model.Add(unmet_required_obj == sum(required_slacks))
+    unmet_required_obj = model.NewIntVar(0, max(1, upper_bound), "unmet_required_obj")
+    if weighted_slack_terms:
+        model.Add(unmet_required_obj == sum(weighted_slack_terms))
     else:
         model.Add(unmet_required_obj == 0)
 
@@ -274,9 +295,12 @@ def solve_students(
         # Single-pass weighted-sum: maximize electives + groupings, minimize balance spread
         # AND minimize unmet required requests (heavily weighted so coverage dominates).
         soft = ds.config.soft
-        # Coverage weight is dominant: a single unmet required request is worse
-        # than ANY combination of electives/groupings/balance. Use 10000x the
-        # max possible payoff from those.
+        # Coverage already carries grade-priority weights up to ~10^12 per slack
+        # (see GRADE_PRIORITY_WEIGHTS above). The G9 weight = 1, so coverage
+        # of a single G9 unmet must still outrank ALL the soft-objective payoffs
+        # combined — that's the role of `coverage_weight` here. Keep it bounded
+        # so multiplying by the upper-bound of unmet_required_obj stays inside
+        # int64 (cap at 10**4 since grade weights already carry the lex order).
         coverage_weight = max(
             10000,
             10 * (soft.first_choice_electives * n_elective_max
