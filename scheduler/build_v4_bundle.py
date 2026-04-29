@@ -27,7 +27,7 @@ from src.scheduler.reports import write_reports, compute_kpis
 
 
 REPO = Path(__file__).resolve().parent
-CANONICAL_XLSX = REPO.parent / "reference" / "columbus_official_2026-2027.xlsx"
+CANONICAL_XLSX = REPO.parent / "reference" / "schedule_master_data_hs.xlsx"
 TEMPLATE_DIR = REPO / "data" / "_bundle_template"  # static docs + verify_bundle.py
 V3_DIR = REPO / "data" / "_client_bundle_v3"  # legacy fallback (gitignored, may not exist)
 V4_DIR = REPO / "data" / "_client_bundle_v4"

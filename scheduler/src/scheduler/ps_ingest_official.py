@@ -396,18 +396,23 @@ def build_dataset_from_official_xlsx(
     # SchoolConfig.term_id (3600) at export time.
     TERM_CODE_TO_ID = {"S1": "3601", "S2": "3602"}
 
+    dropped_assignments: dict[str, list[tuple[str, str, int]]] = defaultdict(list)
     for a in assignment_rows:
         teacher_dcid = _safe_str(a["TEACHER_DCID"])
         course_number = _safe_str(a["COURSENUMBER"])
         n_sections = _safe_int(a.get("SECTIONS_PER_COURSE"), default=1)
-        # SECTIONTYPE 'LP' rows are duplicates of regular rows in the source — skip.
-        section_type = _safe_str(a.get("SECTIONTYPE"))
-        if section_type:  # 'LP' or any non-empty subtype → already counted in the regular row
-            continue
 
         teacher = teacher_by_dcid.get(teacher_dcid)
         course = course_by_number.get(course_number)
-        if teacher is None or course is None:
+        if teacher is None:
+            dropped_assignments["teacher_not_in_teachers_sheet"].append(
+                (teacher_dcid, course_number, n_sections)
+            )
+            continue
+        if course is None:
+            dropped_assignments["course_not_in_courses_sheet"].append(
+                (teacher_dcid, course_number, n_sections)
+            )
             continue
 
         # v4.3 — Term-paired sections (S1/S2 sharing slot).
@@ -604,6 +609,72 @@ def build_dataset_from_official_xlsx(
         xlsx_path.parent / "rfi_1._STUDENTS_PER_COURSE_2026-2027.xlsx",
         teacher_by_lastfirst,
     )
+
+    # ---- Data-quality summary (visible in build output) -------------------
+    # 1) Assignments dropped because of missing teacher / course rows.
+    if dropped_assignments:
+        print("[WARN] dropped teacher_assignments rows during ingest:")
+        for reason, items in dropped_assignments.items():
+            n_rows = len(items)
+            n_secs = sum(s for _, _, s in items)
+            print(f"  {reason}: {n_rows} rows ({n_secs} sections)")
+            for tdcid, cnum, nsec in items[:10]:
+                print(f"    teacher_dcid={tdcid!r} course={cnum!r} sections={nsec}")
+            if n_rows > 10:
+                print(f"    … +{n_rows - 10} more")
+
+    # 2) Cross-check planned (SECTIONSTOOFFER) vs actual sections per course,
+    #    counting linked_course_ids so multi-level merges don't trigger false
+    #    alarms. We treat a mismatch as a WARN, not an error — the school may
+    #    legitimately under-supply teachers (capacity-bound courses).
+    planned_by_course: dict[str, int] = {}
+    for c in course_rows:
+        cnum = _safe_str(c.get("COURSE_NUMBER"))
+        if cnum:
+            planned_by_course[cnum] = _safe_int(c.get("SECTIONSTOOFFER"), default=0)
+    actual_by_course: dict[str, int] = defaultdict(int)
+    for s in sections:
+        actual_by_course[s.course_id] += 1
+        for linked in s.linked_course_ids:
+            actual_by_course[linked] += 1
+    mismatches = []
+    for cnum, planned in planned_by_course.items():
+        actual = actual_by_course.get(cnum, 0)
+        if planned != actual and (planned > 0 or actual > 0):
+            mismatches.append((cnum, planned, actual))
+    if mismatches:
+        print("[WARN] courses where planned (SECTIONSTOOFFER) != generated sections:")
+        for cnum, planned, actual in sorted(mismatches, key=lambda x: -abs(x[1] - x[2]))[:20]:
+            cn = course_by_number.get(cnum)
+            name = cn.name if cn else "??"
+            print(f"  {cnum:10s} {name:35s} planned={planned}  generated={actual}  diff={planned-actual:+d}")
+        if len(mismatches) > 20:
+            print(f"  … +{len(mismatches) - 20} more")
+
+    # 3) Demand vs capacity per course — flag where requests > sum(max_size).
+    demand_by_course: dict[str, int] = defaultdict(int)
+    for r in request_rows:
+        cnum = _safe_str(r.get("COURSENUMBER"))
+        if cnum:
+            demand_by_course[cnum] += 1
+    capacity_by_course: dict[str, int] = defaultdict(int)
+    for s in sections:
+        capacity_by_course[s.course_id] += s.max_size
+        for linked in s.linked_course_ids:
+            capacity_by_course[linked] += s.max_size
+    deficits = []
+    for cnum, demand in demand_by_course.items():
+        cap = capacity_by_course.get(cnum, 0)
+        if demand > cap:
+            deficits.append((cnum, demand, cap, demand - cap))
+    if deficits:
+        print("[WARN] courses with demand > capacity (capacity-bound, will produce unmet):")
+        for cnum, demand, cap, deficit in sorted(deficits, key=lambda x: -x[3])[:20]:
+            cn = course_by_number.get(cnum)
+            name = cn.name if cn else "??"
+            print(f"  {cnum:10s} {name:35s} demand={demand}  cap={cap}  short={deficit}")
+        if len(deficits) > 20:
+            print(f"  … +{len(deficits) - 20} more")
 
     return Dataset(
         config=config,
