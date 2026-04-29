@@ -19,7 +19,7 @@ from pathlib import Path
 
 from src.scheduler.ps_ingest_official import build_dataset_from_official_xlsx
 from src.scheduler.master_solver import solve_master
-from src.scheduler.student_solver import solve_students
+from src.scheduler.student_solver import solve_students, repair_overfill
 from src.scheduler.io_csv import write_dataset
 from src.scheduler.exporter import export_powerschool
 from src.scheduler.io_oneroster import write_oneroster
@@ -108,6 +108,21 @@ def main() -> int:
     t2 = time.time()
     student_assigns, unmet, _, s_status = solve_students(ds, master, time_limit_s=300.0, verbose=True)
     print(f"  status={s_status}, {len(student_assigns)} students placed, {len(unmet)} unmet, {time.time()-t2:.1f}s")
+
+    # Stage 2.5: F1 over-fill repair pass.
+    # Greedy post-pass that adds unmet students to sections that fit them in
+    # the schedule but are at cap. Allows up to +OVER_FILL_BUDGET seats per
+    # section. Default OFF (0) per school decision 2026-04-29 (over-fill not
+    # approved as policy; only AP Research has explicit cap=26 from CONSTRAINTS).
+    # To experiment, set OVER_FILL_BUDGET=1 in the environment.
+    over_fill_budget = int(os.environ.get("OVER_FILL_BUDGET", "0"))
+    if over_fill_budget > 0:
+        print(f"\n=== Stage 2.5: over-fill repair (budget=+{over_fill_budget}) ===")
+        student_assigns, unmet, repaired = repair_overfill(
+            ds, master, student_assigns, unmet,
+            over_fill_budget=over_fill_budget, verbose=True,
+        )
+        print(f"  after repair: {len(student_assigns)} students placed, {len(unmet)} unmet remaining")
 
     print("\n=== Stage 3: KPI report ===")
     kpi = compute_kpis(ds, master, student_assigns, unmet)

@@ -4,97 +4,97 @@
 
 | Metric | Value | Target | Met |
 |---|---|---|---|
-| Fully scheduled students | 80.9% | ≥98% | ❌ |
-| Required course fulfillment | 97.7% | ≥98% | ❌ |
+| Fully scheduled students | 54.2% | ≥98% | ❌ |
+| Required course fulfillment | 94.5% | ≥98% | ❌ |
 | First-choice electives | 0.0% | ≥80% | ❌ |
-| Section balance (max dev from mean) | 13 students | ≤3 | ❌ |
-| Unscheduled (missing required) | 97 | 0 | ❌ |
+| Section balance (max dev from mean) | 4 students | ≤3 | ❌ |
+| Unscheduled (missing required) | 233 | 0 | ❌ |
 | Time conflicts | 0 | 0 | ✅ (enforced by solver) |
 
 ## Capacity overview
 
 | Course | Sections | Enrolled / Capacity | Avg / Section |
 |---|---|---|---|
-| A0901 (Biology 9) | 6 | 129/150 | 21.5 |
-| A1006 (Chemistry 10) | 7 | 124/175 | 17.7 |
-| A1105 (Physics 11) | 5 | 94/125 | 18.8 |
-| A1204 (Environmental Science) | 3 | 59/75 | 19.7 |
+| A0901 (Biology 9) | 6 | 130/150 | 21.7 |
+| A1006 (Chemistry 10) | 7 | 127/175 | 18.1 |
+| A1105 (Physics 11) | 5 | 92/125 | 18.4 |
+| A1204 (Environmental Science) | 3 | 57/75 | 19.0 |
 | ADVHS01 (Advisory HS) | 36 | 509/900 | 14.1 |
-| B0901 (Social Studies 9) | 7 | 124/175 | 17.7 |
+| B0901 (Social Studies 9) | 7 | 116/175 | 16.6 |
 | B1001 (Social Sciences 10) | 7 | 129/175 | 18.4 |
-| B1006 (Cultural Studies) | 2 | 37/50 | 18.5 |
-| C0904 (Band Level I) | 4 | 94/100 | 23.5 |
-| C0905 (Band Level II) | 1 | 22/25 | 22.0 |
-| C0907 (Band Level III) | 1 | 19/25 | 19.0 |
-| E0901 (Physical Education and Health 9) | 6 | 129/780 | 21.5 |
-| E1001 (Physical Education and Health 10) | 6 | 128/780 | 21.3 |
-| E1101 (Physical Education and Health 11) | 6 | 135/780 | 22.5 |
-| E1201 (Physical Education and Health 12) | 6 | 118/780 | 19.7 |
-| G0901 (Español & Literatura 9) | 7 | 127/175 | 18.1 |
+| B1006 (Cultural Studies) | 2 | 25/50 | 12.5 |
+| C0904 (Band Level I) | 4 | 91/100 | 22.8 |
+| C0905 (Band Level II) | 1 | 15/25 | 15.0 |
+| C0907 (Band Level III) | 1 | 21/25 | 21.0 |
+| E0901 (Physical Education and Health 9) | 6 | 128/780 | 21.3 |
+| E1001 (Physical Education and Health 10) | 6 | 120/780 | 20.0 |
+| E1101 (Physical Education and Health 11) | 6 | 134/780 | 22.3 |
+| E1201 (Physical Education and Health 12) | 6 | 116/780 | 19.3 |
+| G0901 (Español & Literatura 9) | 7 | 121/175 | 17.3 |
 | G0902 (Spanish 9 (Foreign Language)) | 1 | 0/25 | 0.0 |
-| G1004 (AP Spanish Language and Culture) | 7 | 122/175 | 17.4 |
+| G1004 (AP Spanish Language and Culture) | 7 | 121/175 | 17.3 |
 | G1201 (Español & Literatura 12) | 6 | 106/150 | 17.7 |
-| G1202 (AP Spanish Literature and Culture) | 1 | 14/25 | 14.0 |
-| G1203 (Español & Literatura 11) | 4 | 86/100 | 21.5 |
+| G1202 (AP Spanish Literature and Culture) | 1 | 11/25 | 11.0 |
+| G1203 (Español & Literatura 11) | 4 | 82/100 | 20.5 |
 | H0904 (English 9) | 7 | 127/175 | 18.1 |
-| H1001 (English 10) | 4 | 66/100 | 16.5 |
-| H1201B (AP English Literature and Composition) | 1 | 21/25 | 21.0 |
-| H1206 (AP English Language & Composition) | 2 | 34/50 | 17.0 |
-| I0903 (Algebra I 9) | 3 | 54/75 | 18.0 |
+| H1001 (English 10) | 4 | 56/100 | 14.0 |
+| H1201B (AP English Literature and Composition) | 1 | 17/25 | 17.0 |
+| H1206 (AP English Language & Composition) | 2 | 32/50 | 16.0 |
+| I0903 (Algebra I 9) | 3 | 56/75 | 18.7 |
 | I1003 (Geometry) | 7 | 126/175 | 18.0 |
-| I1204 (AP Calculus AB) | 2 | 39/50 | 19.5 |
-| I1208 (AP Calculus BC) | 1 | 17/25 | 17.0 |
-| I1211 (AP Precalculus) | 2 | 28/50 | 14.0 |
+| I1204 (AP Calculus AB) | 2 | 32/50 | 16.0 |
+| I1208 (AP Calculus BC) | 1 | 16/25 | 16.0 |
+| I1211 (AP Precalculus) | 2 | 22/50 | 11.0 |
 | I1212 (AP Macroeconomics) | 4 | 79/100 | 19.8 |
 | I1213 (AP Microeconomics) | 4 | 79/100 | 19.8 |
 | I1214 (AP Seminar) | 3 | 58/75 | 19.3 |
-| I1215 (AP 3-D Art and Design) | 1 | 12/25 | 12.0 |
+| I1215 (AP 3-D Art and Design) | 1 | 10/25 | 10.0 |
 | J0901 (Technology 9) | 3 | 65/75 | 21.7 |
-| J0903 (FRC 9) | 3 | 60/75 | 20.0 |
+| J0903 (FRC 9) | 3 | 51/75 | 17.0 |
 | J1203 (Tech. and Innovation for Social Change) | 5 | 92/125 | 18.4 |
-| L1301 (AP Psychology) | 3 | 61/75 | 20.3 |
-| L1302 (Introduction to Law) | 2 | 32/50 | 16.0 |
-| L1303 (Pensar nuestro tiempo) | 1 | 19/25 | 19.0 |
-| L1304 (Life Purpose) | 4 | 96/100 | 24.0 |
+| L1301 (AP Psychology) | 3 | 57/75 | 19.0 |
+| L1302 (Introduction to Law) | 2 | 29/50 | 14.5 |
+| L1303 (Pensar nuestro tiempo) | 1 | 18/25 | 18.0 |
+| L1304 (Life Purpose) | 4 | 98/100 | 24.5 |
 | OA1304 (AP Biology) | 1 | 22/25 | 22.0 |
-| OA1317 (AP Chemistry) | 1 | 19/25 | 19.0 |
-| OA1318 (AP Environmental Science) | 1 | 9/25 | 9.0 |
-| OA1319 (AP Physics 1) | 2 | 40/50 | 20.0 |
+| OA1317 (AP Chemistry) | 1 | 20/25 | 20.0 |
+| OA1318 (AP Environmental Science) | 1 | 10/25 | 10.0 |
+| OA1319 (AP Physics 1) | 2 | 36/50 | 18.0 |
 | OA1322 (AP Physics 2) | 2 | 32/50 | 16.0 |
-| OB1520 (AP Statistics) | 2 | 27/50 | 13.5 |
+| OB1520 (AP Statistics) | 2 | 26/50 | 13.0 |
 | OB1532 (AP Research) | 1 | 20/26 | 20.0 |
-| OC1305 (Painting I) | 4 | 91/100 | 22.8 |
-| OC1306 (Sculpture I) | 1 | 19/25 | 19.0 |
-| OC1307 (Drawing I) | 1 | 20/25 | 20.0 |
+| OC1305 (Painting I) | 4 | 78/100 | 19.5 |
+| OC1306 (Sculpture I) | 1 | 18/25 | 18.0 |
+| OC1307 (Drawing I) | 1 | 19/25 | 19.0 |
 | OC1310 (Painting II) | 3 | 64/75 | 21.3 |
-| OC1314 (AP Drawing) | 1 | 17/25 | 17.0 |
-| OH1305 (Art of Fiction Intermediate Level) | 3 | 65/75 | 21.7 |
+| OC1314 (AP Drawing) | 1 | 16/25 | 16.0 |
+| OH1305 (Art of Fiction Intermediate Level) | 3 | 66/75 | 22.0 |
 | OH1306 (Art of Fiction Higher Level) | 3 | 57/75 | 19.0 |
-| OH1401 (Journalism Intermediate Level) | 2 | 29/50 | 14.5 |
-| OH1501 (Journalism Higher Level) | 2 | 42/50 | 21.0 |
-| OI1003 (Algebra II) | 6 | 112/150 | 18.7 |
-| OI1303 (Financial Math) | 2 | 44/50 | 22.0 |
-| OI1305 (Calculus) | 5 | 101/125 | 20.2 |
-| OJ1203 (Entrepreneurship Business Technology) | 2 | 41/50 | 20.5 |
-| OJ1204 (Creative Design) | 1 | 21/25 | 21.0 |
-| OJ1306 (AP Computer Science Principles) | 1 | 10/25 | 10.0 |
-| OZ1207 (Anatomy and Physiology) | 2 | 35/50 | 17.5 |
+| OH1401 (Journalism Intermediate Level) | 2 | 26/50 | 13.0 |
+| OH1501 (Journalism Higher Level) | 2 | 48/50 | 24.0 |
+| OI1003 (Algebra II) | 6 | 107/150 | 17.8 |
+| OI1303 (Financial Math) | 2 | 41/50 | 20.5 |
+| OI1305 (Calculus) | 5 | 102/125 | 20.4 |
+| OJ1203 (Entrepreneurship Business Technology) | 2 | 40/50 | 20.0 |
+| OJ1204 (Creative Design) | 1 | 13/25 | 13.0 |
+| OJ1306 (AP Computer Science Principles) | 1 | 6/25 | 6.0 |
+| OZ1207 (Anatomy and Physiology) | 2 | 33/50 | 16.5 |
 | OZ1313 (AP Computer Science A) | 1 | 0/25 | 0.0 |
-| OZ1323 (AP Human Geography) | 5 | 90/125 | 18.0 |
-| VHS0052 (Spanish Film, Art, and Literature) | 2 | 34/50 | 17.0 |
+| OZ1323 (AP Human Geography) | 5 | 80/125 | 16.0 |
+| VHS0052 (Spanish Film, Art, and Literature) | 2 | 28/50 | 14.0 |
 
 ## Top unmet rank-1 requests
 
-- **OH1501** (Journalism Higher Level): 8 students did not get their first choice
-- **OB1532** (AP Research): 6 students did not get their first choice
-- **VHS0052** (Spanish Film, Art, and Literature): 6 students did not get their first choice
-- **C0904** (Band Level I): 6 students did not get their first choice
-- **I1204** (AP Calculus AB): 5 students did not get their first choice
-- **B0901** (Social Studies 9): 5 students did not get their first choice
-- **I1211** (AP Precalculus): 4 students did not get their first choice
-- **J0903** (FRC 9): 4 students did not get their first choice
-- **OC1305** (Painting I): 4 students did not get their first choice
-- **E1201** (Physical Education and Health 12): 3 students did not get their first choice
+- **OC1305** (Painting I): 17 students did not get their first choice
+- **B0901** (Social Studies 9): 13 students did not get their first choice
+- **J0903** (FRC 9): 13 students did not get their first choice
+- **H1001** (English 10): 13 students did not get their first choice
+- **B1006** (Cultural Studies): 12 students did not get their first choice
+- **I1204** (AP Calculus AB): 12 students did not get their first choice
+- **VHS0052** (Spanish Film, Art, and Literature): 12 students did not get their first choice
+- **OZ1323** (AP Human Geography): 10 students did not get their first choice
+- **I1211** (AP Precalculus): 10 students did not get their first choice
+- **OJ1204** (Creative Design): 10 students did not get their first choice
 
 ## Teacher load
 
