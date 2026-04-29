@@ -297,10 +297,37 @@ def solve_master(ds: Dataset, time_limit_s: float = 60.0, verbose: bool = False)
             scheme_used_vars.append(used)
         model.Add(sum(scheme_used_vars) >= min_distinct_schemes)
 
+    # HC5 (optional): explicit coplanning groups must share at least one scheme
+    # where all members are simultaneously free. Behind a flag so it stays off
+    # by default until the data is validated against current teaching loads.
+    if ds.config.hard.enforce_coplanning_groups and ds.coplanning_groups:
+        for gi, group in enumerate(ds.coplanning_groups):
+            scheme_all_free: list[cp_model.BoolVar] = []
+            for k in SCHEMES:
+                all_free = model.NewBoolVar(f"coplan_grp{gi}_scheme{k}")
+                busy_indicators = []
+                for tid in group:
+                    sect_ids = sections_by_teacher.get(tid, [])
+                    if not sect_ids:
+                        continue
+                    busy = model.NewBoolVar(f"busy_grp{gi}_{tid}_k{k}")
+                    model.AddMaxEquality(busy, [section_in_scheme[(sid, k)] for sid in sect_ids])
+                    busy_indicators.append(busy)
+                if busy_indicators:
+                    model.Add(sum(busy_indicators) == 0).OnlyEnforceIf(all_free)
+                    model.Add(sum(busy_indicators) >= 1).OnlyEnforceIf(all_free.Not())
+                else:
+                    model.Add(all_free == 1)
+                scheme_all_free.append(all_free)
+            model.AddBoolOr(scheme_all_free)
+
     # === Soft objectives (combined into a single weighted Minimize/Maximize) ===
     soft_terms: list[tuple[int, cp_model.IntVar | cp_model.LinearExpr]] = []  # (signed_weight, expr)
 
     # Soft 1: Balance teacher load across days
+    # Per-day load upper bound: each (day,block) cell can hold up to 1 yearlong
+    # OR (1 S1 + 1 S2) for the same teacher (HC1 is term-partitioned). Bound by
+    # the teacher's own section count since each section contributes ≤1 per day.
     teacher_day_load: list[cp_model.IntVar] = []
     for tid, sect_ids in sections_by_teacher.items():
         for day in DAYS:
@@ -312,12 +339,13 @@ def solve_master(ds: Dataset, time_limit_s: float = 60.0, verbose: bool = False)
                 for sid in sect_ids:
                     load_terms.append(section_in_scheme[(sid, scheme)])
             if load_terms:
-                load_var = model.NewIntVar(0, len(BLOCKS), f"load_{tid}_{day}")
+                load_var = model.NewIntVar(0, len(sect_ids), f"load_{tid}_{day}")
                 model.Add(load_var == sum(load_terms))
                 teacher_day_load.append(load_var)
 
     if teacher_day_load:
-        max_load = model.NewIntVar(0, len(BLOCKS), "max_teacher_day_load")
+        max_load_ub = max((v.Proto().domain[1] for v in teacher_day_load), default=len(BLOCKS))
+        max_load = model.NewIntVar(0, max_load_ub, "max_teacher_day_load")
         model.AddMaxEquality(max_load, teacher_day_load)
         # Negative because we minimize max_load (penalty)
         soft_terms.append((-ds.config.soft.teacher_load_balance, max_load))

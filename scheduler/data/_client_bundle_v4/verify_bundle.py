@@ -117,10 +117,15 @@ def check_row_counts(tables: dict, report: Report) -> None:
 
 
 def check_no_time_conflicts(tables: dict, report: Report) -> None:
+    # v4.3: term-aware — a student CAN have S1 and S2 sections in the same
+    # (day, block) since they alternate semesters. Conflict = same effective
+    # term in same slot.
     section_slots: dict[str, list[str]] = {}
+    section_term: dict[str, str] = {}
     for row in tables["ps_sections"]:
         slots = [s.strip() for s in (row.get("Slots") or "").split(";") if s.strip()]
         section_slots[row["SectionID"]] = slots
+        section_term[row["SectionID"]] = row.get("TermID", "")
 
     student_sections: dict[str, list[str]] = defaultdict(list)
     for row in tables["ps_enrollments"]:
@@ -128,13 +133,25 @@ def check_no_time_conflicts(tables: dict, report: Report) -> None:
 
     conflicts: list[str] = []
     for sid, sects in student_sections.items():
-        seen: dict[str, str] = {}
+        # seen[(slot, effective_term)] -> section_id
+        seen: dict[tuple[str, str], str] = {}
+        flagged = False
         for sec in sects:
+            terms = _effective_terms(section_term.get(sec, ""))
             for slot in section_slots.get(sec, []):
-                if slot in seen and seen[slot] != sec:
-                    conflicts.append(f"student {sid} double-booked at {slot}: {seen[slot]} + {sec}")
+                for et in terms:
+                    key = (slot, et)
+                    if key in seen and seen[key] != sec:
+                        conflicts.append(
+                            f"student {sid} double-booked at {slot} ({et}): {seen[key]} + {sec}"
+                        )
+                        flagged = True
+                        break
+                    seen[key] = sec
+                if flagged:
                     break
-                seen[slot] = sec
+            if flagged:
+                break
     report.check(
         "No student has two sections at the same (day, block)",
         not conflicts,
@@ -142,40 +159,58 @@ def check_no_time_conflicts(tables: dict, report: Report) -> None:
     )
 
 
+def _effective_terms(term_id: str) -> tuple[str, ...]:
+    """Map TermID to the effective concurrency terms.
+
+    Year-long sections (3600 or any non-S1/S2) occupy the slot all year, so
+    they count against BOTH S1 and S2 effective terms. Term-paired sections
+    (3601 = S1, 3602 = S2) only count against their own term.
+    """
+    if term_id == "3601":
+        return ("S1",)
+    if term_id == "3602":
+        return ("S2",)
+    return ("S1", "S2")  # year-long blocks both
+
+
 def check_no_teacher_conflicts(tables: dict, report: Report) -> None:
     # v4.2: Simultaneous multi-level sections emit one row per covered course
     # but share Section_ID_Internal (single physical section, multiple Course
     # codes). Dedupe by (Section_ID_Internal) before counting.
+    # v4.3: term-aware — S1 + S2 in same slot is OK (alternate semesters).
     seen_physical: set[str] = set()
-    teacher_scheme_count: dict[tuple[str, str], int] = defaultdict(int)
+    teacher_scheme_count: dict[tuple[str, str, str], int] = defaultdict(int)
     for row in tables["ps_sections"]:
         sid = row.get("Section_ID_Internal") or row.get("SectionID") or ""
         if sid in seen_physical:
             continue
         seen_physical.add(sid)
-        teacher_scheme_count[(row["TeacherID"], row["Period"])] += 1
-    over = [(tid_p, n) for tid_p, n in teacher_scheme_count.items() if n > 1 and tid_p[1] != "ADV"]
+        for et in _effective_terms(row.get("TermID", "")):
+            teacher_scheme_count[(row["TeacherID"], row["Period"], et)] += 1
+    over = [(key, n) for key, n in teacher_scheme_count.items() if n > 1 and key[1] != "ADV"]
     report.check(
         "No teacher in two sections at the same scheme/period",
         not over,
-        f"OK across {len(teacher_scheme_count)} (teacher, period) pairs" if not over else f"{len(over)} double-bookings: {over[:3]}",
+        f"OK across {len(teacher_scheme_count)} (teacher, period, term) pairs" if not over else f"{len(over)} double-bookings: {over[:3]}",
     )
 
 
 def check_no_room_conflicts(tables: dict, report: Report) -> None:
+    # v4.3: term-aware — S1 + S2 in same room/slot is OK.
     seen_physical: set[str] = set()
-    room_scheme_count: dict[tuple[str, str], int] = defaultdict(int)
+    room_scheme_count: dict[tuple[str, str, str], int] = defaultdict(int)
     for row in tables["ps_sections"]:
         sid = row.get("Section_ID_Internal") or row.get("SectionID") or ""
         if sid in seen_physical:
             continue
         seen_physical.add(sid)
-        room_scheme_count[(row["RoomID"], row["Period"])] += 1
-    over = [(rid_p, n) for rid_p, n in room_scheme_count.items() if n > 1]
+        for et in _effective_terms(row.get("TermID", "")):
+            room_scheme_count[(row["RoomID"], row["Period"], et)] += 1
+    over = [(key, n) for key, n in room_scheme_count.items() if n > 1]
     report.check(
         "No room hosting two sections at the same scheme/period",
         not over,
-        f"OK across {len(room_scheme_count)} (room, period) pairs" if not over else f"{len(over)} double-bookings: {over[:3]}",
+        f"OK across {len(room_scheme_count)} (room, period, term) pairs" if not over else f"{len(over)} double-bookings: {over[:3]}",
     )
 
 

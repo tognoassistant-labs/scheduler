@@ -71,6 +71,19 @@ def _term_sid(year: str) -> str:
     return f"term-{_slug(year)}"
 
 
+def _semester_sid(year: str, term_id: str) -> str:
+    """Sub-session sid for S1 (3601) / S2 (3602) under a school-year term."""
+    suffix = "s1" if term_id == "3601" else ("s2" if term_id == "3602" else term_id)
+    return f"term-{_slug(year)}-{suffix}"
+
+
+def _semester_dates(year_start: str, year_end: str) -> tuple[tuple[str, str], tuple[str, str]]:
+    """Split a year [start..end] into S1 (Aug..Dec) and S2 (Jan..May) ranges."""
+    y1 = year_start[:4]
+    y2 = year_end[:4]
+    return ((year_start, f"{y1}-12-20"), (f"{y2}-01-08", year_end))
+
+
 def _course_sid(course_id: str) -> str:
     return f"course-{course_id}"
 
@@ -176,11 +189,19 @@ def write_oneroster(
         w.writerow(["sourcedId", "status", "dateLastModified", "name", "type", "identifier", "parentSourcedId"])
         w.writerow([school_sid, "active", now, school, "school", school_sid, ""])
 
-    # 2. academicSessions.csv — the school year
+    # 2. academicSessions.csv — the school year + per-semester sub-sessions.
+    # Sub-sessions are referenced by classes whose Section.term_id is set
+    # (3601 = S1, 3602 = S2). Year-long classes reference the year session.
+    s1_sid = _semester_sid(year, "3601")
+    s2_sid = _semester_sid(year, "3602")
+    (s1_start, s1_end), (s2_start, s2_end) = _semester_dates(start, end)
+    school_year_only = year.split("-")[0] if "-" in year else year
     with (out_dir / "academicSessions.csv").open("w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["sourcedId", "status", "dateLastModified", "title", "type", "startDate", "endDate", "parentSourcedId", "schoolYear"])
-        w.writerow([term_sid, "active", now, year, "schoolYear", start, end, "", year.split("-")[0] if "-" in year else year])
+        w.writerow([term_sid, "active", now, year, "schoolYear", start, end, "", school_year_only])
+        w.writerow([s1_sid, "active", now, f"{year} S1", "semester", s1_start, s1_end, term_sid, school_year_only])
+        w.writerow([s2_sid, "active", now, f"{year} S2", "semester", s2_start, s2_end, term_sid, school_year_only])
 
     # 3. users.csv — teachers + students
     with (out_dir / "users.csv").open("w", newline="") as f:
@@ -206,7 +227,6 @@ def write_oneroster(
             ])
 
     # 4. courses.csv
-    school_year_only = year.split("-")[0] if "-" in year else year
     with (out_dir / "courses.csv").open("w", newline="") as f:
         w = csv.writer(f)
         w.writerow([
@@ -239,10 +259,11 @@ def write_oneroster(
                 periods = _slot_codes(m)
             grades_field = str(c.grade_eligibility[0]) if (c and c.grade_eligibility) else str(grade)
             class_type = "homeroom" if (c and c.is_advisory) else "scheduled"
+            class_term_sid = _semester_sid(year, s.term_id) if s.term_id in ("3601", "3602") else term_sid
             w.writerow([
                 _class_sid(s.section_id), "active", now, c.name if c else s.course_id,
                 grades_field, _course_sid(s.course_id), s.section_id, class_type,
-                location, school_sid, term_sid,
+                location, school_sid, class_term_sid,
                 c.department if c else "", c.department if c else "", periods,
             ])
 

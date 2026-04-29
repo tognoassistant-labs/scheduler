@@ -60,6 +60,46 @@ def _safe_str(v) -> str:
     return str(v).strip()
 
 
+def _read_coplanning_groups(
+    xlsx_path: Path,
+    teacher_by_lastfirst: dict[str, "Teacher"],
+) -> list[list[str]]:
+    """Parse the `CO PLANNING INFO` sheet of the RFI xlsx.
+
+    Each blank-row-separated block lists 2-3 teachers that must share a free
+    scheme (preparation period). Returns groups as `[[teacher_dcid, ...], ...]`,
+    dropping placeholder names ("New X Teacher") not present in the dataset and
+    discarding groups that end up with <2 known teachers.
+    """
+    if not xlsx_path.exists():
+        return []
+    wb = load_workbook(xlsx_path, read_only=True, data_only=True)
+    if "CO PLANNING INFO" not in wb.sheetnames:
+        return []
+    ws = wb["CO PLANNING INFO"]
+
+    groups: list[list[str]] = []
+    current: list[str] = []
+    for row in ws.iter_rows(values_only=True):
+        teacher = _safe_str((row + (None,))[0]) if row else ""
+        if not teacher:
+            if current:
+                groups.append(current)
+                current = []
+            continue
+        if teacher.upper().startswith(("CO PLANNING", "PRIORIDADES", "OTROS")):
+            continue
+        t = teacher_by_lastfirst.get(teacher)
+        if t is None:
+            continue  # placeholder ("New X Teacher") or rename mismatch
+        if t.teacher_id not in current:
+            current.append(t.teacher_id)
+    if current:
+        groups.append(current)
+
+    return [g for g in groups if len(g) >= 2]
+
+
 def _safe_int(v, default: int = 0) -> int:
     if v is None or v == "":
         return default
@@ -370,18 +410,13 @@ def build_dataset_from_official_xlsx(
         if teacher is None or course is None:
             continue
 
-        # Term handling: v4.2 ships Simultaneous course relationships.
-        # Term-paired sections (S1/S2 sharing slot) are deferred to v4.3 —
-        # the master_solver's term-aware HC1/HC2 partitioning passes locally
-        # but interacts subtly with the global scheme balance and HC4 home_room
-        # pinning to produce INFEASIBLE for Ortegon's room. Skip semester
-        # sections for now; the engine still produces the correct merged
-        # multi-level Spanish/Art/Drawing/Sculpture sections (the bigger win).
-        # TODO v4.3: emit Term sections + adjust scheme balance + handle home_room.
+        # v4.3 — Term-paired sections (S1/S2 sharing slot).
+        # SCHEDULETERMCODE "S1"/"S2" → semester section; map to term IDs
+        # 3601 (S1) / 3602 (S2). Year-long sections keep term_id=None.
         term_code = _safe_str(a.get("SCHEDULETERMCODE"))
-        if term_code and term_code not in ("26-27", "2026-2027"):
+        section_term_id: str | None = TERM_CODE_TO_ID.get(term_code)
+        if term_code and term_code not in ("26-27", "2026-2027") and section_term_id is None:
             continue
-        section_term_id: str | None = None
 
         # Wire up qualifications
         if course_number not in teacher.qualified_course_ids:
@@ -565,6 +600,11 @@ def build_dataset_from_official_xlsx(
         soft=SoftConstraintWeights(),
     )
 
+    coplanning_groups = _read_coplanning_groups(
+        xlsx_path.parent / "rfi_1._STUDENTS_PER_COURSE_2026-2027.xlsx",
+        teacher_by_lastfirst,
+    )
+
     return Dataset(
         config=config,
         courses=courses,
@@ -573,4 +613,5 @@ def build_dataset_from_official_xlsx(
         sections=sections,
         students=students,
         behavior=BehaviorMatrix(),  # behavior matrix comes from a separate file (HS_Schedule.xlsx)
+        coplanning_groups=coplanning_groups,
     )

@@ -29,7 +29,7 @@ teacher_id,name,department,n_sections,max_load,section_ids
 9803,"Mickens, Tamir Akil",Science,6,5,A1105.2|ADVHS01.18|OA1319.1|OA1319.2|OA1322.1|OA1322.2
 6766,"Murphy, David",Social Stu,6,5,ADVHS01.19|B0901.1|B0901.2|B0901.3|B1006.1|B1006.2
 364,"Naranjo, Felipe",Social Stu,5,5,ADVHS01.20|L1301.1|L1301.2|L1301.3|L1304.3
-10153,"Ortegon Valle, Andres Dario",Social Stu,2,5,ADVHS01.21|B0901.4
+10153,"Ortegon Valle, Andres Dario",Social Stu,10,9,ADVHS01.21|B0901.4|I1212.1|I1212.2|I1212.3|I1212.4|I1213.1|I1213.2|I1213.3|I1213.4
 10853,"Quiroga Posada, Mauricio",Math,6,5,ADVHS01.22|I1003.1|I1003.2|OI1305.1|OI1305.2|OI1305.3
 5108,"Restrepo Pineda, Johana",Spanish,6,5,ADVHS01.23|G1201.6|G1203.1|G1203.2|G1203.3|G1203.4
 11153,"Rodriguez Restrepo, Juan Carlos",Math,6,5,ADVHS01.24|I0903.1|I0903.2|I0903.3|OB1520.1|OB1520.2

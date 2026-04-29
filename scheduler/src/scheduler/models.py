@@ -217,6 +217,10 @@ class HardConstraints(BaseModel):
     # The soft term tightens this further at solve time. Applied to all
     # courses with ≥2 sections.
     max_section_spread_per_course: int = 5
+    # Coplanning: when True, every group in Dataset.coplanning_groups must
+    # share at least one scheme where all members are simultaneously free.
+    # Default OFF — enable per-school when the data is ready.
+    enforce_coplanning_groups: bool = False
     min_sections_for_balance: int = 2
 
 
@@ -269,6 +273,7 @@ class Dataset(BaseModel):
     sections: list[Section]
     students: list[Student]
     behavior: BehaviorMatrix = Field(default_factory=BehaviorMatrix)
+    coplanning_groups: list[list[str]] = Field(default_factory=list)
 
     def course_by_id(self, cid: str) -> Course:
         for c in self.courses:

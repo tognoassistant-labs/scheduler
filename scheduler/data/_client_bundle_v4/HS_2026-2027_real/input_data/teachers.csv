@@ -29,7 +29,7 @@ teacher_id,name,department,qualified_course_ids,max_load,min_prep_periods,prefer
 9803,"Mickens, Tamir Akil",Science,A1105|ADVHS01|OA1319|OA1322,5,1,,,,
 6766,"Murphy, David",Social Stu,ADVHS01|B0901|B1006,5,1,,,,
 364,"Naranjo, Felipe",Social Stu,ADVHS01|L1301|L1304,5,1,,,,
-10153,"Ortegon Valle, Andres Dario",Social Stu,ADVHS01|B0901,5,1,,,,
+10153,"Ortegon Valle, Andres Dario",Social Stu,ADVHS01|B0901|I1212|I1213,9,1,,,,
 10853,"Quiroga Posada, Mauricio",Math,ADVHS01|I1003|OI1305,5,1,,,,
 5108,"Restrepo Pineda, Johana",Spanish,ADVHS01|G1201|G1203,5,1,,,,
 11153,"Rodriguez Restrepo, Juan Carlos",Math,ADVHS01|I0903|OB1520,5,1,,,,

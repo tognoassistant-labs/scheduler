@@ -96,7 +96,7 @@ def main() -> int:
 
     print("\n=== Stage 2: student solve ===")
     t2 = time.time()
-    student_assigns, unmet, _, s_status = solve_students(ds, master, time_limit_s=120.0, verbose=True)
+    student_assigns, unmet, _, s_status = solve_students(ds, master, time_limit_s=300.0, verbose=True)
     print(f"  status={s_status}, {len(student_assigns)} students placed, {len(unmet)} unmet, {time.time()-t2:.1f}s")
 
     print("\n=== Stage 3: KPI report ===")

@@ -134,6 +134,73 @@ class TestLocks:
             solve_master(ds, time_limit_s=5)
 
 
+class TestTermPaired:
+    """v4.3 regression — term-paired sections (S1/S2 sharing slot).
+
+    A teacher home-pinned to one room with 1 yearlong + 4 S1 + 4 S2 academic
+    sections must be feasible: 9 sections in 1 room across 8 schemes is only
+    possible if at least one S1+S2 pair shares a scheme (concurrent in
+    different terms). The bug shipped with v4.2 was a soft-objective
+    `teacher_day_load` upper bound of `len(BLOCKS)=5`, but with term-pairing
+    a teacher's daily load can exceed 5 (S1+S2 in same scheme on same day),
+    making `load_var == sum(...)` INFEASIBLE.
+    """
+
+    def test_term_paired_sections_feasible(self, tiny_dataset: Dataset):
+        from src.scheduler.models import Section
+        ds = tiny_dataset.model_copy(deep=True)
+        adv_course_ids = {c.course_id for c in ds.courses if c.is_advisory}
+        # Pick a teacher with at least 1 academic section and pin home_room.
+        teacher = next(
+            t for t in ds.teachers
+            if any(s.teacher_id == t.teacher_id and s.course_id not in adv_course_ids for s in ds.sections)
+        )
+        target_room = next(
+            r for r in ds.rooms
+            if r.capacity >= 25 and r.room_type.value == "standard"
+        )
+        teacher.home_room_id = target_room.room_id
+
+        # Trim teacher's existing sections to a single yearlong, then add 4 S1 + 4 S2.
+        existing = [s for s in ds.sections if s.teacher_id == teacher.teacher_id and s.course_id not in adv_course_ids]
+        keep = existing[0]
+        ds.sections = [s for s in ds.sections if s not in existing[1:]]
+
+        # Build two semester courses (S1 and S2) using the existing course ids
+        # so the catalog stays consistent. Reuse `keep.course_id` for both pairs
+        # — the test only cares about scheme/room feasibility, not curriculum.
+        for i in range(1, 5):
+            ds.sections.append(Section(
+                section_id=f"{keep.course_id}.S1.{i}",
+                course_id=keep.course_id,
+                teacher_id=teacher.teacher_id,
+                max_size=keep.max_size,
+                grade_level=keep.grade_level,
+                term_id="3601",
+            ))
+            ds.sections.append(Section(
+                section_id=f"{keep.course_id}.S2.{i}",
+                course_id=keep.course_id,
+                teacher_id=teacher.teacher_id,
+                max_size=keep.max_size,
+                grade_level=keep.grade_level,
+                term_id="3602",
+            ))
+
+        master, _, status = solve_master(ds, time_limit_s=20)
+        assert status in ("OPTIMAL", "FEASIBLE"), f"v4.3 regression: term-paired master is {status}"
+        teacher_assignments = [
+            m for m in master
+            if any(s.section_id == m.section_id and s.teacher_id == teacher.teacher_id for s in ds.sections)
+            and m.scheme != "ADVISORY"
+        ]
+        assert len(teacher_assignments) == 9, f"expected 9 academic placements for the test teacher, got {len(teacher_assignments)}"
+        for m in teacher_assignments:
+            assert m.room_id == target_room.room_id, (
+                f"HC4 violated: section {m.section_id} not in home_room {target_room.room_id}"
+            )
+
+
 class TestSchemeBalance:
     def test_no_scheme_drastically_overloaded(self, tiny_dataset: Dataset):
         """Each scheme should hold roughly avg ± 1-2 sections (hard constraint)."""

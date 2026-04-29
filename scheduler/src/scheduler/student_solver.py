@@ -145,17 +145,33 @@ def solve_students(
                 if opts1:
                     model.Add(sum(x[(st.student_id, s)] for s in opts1) <= 1)
 
-    # HC: no time conflicts within a student's schedule
+    # HC: no time conflicts within a student's schedule.
+    # Term-aware: sections only conflict if they're concurrent — a yearlong+S1
+    # pair conflicts (both occupy the slot in S1), as does yearlong+S2; but an
+    # S1 and S2 in the same slot don't (they alternate semesters).
     sections_at_slot: dict[tuple[str, int], list[str]] = defaultdict(list)
     for m in master:
         for (day, block) in m.slots:
             sections_at_slot[(day, block)].append(m.section_id)
 
+    section_term: dict[str, str | None] = {s.section_id: s.term_id for s in ds.sections}
+
     for st in ds.students:
         for slot, sect_ids in sections_at_slot.items():
-            terms = [x[(st.student_id, sid)] for sid in sect_ids if (st.student_id, sid) in x]
-            if len(terms) >= 2:
-                model.Add(sum(terms) <= 1)
+            xs_yearlong, xs_s1, xs_s2 = [], [], []
+            for sid in sect_ids:
+                if (st.student_id, sid) not in x:
+                    continue
+                t = section_term.get(sid)
+                if t == "3601":
+                    xs_s1.append(x[(st.student_id, sid)])
+                elif t == "3602":
+                    xs_s2.append(x[(st.student_id, sid)])
+                else:
+                    xs_yearlong.append(x[(st.student_id, sid)])
+            for term_part in (xs_yearlong + xs_s1, xs_yearlong + xs_s2):
+                if len(term_part) >= 2:
+                    model.Add(sum(term_part) <= 1)
 
     # HC: section capacity
     student_ids = {sid for sid, _ in x.keys()}
