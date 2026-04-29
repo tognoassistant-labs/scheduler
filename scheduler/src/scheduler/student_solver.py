@@ -180,13 +180,27 @@ def solve_students(
         if terms:
             model.Add(sum(terms) <= s.max_size)
 
-    # HC: separation codes
-    if ds.config.hard.enforce_separations:
-        for a, b in ds.behavior.separations:
-            for s in ds.sections:
-                ka, kb = (a, s.section_id), (b, s.section_id)
-                if ka in x and kb in x:
+    # Separation codes — HARD or SOFT depending on enforce_separations flag.
+    # In SOFT mode, each (pair, section) gets a violation BoolVar that is 1
+    # iff both students land in that section. The total is added to the
+    # objective with `separation_violation` weight (default 1000), so the
+    # solver respects most separations but can break a few to maximize
+    # required-course coverage. In HARD mode, the legacy <=1 constraint is
+    # used and no violations are tracked.
+    separation_violation_vars: list[cp_model.BoolVar] = []
+    for a, b in ds.behavior.separations:
+        for s in ds.sections:
+            ka, kb = (a, s.section_id), (b, s.section_id)
+            if ka in x and kb in x:
+                if ds.config.hard.enforce_separations:
                     model.Add(x[ka] + x[kb] <= 1)
+                else:
+                    v = model.NewBoolVar(f"sep_v_{a}_{b}_{s.section_id}")
+                    # v >= x[ka] + x[kb] - 1  (v=1 iff both=1)
+                    model.Add(x[ka] + x[kb] - 1 <= v)
+                    model.Add(v <= x[ka])
+                    model.Add(v <= x[kb])
+                    separation_violation_vars.append(v)
 
     # === Build objective expressions (used by both single and lexmin modes) ===
 
@@ -256,6 +270,14 @@ def solve_students(
     else:
         model.Add(grouping_obj == 0)
 
+    # 3b. Separation violations (active when enforce_separations=False).
+    n_sep_max = max(1, len(separation_violation_vars))
+    separations_violated_obj = model.NewIntVar(0, n_sep_max, "separations_violated_obj")
+    if separation_violation_vars:
+        model.Add(separations_violated_obj == sum(separation_violation_vars))
+    else:
+        model.Add(separations_violated_obj == 0)
+
     # 4. Required-course coverage: weighted count of unmet required requests.
     #
     # School policy 2026-04-29: prioritize satisfying older grades first
@@ -311,6 +333,7 @@ def solve_students(
             soft.first_choice_electives * electives_obj
             + soft.grouping_codes * grouping_obj
             - soft.balance_class_sizes * balance_obj
+            - soft.separation_violation * separations_violated_obj
             - coverage_weight * unmet_required_obj
         )
         model.Maximize(weighted)
@@ -325,6 +348,7 @@ def solve_students(
                 print(f"  electives={solver.Value(electives_obj)}/{n_elective_max}, "
                       f"balance_spread={solver.Value(balance_obj)}, "
                       f"groupings={solver.Value(grouping_obj)}/{n_grouping_max}, "
+                      f"separations_violated={solver.Value(separations_violated_obj)}/{len(separation_violation_vars)}, "
                       f"unmet_required={solver.Value(unmet_required_obj)}/{len(required_slacks)}")
     else:
         # Two-phase lex-min: electives → groupings (balance is hard).

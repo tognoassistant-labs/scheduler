@@ -208,7 +208,13 @@ class HardConstraints(BaseModel):
     max_consecutive_classes: int = 4
     advisory_day: Day = ADVISORY_DAY
     advisory_block: int = ADVISORY_BLOCK
-    enforce_separations: bool = True
+    # When True (legacy default), separations are HARD: paired students NEVER
+    # share a section. When False (recommended for tight grids), separations
+    # become a SOFT objective with `SoftConstraintWeights.separation_violation`
+    # weight — broken only when needed to satisfy required-course coverage.
+    # 2026-04-29: school flagged that hard separations cost ~94 cupos; switched
+    # to soft to maximize coverage while still respecting most separations.
+    enforce_separations: bool = False
     enforce_restricted_teachers: bool = True
     # Balance: max enrollment minus min enrollment within sections of the same course.
     # Applied as a HARD upper bound (loose enough to keep electives optimization
@@ -249,6 +255,11 @@ class SoftConstraintWeights(BaseModel):
     # singletons into different schemes is helpful but can compete with other
     # objectives. Enable per school if needed.
     singleton_separation: int = 0
+    # Separation-pair penalty (active when HardConstraints.enforce_separations
+    # is False). 1000 ranks a violated separation between groupings (~4) and
+    # required-course coverage (~10000+ via grade weights), so the solver
+    # respects most separations but breaks them when needed for coverage.
+    separation_violation: int = 1000
 
 
 class SchoolConfig(BaseModel):
