@@ -23,7 +23,8 @@ from src.scheduler.reports import write_reports, compute_kpis
 
 REPO = Path(__file__).resolve().parent
 CANONICAL_XLSX = REPO.parent / "reference" / "columbus_official_2026-2027.xlsx"
-V3_DIR = REPO / "data" / "_client_bundle_v3"
+TEMPLATE_DIR = REPO / "data" / "_bundle_template"  # static docs + verify_bundle.py
+V3_DIR = REPO / "data" / "_client_bundle_v3"  # legacy fallback (gitignored, may not exist)
 V4_DIR = REPO / "data" / "_client_bundle_v4"
 HS_DIR = V4_DIR / "HS_2026-2027_real"
 
@@ -116,23 +117,28 @@ def main() -> int:
     _write_student_schedules_friendly(ds, master, student_assigns, HS_DIR / "horario_estudiantes" / "student_schedules_friendly.csv")
     print(f"  horario_estudiantes/ ✓")
 
-    # Copy unchanged docs from v3 (they remain valid, will be edited later)
+    # Copy static bundle assets (docs + standalone verifier) from the
+    # tracked template dir. Falls back to v3 if the template is missing
+    # (legacy local checkouts).
     print("\n=== Stage 5: copy + update docs ===")
+    docs_src = TEMPLATE_DIR if TEMPLATE_DIR.exists() else V3_DIR
     for doc in ("00_LEEME_PRIMERO.md", "00_README_FIRST_en.md",
                 "01_PREGUNTAS_PARA_COLUMBUS.md", "01_QUESTIONS_FOR_COLUMBUS_en.md",
                 "03_AGENT_TEST_INSTRUCTIONS.md", "verify_bundle.py"):
-        src = V3_DIR / doc
+        src = docs_src / doc
         dst = V4_DIR / doc
         if src.exists():
             shutil.copy2(src, dst)
-            print(f"  {doc} (copied from v3)")
+            print(f"  {doc} (from {docs_src.name})")
 
-    # Copy MS synthetic PoC unchanged
-    ms_src = V3_DIR / "MS_2026-2027_synthetic_PoC"
+    # MS synthetic PoC: bootstrap from v3 if v4 doesn't already have it
+    # (v4 tracks the PoC in git so this branch only runs on first build).
     ms_dst = V4_DIR / "MS_2026-2027_synthetic_PoC"
-    if ms_src.exists() and not ms_dst.exists():
-        shutil.copytree(ms_src, ms_dst)
-        print(f"  MS_2026-2027_synthetic_PoC/ (copied from v3)")
+    if not ms_dst.exists():
+        ms_src = V3_DIR / "MS_2026-2027_synthetic_PoC"
+        if ms_src.exists():
+            shutil.copytree(ms_src, ms_dst)
+            print(f"  MS_2026-2027_synthetic_PoC/ (bootstrapped from v3)")
 
     # Write fresh KPI report
     kpi_path = V4_DIR / "02_KPI_REPORT.md"
