@@ -203,12 +203,49 @@ def _read_teacher_assignments(wb) -> list[dict]:
     return out
 
 
+def _read_relationships_xlsx(wb) -> list[tuple[str, str, str]]:
+    """Read the in-file `course_relationships` tab. Returns [(c1, c2, code), …]."""
+    if "course_relationships" not in wb.sheetnames:
+        return []
+    ws = wb["course_relationships"]
+    rows = list(ws.iter_rows(values_only=True))
+    if not rows:
+        return []
+    headers = list(rows[0])
+    out: list[tuple[str, str, str]] = []
+    for r in rows[1:]:
+        if not r or not any(c is not None for c in r):
+            continue
+        d = dict(zip(headers, r))
+        c1 = _safe_str(d.get("COURSE_NUMBER1"))
+        c2 = _safe_str(d.get("COURSE_NUMBER2"))
+        code = _safe_str(d.get("RELATIONSHIPCODE"))
+        if c1 and c2 and code:
+            out.append((c1, c2, code))
+    return out
+
+
+def _read_relationships_csv(rel_path: Path) -> list[tuple[str, str, str]]:
+    """Read sibling course_relationships.csv (legacy). Returns [(c1, c2, code), …]."""
+    if not rel_path.exists():
+        return []
+    out: list[tuple[str, str, str]] = []
+    with rel_path.open() as f:
+        for row in csv.DictReader(f):
+            c1 = (row.get("COURSE_NUMBER1") or "").strip()
+            c2 = (row.get("COURSE_NUMBER2") or "").strip()
+            code = (row.get("RELATIONSHIPCODE") or "").strip()
+            if c1 and c2 and code:
+                out.append((c1, c2, code))
+    return out
+
+
 def _apply_course_relationships(
-    rel_path: Path,
+    relationships: list[tuple[str, str, str]],
     courses: list[Course],
     course_by_number: dict[str, Course],
 ) -> None:
-    """Read course_relationships.csv and set Course.simul_group / Course.term_pair.
+    """Apply pre-read course relationships to set Course.simul_group / Course.term_pair.
 
     Simultaneous relationships are unioned via union-find so chains (G0902 ↔
     G1204, G0902 ↔ G1205, G0902 ↔ G1206) collapse to a single shared group ID.
@@ -231,20 +268,14 @@ def _apply_course_relationships(
 
     term_pairs: dict[str, str] = {}
     simul_courses: set[str] = set()
-    with rel_path.open() as f:
-        for row in csv.DictReader(f):
-            c1 = (row.get("COURSE_NUMBER1") or "").strip()
-            c2 = (row.get("COURSE_NUMBER2") or "").strip()
-            code = (row.get("RELATIONSHIPCODE") or "").strip()
-            if not c1 or not c2:
-                continue
-            if code == "Simultaneous":
-                _union(c1, c2)
-                simul_courses.add(c1)
-                simul_courses.add(c2)
-            elif code == "Term":
-                term_pairs[c1] = c2
-                term_pairs[c2] = c1
+    for c1, c2, code in relationships:
+        if code == "Simultaneous":
+            _union(c1, c2)
+            simul_courses.add(c1)
+            simul_courses.add(c2)
+        elif code == "Term":
+            term_pairs[c1] = c2
+            term_pairs[c2] = c1
 
     for cid in simul_courses:
         c = course_by_number.get(cid)
@@ -254,6 +285,182 @@ def _apply_course_relationships(
         c = course_by_number.get(cid)
         if c is not None:
             c.term_pair = peer
+
+
+# Mapping for co-planning placeholder teacher names (display-shorter forms)
+# to the canonical LASTFIRST records in the teachers sheet.
+_PLACEHOLDER_TEACHER_NAME_MAP = {
+    "New Science Teacher": "Science Teacher 1, New",
+    "New English Teacher": "English Teacher 1, New",
+}
+
+
+def _read_coplanning_groups_xlsx(
+    wb,
+    teacher_by_lastfirst: dict[str, "Teacher"],
+) -> list[list[str]]:
+    """Parse the in-file `co-planning` tab.
+
+    Each row is (CO PLANNING TEACHERS, COURSE ID, COURSES, PRIORITY). Teachers
+    that share the same COURSE ID form one coplanning group. Placeholder names
+    like "New Science Teacher" are normalized to the canonical LASTFIRST.
+    """
+    if "co-planning" not in wb.sheetnames:
+        return []
+    ws = wb["co-planning"]
+    rows = list(ws.iter_rows(values_only=True))
+    if not rows:
+        return []
+    headers = list(rows[0])
+    teacher_col = next((i for i, h in enumerate(headers) if h and "TEACHER" in str(h).upper()), 0)
+    course_col = next((i for i, h in enumerate(headers) if h and "COURSE" in str(h).upper() and "ID" in str(h).upper()), 1)
+
+    by_course: dict[str, list[str]] = defaultdict(list)
+    unmatched: set[str] = set()
+    for r in rows[1:]:
+        if not r or not any(c is not None for c in r):
+            continue
+        teacher_name = _safe_str(r[teacher_col]) if len(r) > teacher_col else ""
+        course_id = _safe_str(r[course_col]) if len(r) > course_col else ""
+        if not teacher_name or not course_id:
+            continue
+        canonical_name = _PLACEHOLDER_TEACHER_NAME_MAP.get(teacher_name, teacher_name)
+        teacher = teacher_by_lastfirst.get(canonical_name)
+        if teacher is None:
+            unmatched.add(teacher_name)
+            continue
+        if teacher.teacher_id not in by_course[course_id]:
+            by_course[course_id].append(teacher.teacher_id)
+    if unmatched:
+        print(f"[WARN] co-planning: {len(unmatched)} unmatched teacher names:")
+        for n in sorted(unmatched)[:10]:
+            print(f"    {n!r}")
+    return [g for g in by_course.values() if len(g) >= 2]
+
+
+_BEHAVIOR_SEPARATION_TYPES = {"separado de", "separada de", "separado", "separada"}
+_BEHAVIOR_GROUPING_TYPES = {"compartir clases con", "compartir con"}
+
+
+def _read_behavior_matrix_xlsx(
+    wb,
+    valid_student_ids: set[str],
+) -> tuple[BehaviorMatrix, dict[str, str]]:
+    """Parse `conselours_recommendations` → (BehaviorMatrix, name_to_id).
+
+    The name_to_id mapping (NOMBRE.upper() → STUDENT_NUMBER) is returned so
+    that other sheets (e.g. teacher_avoid, where STUDENT_NUMBER may be blank)
+    can resolve students by name.
+    """
+    if "conselours_recommendations" not in wb.sheetnames:
+        return BehaviorMatrix(), {}
+    ws = wb["conselours_recommendations"]
+    rows = list(ws.iter_rows(values_only=True))
+    seps: list[tuple[str, str]] = []
+    grps: list[tuple[str, str]] = []
+    name_to_id: dict[str, str] = {}
+    skipped_unknown_students = 0
+    skipped_unknown_type = 0
+    for r in rows[1:]:
+        if not r or not any(c is not None for c in r):
+            continue
+        # cols: GRADE_LEVEL | CODIGO | NOMBRE | TYPE | CODIGO | NOMBRE
+        s1_id = _safe_str(r[1]) if len(r) > 1 else ""
+        s1_name = _safe_str(r[2]).upper() if len(r) > 2 else ""
+        rel_type = _safe_str(r[3]).lower() if len(r) > 3 else ""
+        s2_id = _safe_str(r[4]) if len(r) > 4 else ""
+        s2_name = _safe_str(r[5]).upper() if len(r) > 5 else ""
+        if s1_name and s1_id:
+            name_to_id[s1_name] = s1_id
+        if s2_name and s2_id:
+            name_to_id[s2_name] = s2_id
+        if not (s1_id and s2_id and rel_type):
+            continue
+        if s1_id not in valid_student_ids or s2_id not in valid_student_ids:
+            skipped_unknown_students += 1
+            continue
+        pair = (s1_id, s2_id)
+        if rel_type in _BEHAVIOR_SEPARATION_TYPES:
+            seps.append(pair)
+        elif rel_type in _BEHAVIOR_GROUPING_TYPES:
+            grps.append(pair)
+        else:
+            skipped_unknown_type += 1
+    if skipped_unknown_students:
+        print(f"[WARN] conselours_recommendations: {skipped_unknown_students} rows with student IDs not in requests sheet")
+    if skipped_unknown_type:
+        print(f"[WARN] conselours_recommendations: {skipped_unknown_type} rows with unknown relationship type")
+    return BehaviorMatrix(separations=seps, groupings=grps), name_to_id
+
+
+def _read_teacher_avoid_xlsx(
+    wb,
+    students_map: dict[str, "Student"],
+    teacher_by_lastfirst: dict[str, "Teacher"],
+    name_to_id: dict[str, str],
+) -> int:
+    """Apply teacher_avoid restrictions to Student.restricted_teacher_ids.
+
+    The teacher_avoid sheet has STUDENT_NUMBER + STUDENT (name) + TEACHER_NAME.
+    When STUDENT_NUMBER is blank, fall back to looking up the student by
+    name (uppercased) using the mapping built from conselours_recommendations.
+    """
+    if "teacher_avoid" not in wb.sheetnames:
+        return 0
+    ws = wb["teacher_avoid"]
+    rows = list(ws.iter_rows(values_only=True))
+    matched = 0
+    unmatched_students: list[str] = []
+    unmatched_teachers: list[str] = []
+    for r in rows[1:]:
+        if not r or not any(c is not None for c in r):
+            continue
+        s_id = _safe_str(r[0]) if r[0] else ""
+        s_name = _safe_str(r[1]).upper() if len(r) > 1 and r[1] else ""
+        t_name = _safe_str(r[2]) if len(r) > 2 and r[2] else ""
+        if not s_id and s_name:
+            s_id = name_to_id.get(s_name, "")
+        if not s_id:
+            unmatched_students.append(s_name or "<empty>")
+            continue
+        teacher = teacher_by_lastfirst.get(t_name)
+        if teacher is None:
+            unmatched_teachers.append(t_name)
+            continue
+        student = students_map.get(s_id)
+        if student is None:
+            unmatched_students.append(s_name or s_id)
+            continue
+        if teacher.teacher_id not in student.restricted_teacher_ids:
+            student.restricted_teacher_ids.append(teacher.teacher_id)
+            matched += 1
+    if unmatched_students:
+        print(f"[WARN] teacher_avoid: {len(unmatched_students)} unmatched students (need STUDENT_NUMBER or name to be in conselours sheet):")
+        for n in unmatched_students[:10]:
+            print(f"    {n!r}")
+    if unmatched_teachers:
+        print(f"[WARN] teacher_avoid: {len(unmatched_teachers)} unmatched teachers:")
+        for n in unmatched_teachers[:10]:
+            print(f"    {n!r}")
+    return matched
+
+
+def _audit_teacher_assignment_constraints(assignment_rows: list[dict]) -> None:
+    """Free-text CONSTRAINTS column on teacher_assignments — log only.
+
+    These are natural-language instructions ("max 26 students", "schedule when
+    Tamir is free", etc.) that we can't auto-enforce yet. Surface them so the
+    operator sees what manual rules the school has expressed.
+    """
+    items = [(_safe_str(a.get("TEACHER_DCID")), _safe_str(a.get("LASTFIRST")),
+              _safe_str(a.get("COURSENUMBER")), _safe_str(a.get("CONSTRAINTS")))
+             for a in assignment_rows
+             if _safe_str(a.get("CONSTRAINTS"))]
+    if not items:
+        return
+    print(f"[INFO] teacher_assignments has {len(items)} CONSTRAINTS rows (free-text, not auto-enforced):")
+    for dcid, name, course, ctext in items:
+        print(f"    {course} / {name} ({dcid}): {ctext}")
 
 
 def _read_requests(wb) -> list[dict]:
@@ -354,15 +561,14 @@ def build_dataset_from_official_xlsx(
         courses.append(course)
         course_by_number[course_number] = course
 
-    # ---------------------------------------------- course relationships (v4.2)
-    # Apply Simultaneous and Term relationships from the client-provided
-    # `course_relationships.csv` (canonical reference at repo root). The file
-    # contains 7 rows for HS 2026-2027:
-    #   - 6 Simultaneous (multi-level classes: Spanish FL, AP Art, Drawings, etc.)
-    #   - 1 Term (AP Micro / AP Macro share slot, alternate semesters)
-    rel_path = xlsx_path.parent / "course_relationships.csv"
-    if rel_path.exists():
-        _apply_course_relationships(rel_path, courses, course_by_number)
+    # ---------------------------------------------- course relationships (v4.4)
+    # Prefer the in-file `course_relationships` tab; fall back to the legacy
+    # sibling CSV if the tab is missing.
+    relationships = _read_relationships_xlsx(wb)
+    if not relationships:
+        relationships = _read_relationships_csv(xlsx_path.parent / "course_relationships.csv")
+    if relationships:
+        _apply_course_relationships(relationships, courses, course_by_number)
 
     # -------------------------------------------------------------- teachers
     teachers: list[Teacher] = []
@@ -605,9 +811,33 @@ def build_dataset_from_official_xlsx(
         soft=SoftConstraintWeights(),
     )
 
-    coplanning_groups = _read_coplanning_groups(
-        xlsx_path.parent / "rfi_1._STUDENTS_PER_COURSE_2026-2027.xlsx",
-        teacher_by_lastfirst,
+    # ---- v4.4: parse the in-file tabs added by the school -----------------
+    # co-planning groups (each row = teacher × course; group by COURSE ID).
+    coplanning_groups = _read_coplanning_groups_xlsx(wb, teacher_by_lastfirst)
+    if not coplanning_groups:
+        # Fallback to the legacy sibling file
+        coplanning_groups = _read_coplanning_groups(
+            xlsx_path.parent / "rfi_1._STUDENTS_PER_COURSE_2026-2027.xlsx",
+            teacher_by_lastfirst,
+        )
+
+    # conselours_recommendations → BehaviorMatrix (separations + groupings)
+    valid_student_ids = set(students_map.keys())
+    behavior_matrix, name_to_id = _read_behavior_matrix_xlsx(wb, valid_student_ids)
+
+    # teacher_avoid → Student.restricted_teacher_ids (uses name_to_id from above)
+    avoid_matched = _read_teacher_avoid_xlsx(
+        wb, students_map, teacher_by_lastfirst, name_to_id
+    )
+
+    # CONSTRAINTS column on teacher_assignments — surface as info, not enforced.
+    _audit_teacher_assignment_constraints(assignment_rows)
+
+    print(
+        f"[INFO] ingested {len(coplanning_groups)} co-planning groups, "
+        f"{len(behavior_matrix.separations)} separations, "
+        f"{len(behavior_matrix.groupings)} groupings, "
+        f"{avoid_matched} teacher_avoid restrictions"
     )
 
     # ---- Data-quality summary (visible in build output) -------------------
@@ -683,6 +913,6 @@ def build_dataset_from_official_xlsx(
         rooms=rooms,
         sections=sections,
         students=students,
-        behavior=BehaviorMatrix(),  # behavior matrix comes from a separate file (HS_Schedule.xlsx)
+        behavior=behavior_matrix,
         coplanning_groups=coplanning_groups,
     )

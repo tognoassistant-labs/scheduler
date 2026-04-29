@@ -1,7 +1,7 @@
 teacher_id,name,department,qualified_course_ids,max_load,min_prep_periods,preferred_course_ids,avoid_course_ids,preferred_blocks,avoid_blocks
 8456,"Angel Angel, Jorge Mario",Arts,ADVHS01|C0904|C0905|C0907,6,1,,,,
 4202,"Arboleda Otalvaro, Oscar Andres",Math,ADVHS01|I1211|OI1003|OI1303,5,1,,,,
-3752,"Arcila Fernandez, Sofia",Arts,ADVHS01|I1215|OC1305|OC1306|OC1312|OC1313,5,1,,,,
+3752,"Arcila Fernandez, Sofia",Arts,ADVHS01|OC1305|OC1306|OC1312|I1215|OC1313,5,1,,,,
 342,"Atehortua, Erika",Spanish,ADVHS01|G1201|G1202,5,1,,,,
 2023,"Beauchamp, Bill",Science,A1006|A1105|ADVHS01|OA1304,5,1,,,,
 9799,"Berrio Guzman, Sandro",Math,ADVHS01|OI1003,5,1,,,,
@@ -44,6 +44,6 @@ teacher_id,name,department,qualified_course_ids,max_load,min_prep_periods,prefer
 4003,"Summers, Brian",Social Stu,ADVHS01|OZ1323,5,1,,,,
 1251,"Velez Cardona, Gloria Isabel",Arts,ADVHS01|OC1305|OC1307|OC1310|OC1311|OC1314,6,1,,,,
 953,"Villa, Norberto",Spanish,ADVHS01|G1004,5,1,,,,
-8106,"Villamizar Muñoz, Sindy Margarita",Spanish,ADVHS01|G0901|G1004,5,1,,,,
+8106,"Villamizar Muñoz, Sindy Margarita",Spanish,G1004|ADVHS01|G0901,5,1,,,,
 9816,"Zuluaga Patiño, Valentina",Science,A0901|ADVHS01|OZ1207,5,1,,,,
 377,"Zuniga, Julian",Technology,OJ1306|OZ1313,5,1,,,,

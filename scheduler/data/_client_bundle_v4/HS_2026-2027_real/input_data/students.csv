@@ -60,7 +60,7 @@ student_id,name,grade,counselor_id,restricted_teacher_ids
 28104,Student_28104,11,,
 27058,Student_27058,11,,
 28093,Student_28093,11,,
-29036,Student_29036,10,,
+29036,Student_29036,10,,8106
 27140,Student_27140,12,,
 28056,Student_28056,11,,
 29149,Student_29149,10,,
@@ -406,7 +406,7 @@ student_id,name,grade,counselor_id,restricted_teacher_ids
 28057,Student_28057,11,,
 28136,Student_28136,11,,
 29088,Student_29088,10,,
-29164,Student_29164,10,,
+29164,Student_29164,10,,3752
 27032,Student_27032,12,,
 29028,Student_29028,10,,
 28101,Student_28101,11,,
