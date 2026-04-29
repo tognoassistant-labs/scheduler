@@ -1,0 +1,2 @@
+rule,requested,applied,severity,affected_count,affected_ids,reason
+max_consecutive_classes,4,5,policy_override,1,10153,"Pigeonhole-infeasible at strict 4: each affected teacher carries ≥7 academic sections × 3 meetings/week vs only 5 blocks/day, so a 5-in-a-row stretch is unavoidable for at least one day."

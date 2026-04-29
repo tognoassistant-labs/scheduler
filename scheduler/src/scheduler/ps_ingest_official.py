@@ -36,6 +36,7 @@ from .models import (
     CourseRequest,
     Dataset,
     HardConstraints,
+    Relaxation,
     Room,
     RoomType,
     SchoolConfig,
@@ -755,12 +756,34 @@ def build_dataset_from_official_xlsx(
     # Drop teachers with no academic sections (happens when SECTIONTYPE filter dropped all rows)
     # Note: keep all teachers — even those with only Advisory — since they appear in the data.
 
-    # Apply per-teacher max_consec override for the pigeonhole-impossible cases
-    for tid, n in sections_per_teacher.items():
-        if n >= 7:
-            t = teacher_by_dcid.get(tid)
-            if t is not None:
-                t.max_consecutive_classes = 5
+    # Apply per-teacher max_consec override for the pigeonhole-impossible cases.
+    # School policy is max_consecutive_classes=4 (HardConstraints default). With
+    # 7+ academic sections × 3 meetings/week and only 5 blocks/day, strict 4 is
+    # pigeonhole-infeasible: SOMETIMES a teacher will run 5 in a row regardless
+    # of how the master places them. We override to 5 ONLY for those teachers
+    # and record the relaxation in `applied_relaxations` so the bundle exposes
+    # this deviation to the school (Principle 7: never change rules silently).
+    relaxations: list[Relaxation] = []
+    overridden_tids = sorted(tid for tid, n in sections_per_teacher.items() if n >= 7)
+    overridden_with_names: list[str] = []
+    for tid in overridden_tids:
+        t = teacher_by_dcid.get(tid)
+        if t is not None:
+            t.max_consecutive_classes = 5
+            overridden_with_names.append(f"{t.teacher_id} ({t.name}: {sections_per_teacher[tid]} sections)")
+    if overridden_tids:
+        relaxations.append(Relaxation(
+            rule="max_consecutive_classes",
+            requested="4",
+            applied="5",
+            affected=overridden_tids,
+            reason=(
+                "Pigeonhole-infeasible at strict 4: each affected teacher carries "
+                "≥7 academic sections × 3 meetings/week vs only 5 blocks/day, so a "
+                "5-in-a-row stretch is unavoidable for at least one day."
+            ),
+            severity="policy_override",
+        ))
 
     # Adjust max_load per observed
     for t in teachers:
@@ -971,4 +994,5 @@ def build_dataset_from_official_xlsx(
         students=students,
         behavior=behavior_matrix,
         coplanning_groups=coplanning_groups,
+        applied_relaxations=relaxations,
     )

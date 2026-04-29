@@ -278,6 +278,27 @@ class SchoolConfig(BaseModel):
     soft: SoftConstraintWeights = Field(default_factory=SoftConstraintWeights)
 
 
+class Relaxation(BaseModel):
+    """A school-rule the engine had to relax to produce a feasible schedule.
+
+    Every relaxation MUST be recorded so the bundle is honest with the school
+    about what was changed (Principle 7: never change rules silently). The
+    bundle exporter writes these to `applied_relaxations.csv` and surfaces them
+    in `02_KPI_REPORT.md`.
+    """
+    rule: str
+    """Name of the rule (e.g. 'max_consecutive_classes', 'enforce_separations')."""
+    requested: str
+    """Value the school asked for, as a string ('4', 'True')."""
+    applied: str
+    """Value actually used in this run ('5', 'False')."""
+    affected: list[str] = Field(default_factory=list)
+    """Entity IDs (teacher_id, course_id, …) the relaxation affects. Empty = global."""
+    reason: str
+    """Human-readable explanation of WHY the relaxation was needed."""
+    severity: Literal["info", "warning", "policy_override"] = "warning"
+
+
 class Dataset(BaseModel):
     """A complete bundle the solver consumes."""
     config: SchoolConfig
@@ -288,6 +309,9 @@ class Dataset(BaseModel):
     students: list[Student]
     behavior: BehaviorMatrix = Field(default_factory=BehaviorMatrix)
     coplanning_groups: list[list[str]] = Field(default_factory=list)
+    applied_relaxations: list[Relaxation] = Field(default_factory=list)
+    """Rule relaxations applied during ingestion. See `Relaxation` for the
+    motivation. Surfaced in the bundle so the school sees every deviation."""
 
     def course_by_id(self, cid: str) -> Course:
         for c in self.courses:

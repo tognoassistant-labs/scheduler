@@ -5,6 +5,7 @@ Produces:
 - Per-section enrollment + capacity
 - Per-teacher load distribution
 - Unscheduled students / unmet requests
+- Per-unmet diagnosis (Principle 5 — generate infeasibility reports)
 - Markdown overview suitable for review
 """
 from __future__ import annotations
@@ -15,6 +16,224 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .models import Dataset, MasterAssignment, StudentAssignment
+
+
+# Diagnosis reason vocabulary. Single source of truth for the labels used in
+# `unmet_requests.csv`'s `reason` column and `unmet_diagnosis.md`. Order is
+# the priority used when multiple constraints block a student — picks the
+# most actionable blocker first, since that's what the operator would relax.
+DIAGNOSIS_REASONS: tuple[str, ...] = (
+    "no_section",      # the course has zero sections in the dataset
+    "grid_clash",      # every section's slots clash with the student's other assignments
+    "capacity",        # every section is at max_size
+    "restriction",     # every section's teacher is on the student's restricted list
+    "separation",      # every section is blocked by a separation pair already enrolled there
+    "unknown",         # solver anomaly — no constraint visibly blocks the student
+)
+
+
+def diagnose_unmet(
+    ds: Dataset,
+    master: list[MasterAssignment],
+    students: list[StudentAssignment],
+    unmet: list[tuple[str, str]],
+) -> dict[tuple[str, str], str]:
+    """Classify each unmet (student, course) into a `DIAGNOSIS_REASONS` value.
+
+    The diagnosis answers: *which constraint, if relaxed, would have let this
+    student into this course?* The output drives `unmet_requests.csv:reason`
+    and `unmet_diagnosis.md` so coord. académica can triage the ~105 unmet
+    students for manual placement post-import.
+
+    Heuristic (Principle 5: report what the solver concluded, do not re-solve):
+    1. If the course has zero sections → `no_section`.
+    2. Per section, list every visible blocker for this student:
+       - teacher in `restricted_teacher_ids` → `restriction`
+       - section at max_size → `capacity`
+       - any of the section's slots already taken by the student's other
+         assignments → `grid_clash`
+       - a separation partner of this student already enrolled → `separation`
+    3. If every section is blocked by the SAME constraint → that's the diagnosis.
+    4. Otherwise pick the constraint that, in priority order, blocks the
+       largest number of sections. Priority follows `DIAGNOSIS_REASONS`: grid
+       (the dominant case per the lessons doc) before capacity, then
+       restriction, then separation.
+    5. If a section has zero blockers but the student is still unmet → `unknown`
+       (the solver should have placed the student there; data anomaly).
+    """
+    sections_by_course: dict[str, list] = defaultdict(list)
+    for s in ds.sections:
+        sections_by_course[s.course_id].append(s)
+
+    master_by_sect = {m.section_id: m for m in master}
+
+    enrollment: Counter[str] = Counter()
+    students_by_section: dict[str, set[str]] = defaultdict(set)
+    student_slots: dict[str, set[tuple[str, int]]] = defaultdict(set)
+    for sa in students:
+        for sid in sa.section_ids:
+            enrollment[sid] += 1
+            students_by_section[sid].add(sa.student_id)
+            m = master_by_sect.get(sid)
+            if m:
+                for slot in m.slots:
+                    student_slots[sa.student_id].add(tuple(slot))
+
+    sep_partners: dict[str, set[str]] = defaultdict(set)
+    for a, b in ds.behavior.separations:
+        sep_partners[a].add(b)
+        sep_partners[b].add(a)
+
+    student_by_id = {st.student_id: st for st in ds.students}
+
+    # Priority order: grid_clash before capacity (lessons doc says grid is
+    # dominant), then restriction (reflects student-specific data), then
+    # separation (softest — currently enforced as soft anyway).
+    priority = ("grid_clash", "capacity", "restriction", "separation")
+
+    diagnoses: dict[tuple[str, str], str] = {}
+    for stu_id, course_id in unmet:
+        sects = sections_by_course.get(course_id, [])
+        if not sects:
+            diagnoses[(stu_id, course_id)] = "no_section"
+            continue
+        st = student_by_id.get(stu_id)
+        if st is None:
+            diagnoses[(stu_id, course_id)] = "unknown"
+            continue
+
+        slots_taken = student_slots.get(stu_id, set())
+        partners = sep_partners.get(stu_id, set())
+
+        per_section: list[set[str]] = []
+        for sec in sects:
+            blockers: set[str] = set()
+            if sec.teacher_id in st.restricted_teacher_ids:
+                blockers.add("restriction")
+            if enrollment[sec.section_id] >= sec.max_size:
+                blockers.add("capacity")
+            m = master_by_sect.get(sec.section_id)
+            if m and any(tuple(slot) in slots_taken for slot in m.slots):
+                blockers.add("grid_clash")
+            if partners and partners.intersection(students_by_section.get(sec.section_id, set())):
+                blockers.add("separation")
+            per_section.append(blockers)
+
+        # If any section has zero visible blockers, the solver should have
+        # placed the student there — flag as anomaly.
+        if any(not b for b in per_section):
+            diagnoses[(stu_id, course_id)] = "unknown"
+            continue
+
+        # Pick the diagnosis: priority-ordered single blocker that explains
+        # the most sections.
+        section_count = len(per_section)
+        per_blocker_count = Counter(b for blist in per_section for b in blist)
+        # Common blocker = present in EVERY section's blocker set.
+        common = {b for b, c in per_blocker_count.items() if c == section_count}
+        chosen = next((p for p in priority if p in common), None)
+        if chosen is None:
+            # No single blocker explains all sections; report the priority
+            # blocker with the highest section coverage.
+            chosen = next((p for p in priority if p in per_blocker_count), None)
+        diagnoses[(stu_id, course_id)] = chosen or "unknown"
+
+    return diagnoses
+
+
+def write_unmet_diagnosis(
+    ds: Dataset,
+    unmet: list[tuple[str, str]],
+    diagnoses: dict[tuple[str, str], str],
+    out_path: Path,
+) -> Path:
+    """Markdown summary of unmet diagnoses for school review."""
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    courses_by_id = {c.course_id: c for c in ds.courses}
+    students_by_id = {st.student_id: st for st in ds.students}
+
+    by_reason = Counter(diagnoses.values())
+    by_course_reason: dict[str, Counter] = defaultdict(Counter)
+    by_grade_reason: dict[int, Counter] = defaultdict(Counter)
+    for (sid, cid), reason in diagnoses.items():
+        by_course_reason[cid][reason] += 1
+        st = students_by_id.get(sid)
+        if st is not None:
+            by_grade_reason[st.grade][reason] += 1
+
+    lines: list[str] = [
+        "# Unmet diagnosis",
+        "",
+        f"Total unmet (student, course) pairs: **{len(unmet)}**.",
+        "",
+        "Each unmet has been classified into one of:",
+        "",
+        "- `no_section` — the course has zero sections in the dataset (data issue).",
+        "- `grid_clash` — every section's slots clash with the student's other "
+        "assignments (the dominant case for Columbus per the lessons doc — "
+        "**grid-bound, not capacity-bound**).",
+        "- `capacity` — every section is at `max_size`. Opening a section would help.",
+        "- `restriction` — every section's teacher is on the student's "
+        "`restricted_teacher_ids` list.",
+        "- `separation` — every section is blocked by a separation pair already enrolled.",
+        "- `unknown` — solver anomaly: no visible constraint blocks the student. "
+        "Investigate the data.",
+        "",
+        "## Distribution by reason",
+        "",
+        "| Reason | Count | % |",
+        "|---|---|---|",
+    ]
+    total = max(1, len(unmet))
+    for reason in DIAGNOSIS_REASONS:
+        n = by_reason.get(reason, 0)
+        if n == 0:
+            continue
+        lines.append(f"| `{reason}` | {n} | {100.0 * n / total:.1f}% |")
+
+    lines += ["", "## Top 20 courses by unmet count", "",
+              "| Course | Total unmet | Dominant reason |",
+              "|---|---|---|"]
+    courses_ranked = sorted(
+        by_course_reason.items(),
+        key=lambda kv: -sum(kv[1].values()),
+    )[:20]
+    for cid, cr in courses_ranked:
+        c = courses_by_id.get(cid)
+        cname = c.name if c else "?"
+        total_c = sum(cr.values())
+        dominant = max(cr.items(), key=lambda x: x[1])[0]
+        lines.append(f"| `{cid}` ({cname}) | {total_c} | `{dominant}` ({cr[dominant]}) |")
+
+    lines += ["", "## By grade", "",
+              "| Grade | " + " | ".join(f"`{r}`" for r in DIAGNOSIS_REASONS) + " |",
+              "|---|" + "|".join(["---"] * len(DIAGNOSIS_REASONS)) + "|"]
+    for grade in sorted(by_grade_reason):
+        cr = by_grade_reason[grade]
+        cells = " | ".join(str(cr.get(r, 0)) for r in DIAGNOSIS_REASONS)
+        lines.append(f"| {grade} | {cells} |")
+
+    lines += [
+        "",
+        "## How to use this report",
+        "",
+        "1. Filter `unmet_requests.csv` by `reason='grid_clash'` to find students "
+        "who need a slot swap (most common case at Columbus).",
+        "2. `reason='capacity'` rows are candidates for section-expansion "
+        "discussion with admin (school has frozen sections for 2026-2027).",
+        "3. `reason='separation'` rows can be reviewed against the counselor "
+        "recommendations sheet — soft separations may be relaxed case-by-case.",
+        "4. `reason='restriction'` rows reflect explicit teacher-avoid rules; "
+        "review the source data if the count is unexpectedly high.",
+        "5. `reason='no_section'` rows are pure data issues — the course was "
+        "requested but never sectioned. Fix the input.",
+        "6. `reason='unknown'` rows should be empty in a healthy run. If "
+        "present, investigate the dataset before re-running.",
+        "",
+    ]
+
+    out_path.write_text("\n".join(lines) + "\n")
+    return out_path
 
 
 @dataclass
@@ -140,6 +359,7 @@ def write_reports(
     students: list[StudentAssignment],
     unmet: list[tuple[str, str]],
     out_dir: Path,
+    unmet_reasons: dict[tuple[str, str], str] | None = None,
 ) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     sections_by_id = {s.section_id: s for s in ds.sections}
@@ -199,14 +419,19 @@ def write_reports(
                 "|".join(sa.section_ids), "|".join(cids), "|".join(missing),
             ])
 
-    # Unmet requests
+    # Unmet requests — Principle 5: every row carries a `reason` so coord.
+    # académica can triage. If no diagnosis was supplied (legacy callers),
+    # compute one inline so behavior remains useful.
+    if unmet_reasons is None:
+        unmet_reasons = diagnose_unmet(ds, master, students, unmet)
     with (out_dir / "unmet_requests.csv").open("w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["student_id", "course_id", "course_name", "is_required"])
+        w.writerow(["student_id", "course_id", "course_name", "is_required", "reason"])
         for stu_id, cid in unmet:
             c = courses_by_id.get(cid)
             is_req = c.is_required if c else False
-            w.writerow([stu_id, cid, c.name if c else "", is_req])
+            reason = unmet_reasons.get((stu_id, cid), "unknown")
+            w.writerow([stu_id, cid, c.name if c else "", is_req, reason])
 
     # Teacher load summary
     teacher_loads: dict[str, list[str]] = defaultdict(list)

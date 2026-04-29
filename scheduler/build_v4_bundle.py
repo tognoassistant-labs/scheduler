@@ -23,7 +23,8 @@ from src.scheduler.student_solver import solve_students
 from src.scheduler.io_csv import write_dataset
 from src.scheduler.exporter import export_powerschool
 from src.scheduler.io_oneroster import write_oneroster
-from src.scheduler.reports import write_reports, compute_kpis
+from src.scheduler.reports import write_reports, compute_kpis, diagnose_unmet, write_unmet_diagnosis
+from src.scheduler.validate import validate_dataset
 
 
 REPO = Path(__file__).resolve().parent
@@ -92,6 +93,42 @@ def main() -> int:
     print(f"  ingested: {len(ds.students)} students, {len(ds.sections)} sections, "
           f"{len(ds.teachers)} teachers, {len(ds.rooms)} rooms, {len(ds.courses)} courses")
 
+    # Principle 3: build validation tests before optimization. Fail fast on
+    # referential integrity errors (unknown course IDs, missing teacher
+    # qualifications, prereq cycles, etc.) BEFORE burning ~5min on a solve
+    # that will produce a malformed bundle. Warnings are still printed but
+    # don't block — those are policy concerns (capacity shortfalls, teacher
+    # overload) the school chose to accept.
+    print("\n=== Stage 0: validate dataset ===")
+    readiness = validate_dataset(ds)
+    print(f"  readiness score: {readiness.score}/100, "
+          f"{len(readiness.errors)} errors, {len(readiness.warnings)} warnings")
+    if readiness.errors:
+        print("ABORTING: dataset has referential errors (must be fixed in inputs):")
+        for issue in readiness.errors[:30]:
+            ent = f" [{issue.entity_id}]" if issue.entity_id else ""
+            print(f"  ERROR {issue.code}{ent}: {issue.message}")
+        if len(readiness.errors) > 30:
+            print(f"  … +{len(readiness.errors) - 30} more")
+        return 3
+    if readiness.warnings:
+        print("  (warnings — non-blocking, but review them):")
+        for issue in readiness.warnings[:10]:
+            ent = f" [{issue.entity_id}]" if issue.entity_id else ""
+            print(f"  WARN  {issue.code}{ent}: {issue.message}")
+        if len(readiness.warnings) > 10:
+            print(f"  … +{len(readiness.warnings) - 10} more")
+
+    # Principle 7: every rule the engine relaxed compared to school policy is
+    # logged in `ds.applied_relaxations`. We surface them now so it's visible
+    # both in the build log and in the bundle export.
+    if ds.applied_relaxations:
+        print(f"\n  applied {len(ds.applied_relaxations)} rule relaxation(s) "
+              f"(all written to applied_relaxations.csv):")
+        for rx in ds.applied_relaxations:
+            scope = f" affecting {len(rx.affected)} entit(y/ies)" if rx.affected else " (global)"
+            print(f"    [{rx.severity}] {rx.rule}: {rx.requested} → {rx.applied}{scope}")
+
     if os.environ.get("COPLANNING") == "1":
         ds.config.hard.enforce_coplanning_groups = True
         print(f"  COPLANNING=1 → HC5 enabled, {len(ds.coplanning_groups)} groups must share a free scheme")
@@ -122,9 +159,28 @@ def main() -> int:
     print(f"  powerschool_upload/ ✓")
     write_oneroster(ds, master, student_assigns, HS_DIR / "lms_upload")
     print(f"  lms_upload/ ✓")
-    write_reports(ds, master, student_assigns, unmet, HS_DIR / "horario_estudiantes")
+    # Per-unmet diagnosis (Principle 5: generate infeasibility reports). Computed
+    # once and reused for both the CSV reason column and the markdown summary.
+    diagnoses = diagnose_unmet(ds, master, student_assigns, unmet)
+    write_reports(ds, master, student_assigns, unmet, HS_DIR / "horario_estudiantes",
+                  unmet_reasons=diagnoses)
+    write_unmet_diagnosis(ds, unmet, diagnoses,
+                          HS_DIR / "horario_estudiantes" / "unmet_diagnosis.md")
     _write_student_schedules_friendly(ds, master, student_assigns, HS_DIR / "horario_estudiantes" / "student_schedules_friendly.csv")
     print(f"  horario_estudiantes/ ✓")
+
+    # Principle 7: applied_relaxations.csv at the bundle root (machine-readable
+    # audit trail). The KPI report (Stage 5) also surfaces the same data in
+    # human-readable form.
+    rx_csv = V4_DIR / "applied_relaxations.csv"
+    with rx_csv.open("w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["rule", "requested", "applied", "severity",
+                    "affected_count", "affected_ids", "reason"])
+        for rx in ds.applied_relaxations:
+            w.writerow([rx.rule, rx.requested, rx.applied, rx.severity,
+                        len(rx.affected), "|".join(rx.affected), rx.reason])
+    print(f"  applied_relaxations.csv ({len(ds.applied_relaxations)} entries) ✓")
 
     # Copy static bundle assets (docs + standalone verifier) from the
     # tracked template dir. Falls back to v3 if the template is missing
@@ -154,6 +210,52 @@ def main() -> int:
     elapsed_total = time.time() - t0
     total_rank1 = sum(1 for s in ds.students for r in s.requested_courses if r.rank == 1)
     cov_pct = 100.0 * (total_rank1 - len(unmet)) / max(1, total_rank1)
+
+    # Render the applied-relaxations section (Principle 7). Empty when no
+    # rule was relaxed in this run.
+    if ds.applied_relaxations:
+        rx_lines = [
+            "## Rules relaxed in this run",
+            "",
+            "Each row below documents a school rule the engine had to relax to "
+            "produce a feasible schedule. Machine-readable copy: "
+            "`applied_relaxations.csv` at the bundle root.",
+            "",
+            "| Rule | Requested | Applied | Severity | Affected | Reason |",
+            "|---|---|---|---|---|---|",
+        ]
+        for rx in ds.applied_relaxations:
+            affected_summary = (
+                f"{len(rx.affected)} entit(y/ies)" if rx.affected else "global"
+            )
+            rx_lines.append(
+                f"| `{rx.rule}` | {rx.requested} | {rx.applied} | {rx.severity} "
+                f"| {affected_summary} | {rx.reason} |"
+            )
+        rx_lines.append("")
+        rx_section = "\n".join(rx_lines)
+    else:
+        rx_section = (
+            "## Rules relaxed in this run\n\n"
+            "_None._ The engine ran with the school policy unmodified.\n"
+        )
+
+    # Top unmet by reason (Principle 5 — surface the diagnosis at the top of
+    # the KPI report so a reviewer sees the dominant blocker without opening
+    # the per-row CSV).
+    if diagnoses:
+        from collections import Counter as _C
+        reason_counts = _C(diagnoses.values())
+        unmet_reason_lines = [
+            "## Unmet — distribution by reason",
+            "",
+            "| Reason | Count |",
+            "|---|---|",
+        ] + [f"| `{r}` | {n} |" for r, n in reason_counts.most_common()] + [""]
+        unmet_reason_section = "\n".join(unmet_reason_lines)
+    else:
+        unmet_reason_section = ""
+
     kpi_path.write_text(f"""# Reporte de KPIs — Bundle v4
 
 **Fecha:** 2026-04-28
@@ -182,6 +284,9 @@ def main() -> int:
 | Requests no satisfechos | {len(unmet)} |
 | **Cobertura** | **{cov_pct:.1f}%** |
 
+{rx_section}
+
+{unmet_reason_section}
 ## KPI breakdown
 
 ```
@@ -194,6 +299,8 @@ def main() -> int:
 - **Fix:** advisory sections deduplicadas (PS canónico ya las trae).
 - **Fix:** cursos semestrales (S1/S2) omitidos para evitar double-count en Ortegon.
 - **Soft penalty** en student_solver para required courses — antes era hard `==1`, ahora con slack penalizado. Permite cobertura parcial cuando el grid no alcanza (estudiante 29096: 10 requests vs 9 slots).
+- **Per-unmet diagnostic** (Principle 5): `unmet_requests.csv` ahora incluye una columna `reason` clasificando cada caso (capacity / grid_clash / separation / restriction / no_section). Resumen en `unmet_diagnosis.md`.
+- **Audit trail de relajaciones** (Principle 7): cada vez que el engine relaja una regla del colegio, queda registrado en `applied_relaxations.csv` y en la sección "Rules relaxed in this run" arriba.
 
 ## Problemas de datos del cliente
 

@@ -203,6 +203,18 @@ class TestMultiGradeIngest:
         # All other teachers should have None (use default 4)
         non_overridden = [t for t in ds.teachers if t.max_consecutive_classes is None]
         assert len(non_overridden) == len(ds.teachers) - 3
+        # Principle 7: the override must also appear in the audit trail so the
+        # bundle exposes it. The stderr WARNING above is for build feedback;
+        # `applied_relaxations` is the durable record consumed by the bundle.
+        rx = [r for r in ds.applied_relaxations if r.rule == "max_consecutive_classes"]
+        assert len(rx) == 1, f"expected 1 max_consecutive Relaxation, got {len(rx)}"
+        relax = rx[0]
+        assert relax.requested == "4"
+        assert relax.applied == "5"
+        assert relax.severity == "policy_override"
+        assert set(relax.affected) == {t.teacher_id for t in overridden}, (
+            f"affected_ids must match the per-teacher override set"
+        )
 
     @real_data
     def test_grade_12_only_keeps_default_max_consecutive(self):

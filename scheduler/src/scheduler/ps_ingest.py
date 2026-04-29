@@ -33,6 +33,7 @@ from .models import (
     CourseRequest,
     Dataset,
     HardConstraints,
+    Relaxation,
     Room,
     RoomType,
     SchoolConfig,
@@ -724,10 +725,11 @@ def build_dataset_from_columbus(
     # sections, or (b) explicitly pass max_consecutive_classes=5 via config.
     hard = HardConstraints()
     overloaded_teachers = sorted(
-        ((t.name, n) for t, n in [(next((t for t in teachers if t.teacher_id == tid), None), n)
+        ((t.name, n, t.teacher_id) for t, n in [(next((t for t in teachers if t.teacher_id == tid), None), n)
                                     for tid, n in sections_per_teacher.items()] if t and n >= 7),
         key=lambda x: -x[1],
     )
+    relaxations: list[Relaxation] = []
     if overloaded_teachers:
         import sys
         print(
@@ -735,15 +737,31 @@ def build_dataset_from_columbus(
             f"setting per-teacher max_consecutive_classes=5 (default 4 stays for everyone else):",
             file=sys.stderr,
         )
-        for name, n in overloaded_teachers:
+        for name, n, _tid in overloaded_teachers:
             print(f"  - {name}: {n} sections (override applied)", file=sys.stderr)
         # Apply per-teacher override (added 2026-04-28 after client reported
         # other teachers also got 5 consecutive blocks — global override was too
         # generous; only the truly pigeonhole-impossible cases get the relax).
-        overloaded_names = {name for name, _ in overloaded_teachers}
+        overloaded_names = {name for name, _, _ in overloaded_teachers}
         for t in teachers:
             if t.name in overloaded_names:
                 t.max_consecutive_classes = 5
+        # Record the relaxation in the Dataset audit trail (Principle 7) so the
+        # bundle exporter can surface it to the school. The stderr WARNING
+        # above stays for live build feedback; this is the durable record.
+        relaxations.append(Relaxation(
+            rule="max_consecutive_classes",
+            requested="4",
+            applied="5",
+            affected=sorted(tid for _, _, tid in overloaded_teachers),
+            reason=(
+                "Pigeonhole-infeasible at strict 4: each affected teacher "
+                "carries ≥7 academic sections × 3 meetings/week vs only 5 "
+                "blocks/day, so a 5-in-a-row stretch is unavoidable on at "
+                "least one day."
+            ),
+            severity="policy_override",
+        ))
 
     # PowerSchool field values per Columbus IT confirmation 2026-04-26:
     # - SchoolID: number, MS=12000, HS=13000
@@ -773,6 +791,7 @@ def build_dataset_from_columbus(
         sections=sections,
         students=list(students_map.values()),
         behavior=behavior,
+        applied_relaxations=relaxations,
     )
 
 

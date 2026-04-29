@@ -20,7 +20,7 @@ from hypothesis import HealthCheck, given, settings, strategies as st
 from src.scheduler.exporter import export_powerschool
 from src.scheduler.io_csv import read_dataset, write_dataset
 from src.scheduler.master_solver import solve_master
-from src.scheduler.sample_data import make_grade_12_dataset
+from src.scheduler.sample_data import make_full_hs_dataset, make_grade_12_dataset
 from src.scheduler.student_solver import solve_students
 from src.scheduler.validate import validate_dataset
 from tests.check_invariants import check_invariants
@@ -142,6 +142,71 @@ def test_property_capacity_respected(seed: int):
 # ============================================================================
 # Property: HC2b — every advisory section has a distinct room
 # ============================================================================
+
+@given(seed=st.integers(min_value=1, max_value=2**31))
+@settings(max_examples=2, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+def test_property_real_shape_doesnt_crash(seed: int):
+    """Principle 6: the solver pipeline runs cleanly at Columbus production
+    shape (~520 students, 4 grades, full HS rotation) for any seeded fixture.
+
+    Real Columbus inputs (2026-04-28): 509 students, 248 sections, 48 teachers,
+    38 rooms, 67 courses. This test uses `make_full_hs_dataset(n_students=520)`
+    which approximates that scale with synthetic-but-realistic distributions.
+    The test passes if:
+      1. Validation accepts the generated dataset (no referential errors).
+      2. Master returns OPTIMAL/FEASIBLE within budget.
+      3. Student solve returns FEASIBLE within budget OR signals infeasibility
+         cleanly (no crash, no exception).
+      4. Capacity is respected for every assigned section (basic invariant).
+      5. No two of a teacher's sections in the same scheme (HC1).
+
+    Budget set to fit comfortably under 60s/seed so CI cost stays bounded.
+    `max_examples=2` because each example is expensive — the goal is shape
+    coverage, not exhaustive search.
+    """
+    ds = make_full_hs_dataset(n_students=520, seed=seed)
+
+    rep = validate_dataset(ds)
+    assert rep.is_ready, (
+        f"Seed {seed}: real-shape validation failed: "
+        f"{[(i.code, i.message) for i in rep.errors[:5]]}"
+    )
+
+    master, _, m_status = solve_master(ds, time_limit_s=20)
+    assert m_status in ("OPTIMAL", "FEASIBLE"), (
+        f"Seed {seed}: master status={m_status}, expected OPTIMAL or FEASIBLE"
+    )
+    assert master, f"Seed {seed}: master returned no assignments"
+
+    # HC1: no teacher in two sections at the same scheme (term-blind on the
+    # property test — the per-term term_pair logic is a separate property).
+    sections_by_id = {s.section_id: s for s in ds.sections}
+    by_teacher_scheme: dict[tuple[str, object], int] = defaultdict(int)
+    for m in master:
+        sec = sections_by_id[m.section_id]
+        by_teacher_scheme[(sec.teacher_id, m.scheme)] += 1
+    for (tid, scheme), n in by_teacher_scheme.items():
+        if scheme == "ADVISORY":
+            continue  # advisory has its own teacher distribution rules
+        assert n == 1, (
+            f"Seed {seed}: teacher {tid} has {n} sections in scheme {scheme} (HC1)"
+        )
+
+    students, unmet, _, s_status = solve_students(ds, master, time_limit_s=30, mode="single")
+    # Student solver might return INFEASIBLE on very tight seeds — that is
+    # acceptable as long as no crash. We only assert capacity if it returned
+    # placements.
+    if students:
+        sec_max = {s.section_id: s.max_size for s in ds.sections}
+        enrollment: dict[str, int] = defaultdict(int)
+        for sa in students:
+            for sid in sa.section_ids:
+                enrollment[sid] += 1
+        for sid, n in enrollment.items():
+            assert n <= sec_max[sid], (
+                f"Seed {seed}: section {sid} over capacity {n}/{sec_max[sid]}"
+            )
+
 
 @given(seed=st.integers(min_value=1, max_value=2**31))
 @settings(max_examples=4, deadline=None, suppress_health_check=[HealthCheck.too_slow])
