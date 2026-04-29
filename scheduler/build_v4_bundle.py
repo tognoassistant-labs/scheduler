@@ -3,11 +3,16 @@
 
 Run:
     .venv/bin/python build_v4_bundle.py
+
+Env vars:
+    COPLANNING=1     Enable HC5 (coplanning groups must share a free scheme).
+                     Default OFF — costs ~50 unmet on real Columbus.
 """
 from __future__ import annotations
 
 import csv
 import hashlib
+import os
 import shutil
 import time
 from pathlib import Path
@@ -86,6 +91,10 @@ def main() -> int:
     ds = build_dataset_from_official_xlsx(CANONICAL_XLSX)
     print(f"  ingested: {len(ds.students)} students, {len(ds.sections)} sections, "
           f"{len(ds.teachers)} teachers, {len(ds.rooms)} rooms, {len(ds.courses)} courses")
+
+    if os.environ.get("COPLANNING") == "1":
+        ds.config.hard.enforce_coplanning_groups = True
+        print(f"  COPLANNING=1 → HC5 enabled, {len(ds.coplanning_groups)} groups must share a free scheme")
 
     print("\n=== Stage 1: master solve ===")
     t1 = time.time()

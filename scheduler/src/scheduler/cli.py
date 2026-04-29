@@ -87,6 +87,10 @@ def cmd_solve(args: argparse.Namespace) -> int:
         print("\nABORTING: data has errors. Fix and re-run.", file=sys.stderr)
         return 2
 
+    if args.coplanning:
+        ds.config.hard.enforce_coplanning_groups = True
+        print(f"Coplanning HARD enabled — {len(ds.coplanning_groups)} groups must share a free scheme")
+
     print(f"\n=== Stage 1: master schedule (sections={len(ds.sections)}) ===")
     master, _, m_status = solve_master(ds, time_limit_s=args.master_time, verbose=args.verbose)
     print(f"Status: {m_status}, assignments: {len(master)}")
@@ -240,6 +244,9 @@ def main(argv: list[str] | None = None) -> int:
                    help="single (default): weighted-sum with hard balance cap; lexmin: 2-phase (electives → groupings) with hard balance cap")
     s.add_argument("--oneroster", action="store_true",
                    help="Also write a OneRoster v1.1 CSV bundle to <out>/oneroster/")
+    s.add_argument("--coplanning", action="store_true",
+                   help="Enforce coplanning groups (HardConstraints.enforce_coplanning_groups). "
+                        "Default OFF; turning ON costs ~50 unmet on real Columbus.")
     s.add_argument("--verbose", action="store_true")
     s.set_defaults(func=cmd_solve)
 
