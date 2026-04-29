@@ -218,15 +218,17 @@ class HardConstraints(BaseModel):
     enforce_restricted_teachers: bool = True
     # Balance: max enrollment minus min enrollment within sections of the same course.
     # School decision 2026-04-29 (audio noche): "ideal 4, aceptamos 5".
-    # Balance cap = 5 means max(enrollment) - min(enrollment) ≤ 5 across
-    # sections of the same course. Soft term still drives toward tighter
-    # balance within the cap. Was 25 (disabled) in v4.11–v4.14, reverted
-    # back to school's chosen value in v4.15.
-    max_section_spread_per_course: int = 5
+    # v4.16: subimos a la meta ideal del Colegio (≤4) porque al aceptar 90%
+    # de cobertura tenemos presupuesto para endurecer balance. Combinado con
+    # coplanning HARD (recomendación A+C). Estimado: ~66 cupos extra,
+    # required fulfillment ~93% (sigue sobre 90%).
+    max_section_spread_per_course: int = 4
     # Coplanning: when True, every group in Dataset.coplanning_groups must
     # share at least one scheme where all members are simultaneously free.
-    # Default OFF — enable per-school when the data is ready.
-    enforce_coplanning_groups: bool = False
+    # v4.16 (2026-04-29): turned ON per recommendation A+C — el Colegio
+    # acepta 90% cobertura a cambio de respetar balance ≤4 + coplanning
+    # de los 18 grupos definidos en la pestaña 'co-planning'.
+    enforce_coplanning_groups: bool = True
     min_sections_for_balance: int = 2
 
 
