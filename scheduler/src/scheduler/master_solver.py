@@ -297,6 +297,34 @@ def solve_master(ds: Dataset, time_limit_s: float = 60.0, verbose: bool = False)
             scheme_used_vars.append(used)
         model.Add(sum(scheme_used_vars) >= min_distinct_schemes)
 
+    # HC6 (v4.6): Term-paired courses (e.g., AP Micro S1 ↔ AP Macro S2) MUST
+    # share the same scheme AND room when their sections come from the same
+    # teacher. The school requires this so a student can take Micro in S1
+    # and Macro in S2 at the same time slot — without it, "se enloquece el
+    # horario" (sections of the same teacher land in unrelated slots between
+    # semesters). Pairing rule: for each (teacher, course-pair), pair the
+    # i-th section of c1 with the i-th section of c2 (sorted by section_id).
+    visited_term_pairs: set[tuple[str, str]] = set()
+    sections_by_course_and_teacher: dict[tuple[str, str], list[str]] = defaultdict(list)
+    for s in academic_sections:
+        sections_by_course_and_teacher[(s.course_id, s.teacher_id)].append(s.section_id)
+    for c in ds.courses:
+        if not c.term_pair:
+            continue
+        c1_id, c2_id = sorted([c.course_id, c.term_pair])
+        if (c1_id, c2_id) in visited_term_pairs:
+            continue
+        visited_term_pairs.add((c1_id, c2_id))
+        teachers_c1 = {tid for (cid, tid) in sections_by_course_and_teacher if cid == c1_id}
+        teachers_c2 = {tid for (cid, tid) in sections_by_course_and_teacher if cid == c2_id}
+        for tid in teachers_c1 & teachers_c2:
+            c1_sects = sorted(sections_by_course_and_teacher[(c1_id, tid)])
+            c2_sects = sorted(sections_by_course_and_teacher[(c2_id, tid)])
+            for s1, s2 in zip(c1_sects, c2_sects):
+                for k in SCHEMES:
+                    model.Add(section_in_scheme[(s1, k)] == section_in_scheme[(s2, k)])
+                model.Add(section_room[s1] == section_room[s2])
+
     # HC5 (optional): explicit coplanning groups must share at least one scheme
     # where all members are simultaneously free. Behind a flag so it stays off
     # by default until the data is validated against current teaching loads.
