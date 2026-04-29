@@ -174,15 +174,30 @@ def write_reports(
                 enrolled, s.max_size, f"{util:.1f}", slots_str
             ])
 
-    # Per-student CSV
+    # Per-student CSV — n_courses excludes Advisory; n_requested counts only the
+    # student's REAL course requests (not the synthetic Advisory we add to all).
+    # `missing_courses` lists requested course_ids that weren't assigned, so the
+    # school can validate row-by-row that every student got every request.
+    advisory_course_ids = {c.course_id for c in ds.courses if c.is_advisory}
     with (out_dir / "student_schedules.csv").open("w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["student_id", "name", "n_courses", "section_ids", "course_ids"])
+        w.writerow([
+            "student_id", "name", "grade",
+            "n_requested", "n_assigned", "n_missing",
+            "section_ids", "course_ids", "missing_courses",
+        ])
         student_assigns = {sa.student_id: sa for sa in students}
         for st in ds.students:
             sa = student_assigns.get(st.student_id, StudentAssignment(student_id=st.student_id, section_ids=[]))
             cids = [sections_by_id[sid].course_id for sid in sa.section_ids if sid in sections_by_id]
-            w.writerow([st.student_id, st.name, len(sa.section_ids), "|".join(sa.section_ids), "|".join(cids)])
+            assigned_real = [cid for cid in cids if cid not in advisory_course_ids]
+            requested_real = [r.course_id for r in st.requested_courses if r.course_id not in advisory_course_ids]
+            missing = sorted(set(requested_real) - set(assigned_real))
+            w.writerow([
+                st.student_id, st.name, st.grade,
+                len(set(requested_real)), len(set(assigned_real)), len(missing),
+                "|".join(sa.section_ids), "|".join(cids), "|".join(missing),
+            ])
 
     # Unmet requests
     with (out_dir / "unmet_requests.csv").open("w", newline="") as f:

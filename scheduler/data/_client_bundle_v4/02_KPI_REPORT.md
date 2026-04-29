@@ -23,8 +23,8 @@
 | Master assignments | 248 |
 | Student status | `FEASIBLE` |
 | Estudiantes asignados | 509/509 |
-| Requests no satisfechos | 292 |
-| **Cobertura** | **93.7%** |
+| Requests no satisfechos | 277 |
+| **Cobertura** | **94.0%** |
 
 ## KPI breakdown
 
@@ -33,11 +33,11 @@
 
 | Metric | Value | Target | Met |
 |---|---|---|---|
-| Fully scheduled students | 48.3% | ≥98% | ❌ |
-| Required course fulfillment | 93.7% | ≥98% | ❌ |
+| Fully scheduled students | 51.5% | ≥98% | ❌ |
+| Required course fulfillment | 94.0% | ≥98% | ❌ |
 | First-choice electives | 0.0% | ≥80% | ❌ |
-| Section balance (max dev from mean) | 2 students | ≤3 | ✅ |
-| Unscheduled (missing required) | 263 | 0 | ❌ |
+| Section balance (max dev from mean) | 3 students | ≤3 | ✅ |
+| Unscheduled (missing required) | 247 | 0 | ❌ |
 | Time conflicts | 0 | 0 | ✅ (enforced by solver) |
 ```
 

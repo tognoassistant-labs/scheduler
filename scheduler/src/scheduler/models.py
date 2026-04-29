@@ -213,13 +213,12 @@ class HardConstraints(BaseModel):
     # Balance: max enrollment minus min enrollment within sections of the same course.
     # Applied as a HARD upper bound (loose enough to keep electives optimization
     # tractable) PLUS a soft objective (drives toward the best achievable balance).
-    # v2 §10 target: max-dev ≤ 3 from the per-course mean. K=3 (this cap) is
-    # equivalent to "max - min ≤ 3" per course, which guarantees the target.
-    # Previously K=5; observation 2026-04-29 showed 23/49 multi-section courses
-    # were exactly at spread=5, breaching the target.
-    # The soft term tightens this further at solve time. Applied to all
-    # courses with ≥2 sections.
-    max_section_spread_per_course: int = 3
+    # v2 §10 target: max-dev ≤ 3 from the per-course mean. K=4 is the school's
+    # chosen trade-off (2026-04-29) — they prefer max coverage over strict
+    # balance. K=3 was tried and gave 100% balance compliance but cost ~54
+    # additional unmet cupos vs K=4. The soft term still drives toward the
+    # tightest achievable balance within the cap.
+    max_section_spread_per_course: int = 4
     # Coplanning: when True, every group in Dataset.coplanning_groups must
     # share at least one scheme where all members are simultaneously free.
     # Default OFF — enable per-school when the data is ready.
