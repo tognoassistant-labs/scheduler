@@ -208,13 +208,13 @@ class HardConstraints(BaseModel):
     max_consecutive_classes: int = 4
     advisory_day: Day = ADVISORY_DAY
     advisory_block: int = ADVISORY_BLOCK
-    # When True (legacy default), separations are HARD: paired students NEVER
-    # share a section. When False (recommended for tight grids), separations
-    # become a SOFT objective with `SoftConstraintWeights.separation_violation`
-    # weight — broken only when needed to satisfy required-course coverage.
-    # 2026-04-29: school flagged that hard separations cost ~94 cupos; switched
-    # to soft to maximize coverage while still respecting most separations.
-    enforce_separations: bool = False
+    # When True, separations are HARD: paired students NEVER share a section.
+    # When False, soft penalty via `separation_violation` weight.
+    # v4.17: re-enabled HARD as part of A+B+C combo — school accepted ≥90%
+    # required-fulfillment target, so we now spend the budget on guaranteeing
+    # 100% of counselor "Separado de" pairs are respected. Estimated cost
+    # ~94 cupos; estimated landing ~91-92% required fulfillment.
+    enforce_separations: bool = True
     enforce_restricted_teachers: bool = True
     # Balance: max enrollment minus min enrollment within sections of the same course.
     # School decision 2026-04-29 (audio noche): "ideal 4, aceptamos 5".

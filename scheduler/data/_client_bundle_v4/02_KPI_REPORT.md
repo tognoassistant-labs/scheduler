@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-04-28
 **Datos:** PowerSchool canónicos (`columbus_official_2026-2027.xlsx`)
-**Tiempo total de solve:** 303.9s
+**Tiempo total de solve:** 303.4s
 
 ## Datos de entrada
 
@@ -23,8 +23,8 @@
 | Master assignments | 248 |
 | Student status | `FEASIBLE` |
 | Estudiantes asignados | 509/509 |
-| Requests no satisfechos | 290 |
-| **Cobertura** | **93.7%** |
+| Requests no satisfechos | 295 |
+| **Cobertura** | **93.6%** |
 
 ## KPI breakdown
 
@@ -33,11 +33,11 @@
 
 | Metric | Value | Target | Met |
 |---|---|---|---|
-| Fully scheduled students | 49.3% | ≥98% | ❌ |
-| Required course fulfillment | 93.7% | ≥98% | ❌ |
+| Fully scheduled students | 48.9% | ≥98% | ❌ |
+| Required course fulfillment | 93.6% | ≥98% | ❌ |
 | First-choice electives | 0.0% | ≥80% | ❌ |
 | Section balance (max dev from mean) | 3 students | ≤3 | ✅ |
-| Unscheduled (missing required) | 258 | 0 | ❌ |
+| Unscheduled (missing required) | 260 | 0 | ❌ |
 | Time conflicts | 0 | 0 | ✅ (enforced by solver) |
 ```
 
