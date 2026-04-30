@@ -210,18 +210,15 @@ class HardConstraints(BaseModel):
     advisory_block: int = ADVISORY_BLOCK
     # When True, separations are HARD: paired students NEVER share a section.
     # When False, soft penalty via `separation_violation` weight.
-    # v4.17: re-enabled HARD as part of A+B+C combo — school accepted ≥90%
-    # required-fulfillment target, so we now spend the budget on guaranteeing
-    # 100% of counselor "Separado de" pairs are respected. Estimated cost
-    # ~94 cupos; estimated landing ~91-92% required fulfillment.
+    # v4.17: HARD per school's "horario limpio" preference.
+    # v4.24: probamos SOFT — solver variance dio peor outcome, revertido a HARD (v4.25).
     enforce_separations: bool = True
     enforce_restricted_teachers: bool = True
     # Balance: max enrollment minus min enrollment within sections of the same course.
     # School decision 2026-04-29 (audio noche): "ideal 4, aceptamos 5".
-    # v4.16: subimos a la meta ideal del Colegio (≤4) porque al aceptar 90%
-    # de cobertura tenemos presupuesto para endurecer balance. Combinado con
-    # coplanning HARD (recomendación A+C). Estimado: ~66 cupos extra,
-    # required fulfillment ~93% (sigue sobre 90%).
+    # v4.16: subimos a la meta ideal del Colegio (≤4).
+    # v4.24: probamos relajar a ≤5 — empeoró cobertura por solver variance,
+    # revertido a ≤4 (v4.25).
     max_section_spread_per_course: int = 4
     # Coplanning: when True, every group in Dataset.coplanning_groups must
     # share at least one scheme where all members are simultaneously free.
