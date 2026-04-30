@@ -1,0 +1,38 @@
+# Deploy interno con docker-compose.
+#
+# Setup:
+#   1. cp .env.example .env
+#   2. edita .env y pon APP_PASSWORD a un valor fuerte
+#   3. docker compose up -d
+#   4. abre http://<servidor>:8501 en el navegador
+#
+# Logs:    docker compose logs -f
+# Restart: docker compose restart
+# Stop:    docker compose down
+# Backup:  docker compose exec scheduler sh -c "cp /data/columbus.sqlite /data/backup-$(date +%Y%m%d).sqlite"
+
+services:
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: columbus-scheduler:v4.27
+    container_name: columbus-scheduler
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8501}:8501"
+    environment:
+      - APP_PASSWORD=${APP_PASSWORD:?APP_PASSWORD env var required}
+      - COLUMBUS_DB=/data/columbus.sqlite
+    volumes:
+      - columbus-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  columbus-data:
+    driver: local

@@ -61,6 +61,10 @@ scheduler/data/*.xlsx
 # Whitelist sample/template xlsx files explicitly if any get added.
 !scheduler/data/sample_template.xlsx
 
+# Docker / deploy secrets
+scheduler/.env
+.env
+
 # Streamlit — ignore everywhere EXCEPT the deployable config we ship.
 .streamlit/
 !scheduler/.streamlit/

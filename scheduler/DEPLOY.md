@@ -1,112 +1,206 @@
-# Despliegue del motor de horarios — guía paso a paso
+# Despliegue del motor de horarios
 
-Esta app contiene **datos personales reales de estudiantes** (nombres, IDs, recomendaciones de consejeros). No la despliegues en infraestructura pública sin protección.
+La app contiene **datos personales reales de estudiantes** (nombres, IDs,
+recomendaciones de consejeros). Solo debe correr en infraestructura
+controlada por el Colegio.
 
-## Decisión rápida — ¿dónde alojarla?
+## Opciones — comparación rápida
 
-| Plataforma | Repo privado | Disco persistente | Sin spin-down | Costo | Ideal para |
-|---|---|---|---|---|---|
-| **Streamlit Cloud Community** | ❌ requiere público | ❌ ephemero | ❌ duerme | gratis | Demos públicos no sensibles |
-| **Render Starter** | ✅ | ✅ ($0.25/GB) | ✅ | $7/mes | **Recomendado** para uso del Colegio |
-| **Render Free** | ✅ | ❌ | ❌ duerme tras 15 min | gratis | Pruebas del coordinador |
-| **Railway** | ✅ | ✅ | depende del plan | $5+/mes | Alternativa a Render |
-| **Local solamente** | n/a | ✅ | ✅ | gratis | Solo tú |
-
-## Despliegue en Render (recomendado)
-
-### Pre-requisitos
-
-1. Cuenta en [render.com](https://render.com) (signup con GitHub)
-2. Repo conectado a Render (puede ser privado)
-3. Decidir un password fuerte para `APP_PASSWORD`
-
-### Pasos
-
-**1. Crear servicio web**
-
-- Render Dashboard → **New** → **Blueprint**
-- Conecta el repo `handoff_2026-04-26_continuation`
-- Selecciona la rama (típicamente `main` o tu branch de release)
-- Render detecta `scheduler/render.yaml` automáticamente
-
-**2. Configurar variables de entorno**
-
-En el dashboard del servicio, agrega:
-
-| Variable | Valor | Por qué |
-|---|---|---|
-| `APP_PASSWORD` | (password fuerte) | Gate de acceso. SIN este var, la app es pública |
-| `COLUMBUS_DB` | `/data/columbus.sqlite` | Ya en `render.yaml`. La SQLite vive en disco persistente |
-
-**3. Deploy**
-
-- Click **Manual Deploy** → **Deploy latest commit**
-- Espera ~3 minutos (build + bootstrap)
-- Render asigna URL `https://columbus-scheduler-XXXX.onrender.com`
-
-**4. Validar**
-
-- Abre la URL → deberías ver el password gate
-- Ingresa el password → app aparece
-- Prueba el flujo: Inputs → Solve → Compliance → Runs
-- Revisa que la SQLite persiste recargando la página
-
-### Costos esperados
-
-- Servicio Starter: $7/mes
-- Disco 1GB: $0.25/mes
-- Total: **~$7.25/mes**
-
-Para sólo pruebas, baja a Free plan y pierde la persistencia (la SQLite se reinicia con cada redeploy).
+| Plataforma | Datos privados | Costo | Esfuerzo | Ideal para |
+|---|---|---|---|---|
+| **Servidor interno (Docker)** | ✅ red privada | infra existente | ~30 min | **Recomendado** — Colegio |
+| **Servidor interno (Python)** | ✅ red privada | infra existente | ~15 min | Si el servidor no tiene Docker |
+| Render Starter | ⚠️ red pública | $7/mes | ~30 min | Acceso remoto controlado |
+| Streamlit Cloud Community | ❌ requiere repo público | gratis | n/a | NO usar — datos privados |
 
 ---
 
-## Despliegue en Streamlit Cloud (alternativa)
+## Opción 1 — Servidor interno con Docker (recomendado)
 
-⚠️ Requiere **repo público**. Los datos del Colegio NO deben estar en el repo. Verifica que `.gitignore` excluye:
+### Requisitos en el servidor
 
-```
-scheduler/data/*.xlsx
-scheduler/data/columbus*/
-scheduler/data/*.sqlite
-```
+- Linux (Ubuntu/Debian/CentOS) o macOS
+- Docker 20.10+
+- Docker Compose v2
+- Puerto disponible (default 8501)
+- Al menos 1GB RAM libre, 2GB de disco
 
 ### Pasos
 
-1. Repo público en GitHub
-2. Cuenta en [share.streamlit.io](https://share.streamlit.io)
-3. **New app** → seleccionar repo, branch, `scheduler/app.py` como entry point
-4. **Advanced settings** → Secrets → agregar:
-   ```toml
-   APP_PASSWORD = "tu-password-aqui"
-   ```
-5. Deploy
+```bash
+# 1. Clonar el repo en el servidor (red privada o VPN)
+git clone <ruta-al-repo> columbus-scheduler
+cd columbus-scheduler/scheduler
 
-### Limitaciones
+# 2. Configurar variables de entorno
+cp .env.example .env
+# editar .env y poner APP_PASSWORD a algo fuerte (16+ caracteres)
+nano .env
 
-- 1 GB RAM total — el solver de 509 estudiantes puede acercarse al límite con master_time alto
-- Disco ephemero — la SQLite se reinicia con cada redeploy. Para persistencia real, necesitas un bucket S3/R2 montado vía wrappers
-- App pública por URL incluso con password (cualquiera puede intentar)
+# 3. Build + start
+docker compose up -d --build
+
+# 4. Verificar
+docker compose ps
+# Debería mostrar 'columbus-scheduler' running y healthy
+
+# 5. Test desde el navegador
+# http://<ip-del-servidor>:8501
+```
+
+### Operación
+
+| Acción | Comando |
+|---|---|
+| Ver logs | `docker compose logs -f` |
+| Restart | `docker compose restart` |
+| Stop | `docker compose down` |
+| Update (pull + rebuild) | `git pull && docker compose up -d --build` |
+| Backup BD | `docker compose exec scheduler sh -c "cp /data/columbus.sqlite /data/backup-$(date +%Y%m%d).sqlite"` |
+| Inspect BD | `docker compose exec scheduler sqlite3 /data/columbus.sqlite "SELECT * FROM run"` |
+
+### Persistencia
+
+La SQLite (todos los runs, bundles, configs) vive en el volumen Docker
+`columbus-data`. Sobrevive a `docker compose down/up`. Para backup
+externo, copia periódicamente el archivo `/data/columbus.sqlite` a un
+NAS o tape.
+
+### Cuándo cambiar APP_PASSWORD
+
+- Cuando se va alguien con acceso
+- Cada semestre como buena práctica
+- Cambiar el `.env` y `docker compose restart`
 
 ---
 
-## Hardening posterior (cuando esté en producción)
+## Opción 2 — Servidor interno con Python directo (sin Docker)
+
+Si el servidor no tiene Docker, corre Streamlit directo:
+
+```bash
+git clone <ruta-al-repo> columbus-scheduler
+cd columbus-scheduler/scheduler
+
+# Crear venv
+python3.12 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+
+# Variables de entorno
+export APP_PASSWORD="tu-password-fuerte-aqui"
+export COLUMBUS_DB="/var/lib/columbus/columbus.sqlite"
+
+# Crear directorio para BD
+sudo mkdir -p /var/lib/columbus
+sudo chown $USER /var/lib/columbus
+
+# Correr (en foreground, para probar)
+.venv/bin/streamlit run app.py --server.port 8501 --server.headless true
+```
+
+Para correrlo como **servicio systemd** que sobrevive reboots:
+
+```ini
+# /etc/systemd/system/columbus-scheduler.service
+[Unit]
+Description=Columbus Scheduling Engine
+After=network.target
+
+[Service]
+Type=simple
+User=columbus
+WorkingDirectory=/opt/columbus-scheduler/scheduler
+Environment="APP_PASSWORD=tu-password-fuerte-aqui"
+Environment="COLUMBUS_DB=/var/lib/columbus/columbus.sqlite"
+ExecStart=/opt/columbus-scheduler/scheduler/.venv/bin/streamlit run app.py \
+  --server.port 8501 --server.address 0.0.0.0 --server.headless true
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl enable --now columbus-scheduler
+sudo systemctl status columbus-scheduler
+journalctl -u columbus-scheduler -f
+```
+
+---
+
+## Opción 3 — Render (acceso remoto)
+
+⚠️ Solo si el personal necesita acceso desde fuera de la red del Colegio
+y no hay VPN. La app sirve datos reales por HTTPS público con password.
+
+Ver `render.yaml` (ya en el repo). Pasos:
+
+1. Cuenta en [render.com](https://render.com)
+2. Conecta el repo (privado funciona en plan Starter)
+3. Render Dashboard → New → Blueprint → selecciona el repo
+4. Configura env vars: `APP_PASSWORD` (manualmente)
+5. Manual Deploy → Deploy latest commit
+
+Costo: $7/mes (Starter) + $0.25/mes (disco 1GB) = **~$7.25/mes**
+
+---
+
+## Configuración de red interna recomendada
+
+### Acceso solo desde la LAN del Colegio
+
+```
+[Coordinador's PC] ─┐
+                    ├─→ [Servidor interno :8501] ─→ [Streamlit app]
+[Otros PCs LAN]  ───┘
+```
+
+- **Sin reverse proxy:** funciona out-of-the-box, acceso por IP del servidor
+- **Con reverse proxy (nginx/caddy):** dale un dominio interno tipo `scheduler.colegio.local` con HTTPS auto-firmado
+- **Con VPN:** el coordinador conecta a la VPN del Colegio desde casa, accede igual
+
+### Ejemplo nginx en frente
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name scheduler.colegio.local;
+
+    ssl_certificate     /etc/letsencrypt/live/scheduler/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/scheduler/privkey.pem;
+
+    # Streamlit necesita websockets
+    location / {
+        proxy_pass http://localhost:8501;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 300s;
+    }
+}
+```
+
+---
+
+## Hardening posterior (opcional)
 
 | Mejora | Cuándo | Cómo |
 |---|---|---|
-| Auth con cuentas | Si hay 2+ usuarios | `streamlit-authenticator` con users en YAML |
-| Backup automático de la DB | Inmediato | Cron en Render que `cp /data/columbus.sqlite` a S3 cada noche |
-| Logs estructurados | Cuando empieces a debuggear | `loguru` o `structlog` + Render log drains |
-| Rate limiting | Si la URL se filtra | Cloudflare gratis frente del Render |
-| Encriptación de DB | Antes de FERPA review | SQLite + SQLCipher |
+| Backup automático nocturno | Inmediato | Cron del servidor que copia `/data/columbus.sqlite` a NAS |
+| Auth con cuentas (SSO) | Cuando haya 5+ usuarios | `streamlit-authenticator` con LDAP del Colegio |
+| Rate limiting | Si se expone vía internet | nginx `limit_req` en frente |
+| Encriptación de BD | Antes de auditoría FERPA | Cambiar SQLite por SQLCipher (requiere wrapper) |
+| Logs centralizados | Cuando sea producción crítica | Render log drains a Loki/Splunk |
 
 ---
 
-## Local (sin despliegue)
+## Local (desarrollo)
 
 ```bash
 cd scheduler
 .venv/bin/streamlit run app.py
 ```
 
-El gate solo se activa con `APP_PASSWORD` set. Sin el env var → app abierta directamente.
+Sin `APP_PASSWORD` la app es abierta — útil para iterar.
