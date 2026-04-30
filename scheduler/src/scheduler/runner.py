@@ -29,6 +29,7 @@ from .models import (
 from .persistence import DB, InputBundleRepo, RuleConfigRepo, RunRepo
 from .reports import KPIReport, compute_kpis
 from .rules.compliance import compute_compliance, to_db_rows
+from .rules.custom import apply_custom_rules_to_dataset, deserialize_custom_rules
 from .student_solver import solve_students
 
 APP_VERSION = "v4.27-dev"
@@ -216,13 +217,17 @@ def solve_from_db(
 
     The rule_config's hard/soft override whatever is in the bundle's
     saved `dataset.config` — this is the whole point of having separate
-    bundle and rule_config tables.
+    bundle and rule_config tables. Any persisted custom rules
+    (registry_overrides_json) are also applied to the dataset.
     """
     bundle_repo = InputBundleRepo(db)
     rule_repo = RuleConfigRepo(db)
     _, dataset = bundle_repo.get(bundle_id)
-    _, hard, soft, _ = rule_repo.get(rule_config_id)
+    _, hard, soft, overrides_blob = rule_repo.get(rule_config_id)
     dataset = _apply_rule_config(dataset, hard, soft)
+    custom_specs = deserialize_custom_rules(overrides_blob)
+    if custom_specs:
+        dataset = apply_custom_rules_to_dataset(dataset, custom_specs)
     return solve_and_persist(
         dataset,
         db=db,

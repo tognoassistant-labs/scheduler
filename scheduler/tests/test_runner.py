@@ -91,6 +91,44 @@ def test_solve_from_db_reuses_persisted_inputs(db: DB, tiny_dataset: Dataset) ->
     assert outcome.kpi.required_fulfillment_pct >= 0.0
 
 
+def test_solve_from_db_applies_custom_rules(db: DB, tiny_dataset: Dataset) -> None:
+    """A rule_config with a forbid_pair custom rule should add a separation
+    that survives into the active dataset at solve time."""
+    from src.scheduler.persistence.repo import InputBundleRepo, RuleConfigRepo
+    from src.scheduler.rules.custom import CustomRuleSpec, serialize_custom_rules
+
+    # Pick two existing students for the pair so the constraint is non-trivial.
+    s_a = tiny_dataset.students[0].student_id
+    s_b = tiny_dataset.students[1].student_id
+
+    bundles = InputBundleRepo(db)
+    rules = RuleConfigRepo(db)
+    bid = bundles.save("custom-rules-test", "sample", tiny_dataset)
+
+    overrides_blob = serialize_custom_rules([
+        CustomRuleSpec(
+            id="user_test_pair",
+            kind="hard",
+            label="test pair",
+            solver_op="forbid_pair",
+            params={"student_a": s_a, "student_b": s_b},
+        ),
+    ])
+    cid = rules.save("with-custom", tiny_dataset.config.hard, tiny_dataset.config.soft, overrides_blob)
+
+    outcome = solve_from_db(
+        db, bid, cid, run_label="custom-rules", master_time=10.0, student_time=20.0
+    )
+    assert outcome.run_id is not None
+    assert outcome.result.master, "solve must succeed even with the extra separation"
+
+    # Confirm s_a and s_b never share a section in the resulting student schedules.
+    student_sects = {sa.student_id: set(sa.section_ids) for sa in outcome.result.students}
+    sa_set = student_sects.get(s_a, set())
+    sb_set = student_sects.get(s_b, set())
+    assert not (sa_set & sb_set), f"forbid_pair violated: {sa_set & sb_set}"
+
+
 def test_persist_does_not_break_solver(db: DB, tiny_dataset: Dataset) -> None:
     """Persistence is a pure side-channel — both paths must produce valid runs.
 

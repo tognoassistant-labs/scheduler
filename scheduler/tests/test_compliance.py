@@ -90,3 +90,136 @@ def test_zero_division_safe_with_no_separations() -> None:
     r = _check_separations(ds, [], [], [])
     assert r.pct == 100.0
     assert r.violated == 0
+
+
+def test_extended_checkers_present(tiny_solved) -> None:
+    """The 13 implemented checkers must all run on a real solve."""
+    ds, master, students, unmet = tiny_solved
+    rows = compute_compliance(ds, master, students, unmet)
+    rule_ids = {r.rule_id for r in rows}
+    expected = {
+        "R_max_class_size",
+        "R_enforce_separations",
+        "R_enforce_restricted_teachers",
+        "R_max_section_spread_per_course",
+        "R_max_consecutive_classes",
+        "R_enforce_coplanning_groups",
+        "R_w_first_choice_electives",
+        "R_w_grouping_codes",
+        "R_w_teacher_preferred_courses",
+        "R_w_teacher_avoid_courses",
+        "R_w_teacher_preferred_blocks",
+        "R_w_teacher_avoid_blocks",
+        "R_w_teacher_load_balance",
+    }
+    assert expected <= rule_ids, f"missing: {expected - rule_ids}"
+
+
+def test_apply_custom_rules_forbid_pair() -> None:
+    """A forbid_pair custom rule should append to behavior.separations."""
+    from src.scheduler.models import (
+        BehaviorMatrix,
+        SchoolConfig,
+        default_rotation,
+    )
+    from src.scheduler.rules.custom import (
+        CustomRuleSpec,
+        apply_custom_rules_to_dataset,
+    )
+    ds = Dataset(
+        config=SchoolConfig(bell=default_rotation()),
+        courses=[],
+        teachers=[],
+        rooms=[],
+        sections=[],
+        students=[],
+        behavior=BehaviorMatrix(separations=[("A", "B")], groupings=[]),
+    )
+    specs = [
+        CustomRuleSpec(
+            id="user_no_pair_cd",
+            kind="hard",
+            label="Never C and D",
+            solver_op="forbid_pair",
+            params={"student_a": "C", "student_b": "D"},
+        ),
+        CustomRuleSpec(
+            id="user_disabled",
+            kind="hard",
+            label="Disabled",
+            solver_op="forbid_pair",
+            params={"student_a": "E", "student_b": "F"},
+            enabled=False,
+        ),
+    ]
+    new_ds = apply_custom_rules_to_dataset(ds, specs)
+    assert ("A", "B") in new_ds.behavior.separations
+    assert ("C", "D") in new_ds.behavior.separations
+    assert ("E", "F") not in new_ds.behavior.separations
+    # Original ds not mutated
+    assert ds.behavior.separations == [("A", "B")]
+
+
+def test_apply_custom_rules_no_double_add() -> None:
+    """Adding a pair that already exists must not duplicate it."""
+    from src.scheduler.models import (
+        BehaviorMatrix,
+        SchoolConfig,
+        default_rotation,
+    )
+    from src.scheduler.rules.custom import (
+        CustomRuleSpec,
+        apply_custom_rules_to_dataset,
+    )
+    ds = Dataset(
+        config=SchoolConfig(bell=default_rotation()),
+        courses=[],
+        teachers=[],
+        rooms=[],
+        sections=[],
+        students=[],
+        behavior=BehaviorMatrix(separations=[("A", "B")], groupings=[]),
+    )
+    specs = [
+        CustomRuleSpec(
+            id="dup",
+            kind="hard",
+            label="dup",
+            solver_op="forbid_pair",
+            params={"student_a": "A", "student_b": "B"},
+        ),
+    ]
+    new_ds = apply_custom_rules_to_dataset(ds, specs)
+    assert new_ds.behavior.separations == [("A", "B")]
+
+
+def test_apply_custom_rules_unknown_op_is_noop() -> None:
+    from src.scheduler.models import (
+        BehaviorMatrix,
+        SchoolConfig,
+        default_rotation,
+    )
+    from src.scheduler.rules.custom import (
+        CustomRuleSpec,
+        apply_custom_rules_to_dataset,
+    )
+    ds = Dataset(
+        config=SchoolConfig(bell=default_rotation()),
+        courses=[],
+        teachers=[],
+        rooms=[],
+        sections=[],
+        students=[],
+        behavior=BehaviorMatrix(),
+    )
+    specs = [
+        CustomRuleSpec(
+            id="x",
+            kind="hard",
+            label="x",
+            solver_op="not_implemented_yet",
+            params={},
+        ),
+    ]
+    new_ds = apply_custom_rules_to_dataset(ds, specs)
+    assert new_ds is ds  # untouched

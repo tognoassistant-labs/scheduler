@@ -332,6 +332,117 @@ def _check_teacher_preferred_courses(
     return _make("R_w_teacher_preferred_courses", sat, vio, samples)
 
 
+def _check_teacher_avoid_courses(
+    ds: Dataset, master: list[MasterAssignment], students: list[StudentAssignment], unmet: list[tuple[str, str]]
+) -> RuleCompliance:
+    """Counts every section assignment; a teacher dictating a course in their
+    avoid_course_ids is a violation. No avoid lists → all sections satisfied."""
+    teachers_by_id = {t.teacher_id: t for t in ds.teachers}
+    sat = vio = 0
+    samples: list[dict[str, Any]] = []
+    for s in ds.sections:
+        teacher = teachers_by_id.get(s.teacher_id)
+        if teacher is None:
+            continue
+        if s.course_id in (teacher.avoid_course_ids or []):
+            vio += 1
+            if len(samples) < SAMPLE_LIMIT:
+                samples.append({
+                    "teacher_id": teacher.teacher_id,
+                    "section_id": s.section_id,
+                    "course_id": s.course_id,
+                })
+        else:
+            sat += 1
+    return _make("R_w_teacher_avoid_courses", sat, vio, samples)
+
+
+def _check_teacher_preferred_blocks(
+    ds: Dataset, master: list[MasterAssignment], students: list[StudentAssignment], unmet: list[tuple[str, str]]
+) -> RuleCompliance:
+    """Per-slot achievement: a slot in the teacher's preferred_blocks counts
+    as satisfied. Teachers with no preferences contribute neither sat nor vio."""
+    teachers_by_id = {t.teacher_id: t for t in ds.teachers}
+    sections_by_id = {s.section_id: s for s in ds.sections}
+    sat = vio = 0
+    samples: list[dict[str, Any]] = []
+    for m in master:
+        sect = sections_by_id.get(m.section_id)
+        if sect is None:
+            continue
+        teacher = teachers_by_id.get(sect.teacher_id)
+        if teacher is None or not teacher.preferred_blocks:
+            continue
+        for _, block in m.slots:
+            if block in teacher.preferred_blocks:
+                sat += 1
+            else:
+                vio += 1
+                if len(samples) < SAMPLE_LIMIT:
+                    samples.append({
+                        "teacher_id": teacher.teacher_id,
+                        "section_id": sect.section_id,
+                        "block": block,
+                    })
+    return _make("R_w_teacher_preferred_blocks", sat, vio, samples)
+
+
+def _check_teacher_avoid_blocks(
+    ds: Dataset, master: list[MasterAssignment], students: list[StudentAssignment], unmet: list[tuple[str, str]]
+) -> RuleCompliance:
+    teachers_by_id = {t.teacher_id: t for t in ds.teachers}
+    sections_by_id = {s.section_id: s for s in ds.sections}
+    sat = vio = 0
+    samples: list[dict[str, Any]] = []
+    for m in master:
+        sect = sections_by_id.get(m.section_id)
+        if sect is None:
+            continue
+        teacher = teachers_by_id.get(sect.teacher_id)
+        if teacher is None:
+            continue
+        for _, block in m.slots:
+            if block in (teacher.avoid_blocks or []):
+                vio += 1
+                if len(samples) < SAMPLE_LIMIT:
+                    samples.append({
+                        "teacher_id": teacher.teacher_id,
+                        "section_id": sect.section_id,
+                        "block": block,
+                    })
+            else:
+                sat += 1
+    return _make("R_w_teacher_avoid_blocks", sat, vio, samples)
+
+
+def _check_teacher_load_balance(
+    ds: Dataset, master: list[MasterAssignment], students: list[StudentAssignment], unmet: list[tuple[str, str]]
+) -> RuleCompliance:
+    """A teacher within ±2 of the mean load is "satisfied"; otherwise violated.
+    The 2-section tolerance matches the v2 §10 target for teacher_load_max_dev."""
+    loads: dict[str, int] = defaultdict(int)
+    for s in ds.sections:
+        loads[s.teacher_id] += 1
+    if not loads:
+        return _make("R_w_teacher_load_balance", 0, 0, [])
+    values = list(loads.values())
+    mean = sum(values) / len(values)
+    sat = vio = 0
+    samples: list[dict[str, Any]] = []
+    for tid, load in loads.items():
+        if abs(load - mean) <= 2:
+            sat += 1
+        else:
+            vio += 1
+            if len(samples) < SAMPLE_LIMIT:
+                samples.append({
+                    "teacher_id": tid,
+                    "load": load,
+                    "mean": round(mean, 2),
+                })
+    return _make("R_w_teacher_load_balance", sat, vio, samples)
+
+
 # ---------------------------------------------------------------------------
 # Dispatch
 # ---------------------------------------------------------------------------
@@ -352,6 +463,10 @@ CHECKERS: dict[str, CheckFn] = {
     "R_w_first_choice_electives": _check_first_choice_electives,
     "R_w_grouping_codes": _check_grouping_codes,
     "R_w_teacher_preferred_courses": _check_teacher_preferred_courses,
+    "R_w_teacher_avoid_courses": _check_teacher_avoid_courses,
+    "R_w_teacher_preferred_blocks": _check_teacher_preferred_blocks,
+    "R_w_teacher_avoid_blocks": _check_teacher_avoid_blocks,
+    "R_w_teacher_load_balance": _check_teacher_load_balance,
 }
 
 

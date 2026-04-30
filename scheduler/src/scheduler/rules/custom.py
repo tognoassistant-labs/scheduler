@@ -80,3 +80,43 @@ def deserialize_custom_rules(blob: bytes | str | None) -> list[CustomRuleSpec]:
         return []
     payload = json.loads(blob)
     return [CustomRuleSpec.from_json(item) for item in payload.get("rules", [])]
+
+
+# ---------------------------------------------------------------------------
+# Minimal Phase-2 applier — translates a small subset of solver_op values to
+# direct mutations of the Dataset before solving.
+#
+# Supported ops:
+#   forbid_pair     params.student_a, params.student_b → adds to behavior.separations
+#                   (the existing solver already enforces these as hard or soft)
+#
+# Unknown ops are silently no-op (forward compat). The Phase-2 DSL will replace
+# this with proper CP-SAT constraint generation; until then this lets the user
+# author the most common rule type without writing solver code.
+# ---------------------------------------------------------------------------
+
+
+def apply_custom_rules_to_dataset(ds, specs: list[CustomRuleSpec]):
+    """Mutate-then-return the Dataset with each enabled custom rule applied.
+
+    Pydantic models are not mutated in place — we model_copy with updated lists
+    where needed. Returns the new Dataset. No-op for empty / all-disabled specs.
+    """
+    if not specs:
+        return ds
+    new_separations = list(ds.behavior.separations)
+    applied = 0
+    for spec in specs:
+        if not spec.enabled:
+            continue
+        if spec.solver_op == "forbid_pair":
+            a = spec.params.get("student_a")
+            b = spec.params.get("student_b")
+            if a and b and (a, b) not in new_separations and (b, a) not in new_separations:
+                new_separations.append((a, b))
+                applied += 1
+        # other ops: no-op until full DSL ships
+    if applied == 0:
+        return ds
+    new_behavior = ds.behavior.model_copy(update={"separations": new_separations})
+    return ds.model_copy(update={"behavior": new_behavior})
