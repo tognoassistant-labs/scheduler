@@ -1776,6 +1776,37 @@ ese objetivo. Pesos altos hacen que el motor prefiera satisfacer ese criterio so
 """)
 
     st.divider()
+    st.subheader("Reglas personalizadas (Phase 2)")
+    st.markdown("""
+La app permite autorear reglas custom desde la tab **Reglas** sin tocar
+código. Cada regla tiene un opcode que define qué hace.
+
+| Opcode | Para qué sirve | Ejemplo |
+|---|---|---|
+| `forbid_pair` | Estudiantes A y B nunca en la misma sección | "Pedro y Juan separados" |
+| `forbid_slot` | Teacher T no puede dictar en cierto bloque | "Sandro no en bloque 5" |
+| `require_room` | Curso C solo en sala R específica | "AP Bio solo en Lab 901" |
+| `require_room_type` | Curso C solo en salas tipo X | "PE va a gym, Banda a music" |
+| `prefer_teacher` | Estudiante S debe quedar con teacher T en curso C | "Ariana asiste a Gloria en AP Drawing" |
+| `cohort_together` | Lista L de estudiantes comparte secciones | "Equipo de robótica junto" |
+
+**Cómo importar reglas desde xlsx:**
+- La tab `Reglas` tiene importadores para las hojas `course_room_type`
+  y `free_text_rules_log` del archivo limpio. Cambia `STATUS=PROPOSED`
+  → `STATUS=ACTIVE` en Excel y luego un click importa todas.
+- También puedes agregar reglas manualmente con el formulario.
+
+**Tipo de sala (room_type) — valores válidos:**
+- `gym` — coliseos, canchas (PE)
+- `science_lab` — laboratorios de ciencia (química, biología, física)
+- `computer_lab` — laboratorios de cómputo (Tech, AP CS)
+- `music` — sala de música (banda, coro, orquesta)
+- `art` — sala de arte (drawing, painting, sculpture)
+- `special_ed` — educación especial
+- `standard` — salón regular (default)
+""")
+
+    st.divider()
     st.subheader("Glosario rápido")
     st.markdown("""
 - **Bundle** — un conjunto de inputs (cursos, teachers, salas, secciones, estudiantes, requests). Cada bundle se guarda con un ID único.
