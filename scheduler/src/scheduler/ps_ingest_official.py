@@ -497,6 +497,197 @@ def _apply_teacher_assignment_constraints(
             print(f"    {cid} / {tname} ({dcid}): {ctext}")
 
 
+_TEACHER_AIDE_COURSE_ID = "OZ1333"  # Generic "Teacher Aide" placeholder
+
+
+def _normalize_course_name_for_match(s: str) -> str:
+    """Normalize a course name string for fuzzy matching across the
+    teacher_assistants sheet (uses abbreviations like 'P.E 11') and the
+    courses catalog ('Physical Education and Health 11')."""
+    if not s:
+        return ""
+    s = s.lower().strip()
+    # Common abbreviations used in the school's TA sheet
+    s = s.replace(".", " ").replace("  ", " ")
+    if s.startswith("p e ") or s.startswith("pe "):
+        s = "physical education and health " + s.split(" ", 2)[-1]
+    # "Ar of Fiction" typo
+    s = s.replace("ar of fiction", "art of fiction")
+    return s.strip()
+
+
+def _read_required_courses_xlsx(wb) -> dict[int, set[str]]:
+    """Parse the in-file `required_courses` sheet (added by school 2026-04-30).
+
+    Returns: {grade_level: {course_number, …}} — the official list of
+    truly-required courses (graduation-required, per grade). Used by the
+    ingester to set CourseRequest.is_required correctly: only requests
+    matching (student_grade, course_number) in this map are HARD-required;
+    the rest are student-elected (still important, but the solver may drop
+    them before dropping a HARD required).
+    """
+    if "required_courses" not in wb.sheetnames:
+        return {}
+    ws = wb["required_courses"]
+    out: dict[int, set[str]] = defaultdict(set)
+    for r in list(ws.iter_rows(values_only=True))[1:]:
+        if not r or not r[0]:
+            continue
+        cnum = _safe_str(r[0])
+        try:
+            grade = int(r[2]) if r[2] is not None else None
+        except (TypeError, ValueError):
+            grade = None
+        if cnum and grade is not None:
+            out[grade].add(cnum)
+    return dict(out)
+
+
+def _read_teacher_assistants_xlsx(wb) -> list[dict]:
+    """Parse the in-file `teacher_assistants` sheet.
+
+    Each row identifies a student who is a teacher's aide (= teacher
+    assistant; school confirmed 2026-04-30 these terms are equivalent).
+    Returns: list of dicts with student_id, grade, assist_course_name,
+    teacher_name, status. Used to clean their request list so the engine
+    does not waste cycles trying to schedule them into the placeholder
+    OZ1333 course or into the section they actually assist.
+    """
+    if "teacher_assistants" not in wb.sheetnames:
+        return []
+    ws = wb["teacher_assistants"]
+    rows = list(ws.iter_rows(values_only=True))
+    if not rows:
+        return []
+    out: list[dict] = []
+    for r in rows[1:]:
+        if not r or not r[0]:
+            continue
+        try:
+            sid = str(int(r[0]))
+        except (TypeError, ValueError):
+            sid = _safe_str(r[0])
+        out.append({
+            "student_id": sid,
+            "grade": int(r[1]) if isinstance(r[1], (int, float)) else None,
+            "name": _safe_str(r[2]),
+            "placeholder_course": _safe_str(r[3]),  # COURSENAME (= "Electives Alternative 1")
+            "assist_course_name": _safe_str(r[4]),  # COURSENAME_TO_ASSIST
+            "teacher_name": _safe_str(r[5]),
+            "status": _safe_str(r[6]) if len(r) > 6 else "",
+        })
+    return out
+
+
+def _apply_teacher_assistants_cleanup(
+    request_rows: list[dict],
+    ta_records: list[dict],
+    course_by_number: dict[str, "Course"],
+) -> tuple[list[dict], dict[str, dict]]:
+    """Remove TA-related entries from a student's request list.
+
+    For each TA student in `ta_records`:
+      1. Drop any request row with COURSENUMBER = OZ1333 (Teacher Aide
+         placeholder).
+      2. If the student also has the "assist course" listed as a real
+         request (double-entry case e.g. G12 student requesting PE 11
+         because they assist PE 11), drop that too.
+      3. Skip students whose status string indicates they're an ex-TA
+         going back to a normal class ("Sale de TA").
+
+    Returns:
+      (filtered_request_rows, ta_summary_per_student)
+      ta_summary_per_student is for the visor / reporting later.
+    """
+    if not ta_records:
+        return request_rows, {}
+
+    # Build a (student_id, course_number) skip set.
+    skip_pairs: set[tuple[str, str]] = set()
+    ta_summary: dict[str, dict] = {}
+    ex_ta_skipped: list[str] = []
+    double_entry_count = 0
+    oz_only_count = 0
+
+    # Helper: index requests by student for fast lookup
+    by_student: dict[str, list[dict]] = defaultdict(list)
+    for r in request_rows:
+        sid = _safe_str(r.get("STUDENT_NUMBER"))
+        if sid:
+            by_student[sid].append(r)
+
+    # Course name → course_number index for fuzzy matching
+    name_to_number: dict[str, str] = {}
+    for c in course_by_number.values():
+        if c.name:
+            name_to_number[c.name.lower().strip()] = c.course_id
+
+    for ta in ta_records:
+        sid = ta["student_id"]
+        status_l = (ta.get("status") or "").lower()
+        assist_l = (ta.get("assist_course_name") or "").lower().strip()
+
+        # Ex-TAs going back to normal classes are NOT cleaned
+        if "sale de ta" in assist_l or "sale de ta" in status_l:
+            ex_ta_skipped.append(sid)
+            continue
+
+        student_reqs = by_student.get(sid, [])
+        has_oz = False
+        matched_assist_course: str | None = None
+        assist_norm = _normalize_course_name_for_match(ta.get("assist_course_name"))
+        for req in student_reqs:
+            cnum = _safe_str(req.get("COURSENUMBER"))
+            cname_norm = _normalize_course_name_for_match(_safe_str(req.get("COURSENAME")))
+            # Drop OZ1333 placeholder
+            if cnum == _TEACHER_AIDE_COURSE_ID:
+                skip_pairs.add((sid, cnum))
+                has_oz = True
+            # Drop assist course (double-entry case)
+            if assist_norm and cname_norm:
+                if assist_norm in cname_norm or cname_norm in assist_norm:
+                    skip_pairs.add((sid, cnum))
+                    matched_assist_course = cnum
+
+        if has_oz and matched_assist_course:
+            double_entry_count += 1
+        elif has_oz:
+            oz_only_count += 1
+
+        ta_summary[sid] = {
+            "name": ta.get("name"),
+            "grade": ta.get("grade"),
+            "assist_course": ta.get("assist_course_name"),
+            "teacher": ta.get("teacher_name"),
+            "removed_oz1333": has_oz,
+            "removed_assist_course_id": matched_assist_course,
+        }
+
+    # Filter
+    filtered = [r for r in request_rows
+                if (_safe_str(r.get("STUDENT_NUMBER")), _safe_str(r.get("COURSENUMBER")))
+                not in skip_pairs]
+
+    n_removed = len(request_rows) - len(filtered)
+    print(
+        f"[INFO] teacher_assistants cleanup: removed {n_removed} request rows "
+        f"({double_entry_count} double-entry, {oz_only_count} OZ1333-only, "
+        f"{len(ex_ta_skipped)} ex-TA students skipped)"
+    )
+    if ex_ta_skipped:
+        print(f"  Ex-TAs (no cleanup needed): {ex_ta_skipped}")
+
+    # Detect TAs from the sheet who didn't match any of their request entries
+    unmatched_tas = [sid for sid, info in ta_summary.items()
+                     if not info["removed_oz1333"] and not info["removed_assist_course_id"]]
+    if unmatched_tas:
+        print(f"[WARN] {len(unmatched_tas)} TA students from sheet have neither OZ1333 nor assist-course in their requests:")
+        for sid in unmatched_tas:
+            print(f"    student {sid} (grade {ta_summary[sid].get('grade')}): assists {ta_summary[sid].get('assist_course')!r}")
+
+    return filtered, ta_summary
+
+
 def _audit_teacher_assignment_constraints(assignment_rows: list[dict]) -> None:
     """Backward-compat shim — delegates to the structured applier.
 
@@ -515,7 +706,11 @@ def _audit_teacher_assignment_constraints(assignment_rows: list[dict]) -> None:
 
 
 def _read_requests(wb) -> list[dict]:
-    ws = wb["requests"]
+    # School renamed `requests` → `student_requests` on 2026-04-30 and added
+    # two new columns (COURSENAME, TEARCHERASSISTANT). Fall back to the old
+    # name for backward compat with older snapshots.
+    sheet_name = "student_requests" if "student_requests" in wb.sheetnames else "requests"
+    ws = wb[sheet_name]
     rows = list(ws.iter_rows(values_only=True))
     headers = list(rows[0])
     out = []
@@ -620,6 +815,16 @@ def build_dataset_from_official_xlsx(
         relationships = _read_relationships_csv(xlsx_path.parent / "course_relationships.csv")
     if relationships:
         _apply_course_relationships(relationships, courses, course_by_number)
+
+    # ----------------------- teacher_assistants cleanup (v4.22, school 2026-04-30)
+    # Strip TA placeholder entries from request_rows so the engine doesn't
+    # fight with fake course assignments. School confirmed "teacher aide"
+    # (course OZ1333) and "teacher assistant" (sheet teacher_assistants)
+    # are equivalent.
+    ta_records = _read_teacher_assistants_xlsx(wb)
+    request_rows, ta_summary = _apply_teacher_assistants_cleanup(
+        request_rows, ta_records, course_by_number
+    )
 
     # -------------------------------------------------------------- teachers
     teachers: list[Teacher] = []
@@ -773,7 +978,18 @@ def build_dataset_from_official_xlsx(
     course_by_number = {c.course_id: c for c in courses}
 
     # ----------------------------------------------------------------- students
+    # v4.22 (school 2026-04-30): the new `required_courses` sheet defines
+    # truly-required courses by grade. Only requests matching that map are
+    # marked is_required=True; the rest are student-elected (still tracked
+    # but the solver may drop them before dropping a real required).
+    required_by_grade = _read_required_courses_xlsx(wb)
+    if required_by_grade:
+        n_total = sum(len(s) for s in required_by_grade.values())
+        print(f"[INFO] required_courses: {n_total} truly-required (grade,course) pairs loaded")
+
     students_map: dict[str, Student] = {}
+    n_marked_required = 0
+    n_marked_elective = 0
     for r in request_rows:
         sid = _safe_str(r["STUDENT_NUMBER"])
         course_number = _safe_str(r["COURSENUMBER"])
@@ -781,21 +997,33 @@ def build_dataset_from_official_xlsx(
             continue
         if course_number not in course_by_number:
             continue  # request for a course not in catalog — skip
+        # Grade comes directly from the request row's STUDENT_GRADE_LEVEL_NEXT_YEAR.
+        try:
+            stu_grade = int(r.get("STUDENT_GRADE_LEVEL_NEXT_YEAR") or 12)
+        except (TypeError, ValueError):
+            stu_grade = 12
         if sid not in students_map:
-            # Infer grade from the courses they request (highest grade-suffixed course wins)
             students_map[sid] = Student(
                 student_id=sid,
-                name=f"Student_{sid}",  # real names not in this sheet; PS provides them later
-                grade=12,  # placeholder; updated below if their requests reveal a grade
+                name=f"Student_{sid}",
+                grade=stu_grade,  # use real grade from request row
                 requested_courses=[],
             )
-        # Per client B6: ALL requests for 2026-2027 are mandatory.
+        # Mark is_required only if (grade, course) is in the official required map
+        is_req = course_number in required_by_grade.get(stu_grade, set())
+        if is_req:
+            n_marked_required += 1
+        else:
+            n_marked_elective += 1
         students_map[sid].requested_courses.append(CourseRequest(
             student_id=sid,
             course_id=course_number,
-            is_required=True,
+            is_required=is_req,
             rank=1,
         ))
+    if required_by_grade:
+        print(f"[INFO] CourseRequest classification: {n_marked_required} HARD required, "
+              f"{n_marked_elective} student-elected (electives)")
 
     # Add Advisory request to every student (Advisory is always-on for HS)
     advisory_id = next((c.course_id for c in courses if c.is_advisory), None)

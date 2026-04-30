@@ -124,6 +124,34 @@ def main() -> int:
         )
         print(f"  after repair: {len(student_assigns)} students placed, {len(unmet)} unmet remaining")
 
+    # Stage 2.9: Validation gate (school 2026-04-30 meeting requirement).
+    # Confirm every (student, section) assignment maps to a course the student
+    # actually requested. Advisory is whitelisted (always-on, added by ingester).
+    print("\n=== Stage 2.9: validation — assigned ⊆ requested ===")
+    sections_by_id = {s.section_id: s for s in ds.sections}
+    requested_by_student = {s.student_id: {r.course_id for r in s.requested_courses}
+                            for s in ds.students}
+    advisory_ids = {c.course_id for c in ds.courses if c.is_advisory}
+    invalid = []
+    for sa in student_assigns:
+        requested = requested_by_student.get(sa.student_id, set())
+        for sid in sa.section_ids:
+            sec = sections_by_id.get(sid)
+            if not sec:
+                continue
+            if sec.course_id in advisory_ids:
+                continue
+            if sec.course_id not in requested:
+                invalid.append((sa.student_id, sec.course_id, sid))
+    if invalid:
+        print(f"  ❌ {len(invalid)} assignments are NOT in student's request list:")
+        for s, c, sec in invalid[:10]:
+            print(f"    student {s} got {c} (section {sec}) — NOT requested")
+        if len(invalid) > 10:
+            print(f"    ... +{len(invalid) - 10} more")
+    else:
+        print(f"  ✅ all {sum(len(a.section_ids) for a in student_assigns)} assignments are in students' request lists")
+
     print("\n=== Stage 3: KPI report ===")
     kpi = compute_kpis(ds, master, student_assigns, unmet)
     print(kpi.summary())
