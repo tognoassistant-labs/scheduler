@@ -20,9 +20,13 @@ import streamlit as st
 from src.scheduler.exporter import export_powerschool
 from src.scheduler.io_csv import read_dataset, write_dataset
 from src.scheduler.master_solver import solve_master
-from src.scheduler.models import Dataset
+from src.scheduler.models import Dataset, HardConstraints, SoftConstraintWeights
+from src.scheduler.persistence import DB, InputBundleRepo, RuleConfigRepo, RunRepo, open_db
 from src.scheduler.ps_ingest import build_dataset_from_columbus
 from src.scheduler.reports import compute_kpis, write_reports
+from src.scheduler.rules import RULE_REGISTRY, apply_overrides, extract_values, list_rules
+from src.scheduler.rules.compliance import compute_compliance
+from src.scheduler.runner import solve_and_persist
 from src.scheduler.sample_data import make_grade_12_dataset
 from src.scheduler.scenarios import PRESETS, format_comparison, run_scenarios
 from src.scheduler.student_solver import solve_students
@@ -51,6 +55,13 @@ DEFAULTS = {
     "student_status": "",
     "master_seconds": 0.0,
     "student_seconds": 0.0,
+    # v4.27 persistence + rules
+    "persist_enabled": False,
+    "db": None,              # DB instance, lazily created
+    "bundle_id": None,       # int — persisted bundle for the active dataset
+    "rule_config_id": None,  # int — persisted rule config for the next solve
+    "rule_overrides": {},    # dict[rule_id, bool|int] — Rules-tab edits
+    "last_run_id": None,
 }
 for k, v in DEFAULTS.items():
     if k not in st.session_state:
@@ -115,9 +126,26 @@ def _has_solution() -> bool:
 def _set_dataset(ds: Dataset, source: str) -> None:
     st.session_state["dataset"] = ds
     st.session_state["dataset_source"] = source
-    # Clear stale solve outputs
+    # New dataset → invalidate any persisted bundle pointer & solve outputs
+    st.session_state["bundle_id"] = None
+    st.session_state["rule_overrides"] = {}
     for k in ("master", "students", "unmet", "kpi", "master_status", "student_status"):
         st.session_state[k] = DEFAULTS[k]
+
+
+def _get_db() -> DB | None:
+    """Lazy-init the SQLite connection when persistence is enabled."""
+    if not st.session_state.get("persist_enabled"):
+        return None
+    if st.session_state.get("db") is None:
+        st.session_state["db"] = open_db()
+    return st.session_state["db"]
+
+
+def _effective_rules(ds: Dataset) -> tuple[HardConstraints, SoftConstraintWeights]:
+    """Apply session_state['rule_overrides'] on top of ds.config.hard/soft."""
+    overrides = st.session_state.get("rule_overrides") or {}
+    return apply_overrides(ds.config.hard, ds.config.soft, overrides)
 
 
 # ============================================================================
@@ -193,6 +221,21 @@ with st.sidebar:
     else:
         st.info("Pick a dataset source above")
 
+    st.divider()
+    st.subheader("Persistence")
+    persist = st.checkbox(
+        "Save runs to SQLite",
+        value=st.session_state.get("persist_enabled", False),
+        help="Persist bundles, rule configs, and solve outputs so any historical "
+             "run can be browsed and re-exported. DB path: $COLUMBUS_DB or "
+             "data/columbus.sqlite.",
+    )
+    st.session_state["persist_enabled"] = persist
+    if persist:
+        db = _get_db()
+        if db is not None:
+            st.caption(f"DB: `{db.path}`")
+
 
 # ============================================================================
 # Main — tabs
@@ -200,8 +243,26 @@ with st.sidebar:
 
 st.title("Columbus Scheduling Engine")
 
-tab_setup, tab_solve, tab_browse, tab_locks, tab_scenarios, tab_export = st.tabs([
-    "1️⃣ Setup", "2️⃣ Solve", "3️⃣ Browse", "🔒 Locks & Prefs", "4️⃣ Scenarios", "5️⃣ Export"
+(
+    tab_setup,
+    tab_rules,
+    tab_solve,
+    tab_compliance,
+    tab_browse,
+    tab_locks,
+    tab_runs,
+    tab_scenarios,
+    tab_export,
+) = st.tabs([
+    "1️⃣ Inputs",
+    "📋 Rules",
+    "2️⃣ Solve",
+    "✅ Compliance",
+    "3️⃣ Browse",
+    "🔒 Locks & Prefs",
+    "📜 Runs",
+    "4️⃣ Scenarios",
+    "5️⃣ Export",
 ])
 
 # ----------------------------------------------------------------------------
@@ -235,6 +296,34 @@ with tab_setup:
                 for issue in rep.warnings:
                     st.write(f"- **{issue.code}** · `{issue.entity_id or '-'}` · {issue.message}")
 
+        # v4.27 — persist the active dataset to SQLite so it survives reruns.
+        if st.session_state.get("persist_enabled"):
+            db = _get_db()
+            st.divider()
+            cols_persist = st.columns([2, 1])
+            with cols_persist[0]:
+                bundle_label = st.text_input(
+                    "Bundle label",
+                    value=st.session_state["dataset_source"][:60] or "ad-hoc",
+                    key="bundle_label_input",
+                )
+            with cols_persist[1]:
+                st.write("")
+                st.write("")
+                if st.button("💾 Save bundle to DB", width='stretch'):
+                    repo = InputBundleRepo(db)
+                    src = st.session_state["dataset_source"]
+                    kind = (
+                        "xlsx" if src.startswith("columbus")
+                        else "sample" if src.startswith("sample")
+                        else "csv"
+                    )
+                    bid = repo.save(bundle_label, kind, ds)
+                    st.session_state["bundle_id"] = bid
+                    st.success(f"Saved as bundle #{bid}")
+            if st.session_state.get("bundle_id"):
+                st.caption(f"Active bundle: #{st.session_state['bundle_id']}")
+
         st.divider()
         st.subheader("Course breakdown")
         rows = []
@@ -260,6 +349,142 @@ with tab_setup:
                 "Slack": cap - demand,
             })
         st.dataframe(pd.DataFrame(rows), width='stretch', hide_index=True)
+
+
+# ----------------------------------------------------------------------------
+# TAB 1.5: RULES — registry-driven toggles + sliders
+# ----------------------------------------------------------------------------
+
+with tab_rules:
+    if not _has_dataset():
+        st.info("Load a dataset first.")
+    else:
+        ds = st.session_state["dataset"]
+        st.subheader("Reglas del motor")
+        st.caption(
+            "Toggles y pesos generados desde el registry. Los cambios aplican al próximo solve. "
+            "Sin guardar a DB, los cambios se pierden al reiniciar la app."
+        )
+
+        # Group rules by (kind, category) so the form is scannable.
+        from itertools import groupby
+        rules_sorted = sorted(
+            list_rules(),
+            key=lambda r: (r.kind, r.category, r.id),
+        )
+
+        # Pre-fill widgets with current value: override > dataset config > default.
+        cfg_values = extract_values(ds.config)
+        overrides = dict(st.session_state.get("rule_overrides") or {})
+
+        new_overrides: dict[str, bool | int] = {}
+        for kind, kind_group in groupby(rules_sorted, key=lambda r: r.kind):
+            kind_label = "Reglas duras (hard)" if kind == "hard" else "Pesos suaves (soft)"
+            with st.expander(kind_label, expanded=(kind == "hard")):
+                for category, cat_group in groupby(list(kind_group), key=lambda r: r.category):
+                    st.markdown(f"**{category}**")
+                    for r in cat_group:
+                        current = overrides.get(r.id, cfg_values[r.id])
+                        widget_key = f"rule_widget_{r.id}"
+                        if r.value_type == "bool":
+                            value = st.checkbox(
+                                r.label,
+                                value=bool(current),
+                                key=widget_key,
+                                help=r.description,
+                            )
+                        else:
+                            value = st.number_input(
+                                r.label,
+                                min_value=int(r.min_value or 0),
+                                max_value=int(r.max_value or 1000),
+                                value=int(current),
+                                step=1,
+                                key=widget_key,
+                                help=r.description,
+                            )
+                        new_overrides[r.id] = value
+                    st.write("")  # vertical breathing room
+
+        col_apply, col_reset, col_save = st.columns(3)
+        with col_apply:
+            if st.button("✓ Aplicar al próximo solve", type="primary", width='stretch'):
+                # Strip overrides that match the current dataset config — keeps the
+                # session state minimal and obvious.
+                effective = {rid: v for rid, v in new_overrides.items() if v != cfg_values[rid]}
+                st.session_state["rule_overrides"] = effective
+                if effective:
+                    st.success(f"{len(effective)} regla(s) modificada(s) — aplicarán en el próximo solve")
+                else:
+                    st.info("No hay cambios respecto a la config actual del dataset")
+        with col_reset:
+            if st.button("↺ Reset a defaults del dataset", width='stretch'):
+                st.session_state["rule_overrides"] = {}
+                st.rerun()
+        with col_save:
+            if st.session_state.get("persist_enabled"):
+                save_label = st.text_input(
+                    "Nombre",
+                    value="custom",
+                    key="rule_config_save_label",
+                    label_visibility="collapsed",
+                    placeholder="Nombre para esta config",
+                )
+                if st.button("💾 Guardar config", width='stretch'):
+                    db = _get_db()
+                    repo = RuleConfigRepo(db)
+                    new_hard, new_soft = apply_overrides(
+                        ds.config.hard, ds.config.soft, new_overrides
+                    )
+                    cid = repo.save(save_label or "custom", new_hard, new_soft)
+                    st.session_state["rule_config_id"] = cid
+                    st.session_state["rule_overrides"] = {
+                        rid: v for rid, v in new_overrides.items() if v != cfg_values[rid]
+                    }
+                    st.success(f"Guardada como rule_config #{cid}")
+            else:
+                st.caption("Activa 'Save runs to SQLite' en el sidebar para guardar configs nombradas")
+
+        active = st.session_state.get("rule_overrides") or {}
+        if active:
+            st.divider()
+            st.markdown(f"**Pendiente de aplicar — {len(active)} regla(s) modificada(s):**")
+            diff_rows = []
+            for rid, val in active.items():
+                r = RULE_REGISTRY.get(rid)
+                if r is None:
+                    continue
+                diff_rows.append({
+                    "Regla": r.label,
+                    "Default": cfg_values[rid],
+                    "Override": val,
+                })
+            st.dataframe(pd.DataFrame(diff_rows), width='stretch', hide_index=True)
+
+        # M6 — Phase 2 placeholder: custom rule editor
+        st.divider()
+        with st.expander("➕ Reglas personalizadas (próximamente — Fase 2)"):
+            st.markdown(
+                "**Estado:** la arquitectura ya soporta reglas custom serializadas en "
+                "`rule_config.registry_overrides_json`. La UI de autoría y el "
+                "evaluador de DSL llegan en una segunda fase."
+            )
+            st.code(
+                """# Ejemplo de spec custom (CustomRuleSpec):
+{
+  "id": "user_no_friday_pe",
+  "kind": "hard",
+  "label": "No PE on Fridays",
+  "solver_op": "forbid_slot",
+  "params": {"course_id": "PE12", "day": "E"},
+  "enabled": true
+}""",
+                language="json",
+            )
+            st.caption(
+                "Cuando la Fase 2 esté lista, esta sección permitirá escribir, probar y "
+                "guardar reglas custom directamente desde la UI."
+            )
 
 
 # ----------------------------------------------------------------------------
@@ -290,10 +515,19 @@ with tab_solve:
                                  help="Co-planning concentrates same-dept sections; >0 may hurt electives.")
             teacher_load_w = st.slider("Teacher-load balance weight", 0, 20, ds.config.soft.teacher_load_balance)
 
+        # Show rule overrides badge if any are pending.
+        if st.session_state.get("rule_overrides"):
+            n = len(st.session_state["rule_overrides"])
+            st.info(f"📋 {n} regla(s) modificada(s) en la tab Rules — aplicarán automáticamente al solve")
+
         if st.button("▶️ Solve", type="primary", width='stretch'):
-            # Apply config to a copy of the dataset
+            # Apply quick-slider config + Rules-tab overrides to a copy of the dataset.
             import copy
             ds_run = copy.deepcopy(ds)
+            new_hard, new_soft = _effective_rules(ds_run)
+            ds_run.config.hard = new_hard
+            ds_run.config.soft = new_soft
+            # Quick sliders win over rule overrides for the parameters they expose.
             ds_run.config.hard.max_section_spread_per_course = spread_cap
             ds_run.config.soft.first_choice_electives = elective_w
             ds_run.config.soft.balance_class_sizes = balance_w
@@ -301,36 +535,81 @@ with tab_solve:
             ds_run.config.soft.co_planning = coplan_w
             ds_run.config.soft.teacher_load_balance = teacher_load_w
 
-            with st.spinner(f"Stage 1: master schedule (budget {master_time}s)..."):
-                t0 = time.time()
-                master, _, m_status = solve_master(ds_run, time_limit_s=master_time)
-                m_elapsed = time.time() - t0
-            if not master:
-                st.error(f"Master solve failed: {m_status}")
-            else:
-                st.session_state["master"] = master
-                st.session_state["master_status"] = m_status
-                st.session_state["master_seconds"] = m_elapsed
-                st.success(f"✓ Stage 1: {m_status} · {len(master)} sections placed · {m_elapsed:.1f}s")
+            db = _get_db() if st.session_state.get("persist_enabled") else None
 
-                with st.spinner(f"Stage 2: student assignment (mode={mode}, budget {student_time}s)..."):
-                    t0 = time.time()
-                    students, unmet, _, s_status = solve_students(
-                        ds_run, master, time_limit_s=student_time, mode=mode
+            if db is not None:
+                # Persistence path: runner handles bundle/rule_config/run lifecycle.
+                with st.spinner("Solving (with persistence)..."):
+                    src = st.session_state["dataset_source"]
+                    bundle_label = st.session_state.get("bundle_label_input") or src[:60] or "ad-hoc"
+                    kind = (
+                        "xlsx" if src.startswith("columbus")
+                        else "sample" if src.startswith("sample")
+                        else "csv"
                     )
-                    s_elapsed = time.time() - t0
-                if not students:
-                    st.error(f"Student solve failed: {s_status}")
+                    outcome = solve_and_persist(
+                        ds_run,
+                        db=db,
+                        bundle_id=st.session_state.get("bundle_id"),
+                        rule_config_id=st.session_state.get("rule_config_id"),
+                        bundle_label=bundle_label,
+                        bundle_source_kind=kind,
+                        rule_config_label="ui-active",
+                        run_label=f"ui-{int(time.time())}",
+                        master_time=master_time,
+                        student_time=student_time,
+                        mode=mode,
+                    )
+                if not outcome.result.master:
+                    st.error(f"Master solve failed: {outcome.master_status}")
                 else:
-                    st.session_state["students"] = students
-                    st.session_state["unmet"] = unmet
-                    st.session_state["student_status"] = s_status
-                    st.session_state["student_seconds"] = s_elapsed
-                    st.session_state["kpi"] = compute_kpis(ds_run, master, students, unmet)
-                    # Also overwrite the active dataset config so other tabs see it
+                    st.session_state["master"] = outcome.result.master
+                    st.session_state["students"] = outcome.result.students
+                    st.session_state["unmet"] = outcome.result.unscheduled_requests
+                    st.session_state["master_status"] = outcome.master_status
+                    st.session_state["student_status"] = outcome.student_status
+                    st.session_state["master_seconds"] = outcome.result.solve_seconds * 0.5  # split for display
+                    st.session_state["student_seconds"] = outcome.result.solve_seconds * 0.5
+                    st.session_state["kpi"] = outcome.kpi
                     st.session_state["dataset"] = ds_run
-                    st.success(f"✓ Stage 2: {s_status} · {len(students)} students placed · "
-                               f"{len(unmet)} unmet rank-1 · {s_elapsed:.1f}s")
+                    st.session_state["bundle_id"] = outcome.bundle_id
+                    st.session_state["rule_config_id"] = outcome.rule_config_id
+                    st.session_state["last_run_id"] = outcome.run_id
+                    st.success(
+                        f"✓ Run #{outcome.run_id} · {outcome.master_status} / {outcome.student_status} · "
+                        f"{len(outcome.result.students)} students · {len(outcome.result.unscheduled_requests)} unmet"
+                    )
+            else:
+                # Legacy path — no persistence
+                with st.spinner(f"Stage 1: master schedule (budget {master_time}s)..."):
+                    t0 = time.time()
+                    master, _, m_status = solve_master(ds_run, time_limit_s=master_time)
+                    m_elapsed = time.time() - t0
+                if not master:
+                    st.error(f"Master solve failed: {m_status}")
+                else:
+                    st.session_state["master"] = master
+                    st.session_state["master_status"] = m_status
+                    st.session_state["master_seconds"] = m_elapsed
+                    st.success(f"✓ Stage 1: {m_status} · {len(master)} sections placed · {m_elapsed:.1f}s")
+
+                    with st.spinner(f"Stage 2: student assignment (mode={mode}, budget {student_time}s)..."):
+                        t0 = time.time()
+                        students, unmet, _, s_status = solve_students(
+                            ds_run, master, time_limit_s=student_time, mode=mode
+                        )
+                        s_elapsed = time.time() - t0
+                    if not students:
+                        st.error(f"Student solve failed: {s_status}")
+                    else:
+                        st.session_state["students"] = students
+                        st.session_state["unmet"] = unmet
+                        st.session_state["student_status"] = s_status
+                        st.session_state["student_seconds"] = s_elapsed
+                        st.session_state["kpi"] = compute_kpis(ds_run, master, students, unmet)
+                        st.session_state["dataset"] = ds_run
+                        st.success(f"✓ Stage 2: {s_status} · {len(students)} students placed · "
+                                   f"{len(unmet)} unmet rank-1 · {s_elapsed:.1f}s")
 
         if _has_solution():
             st.divider()
@@ -341,6 +620,67 @@ with tab_solve:
                 f"Master: {st.session_state['master_status']} ({st.session_state['master_seconds']:.1f}s) · "
                 f"Student: {st.session_state['student_status']} ({st.session_state['student_seconds']:.1f}s)"
             )
+
+
+# ----------------------------------------------------------------------------
+# TAB 2.5: COMPLIANCE — per-rule satisfaction with drilldown
+# ----------------------------------------------------------------------------
+
+with tab_compliance:
+    if not _has_solution():
+        st.info("Corre el solver primero (tab 2) para ver cumplimiento por regla.")
+    else:
+        ds = st.session_state["dataset"]
+        master = st.session_state["master"]
+        students = st.session_state["students"]
+        unmet = st.session_state["unmet"] or []
+
+        compliances = compute_compliance(ds, master, students, unmet)
+        st.subheader("Cumplimiento por regla")
+        st.caption("Solo se muestran reglas con un checker disponible. Las demás aparecen como N/A.")
+
+        rows = []
+        for c in compliances:
+            r = RULE_REGISTRY.get(c.rule_id)
+            if r is None:
+                continue
+            total = c.satisfied + c.violated
+            rows.append({
+                "Regla": r.label,
+                "Tipo": r.kind,
+                "Categoría": r.category,
+                "Cumplidas": c.satisfied,
+                "Violadas": c.violated,
+                "% Cumplimiento": round(c.pct, 2),
+                "Total": total,
+                "_id": c.rule_id,
+            })
+        df_comp = pd.DataFrame(rows).drop(columns=["_id"]) if rows else pd.DataFrame()
+        if not df_comp.empty:
+            st.dataframe(df_comp, width='stretch', hide_index=True)
+
+        # N/A list — registered rules without a checker
+        measured_ids = {c.rule_id for c in compliances}
+        unmeasured = [r for r in RULE_REGISTRY.values() if r.id not in measured_ids]
+        if unmeasured:
+            with st.expander(f"Reglas sin medición disponible ({len(unmeasured)})"):
+                for r in unmeasured:
+                    st.write(f"- **{r.label}** — _no checker implementado_")
+
+        st.divider()
+        st.subheader("Drill-down de violaciones")
+        violated = [c for c in compliances if c.violated > 0]
+        if not violated:
+            st.success("✅ Sin violaciones detectadas en las reglas medidas.")
+        else:
+            options = {f"{RULE_REGISTRY[c.rule_id].label} ({c.violated} violadas)": c for c in violated}
+            picked_label = st.selectbox("Selecciona regla", list(options.keys()))
+            picked = options[picked_label]
+            if picked.sample_violations:
+                st.markdown(f"**Muestra (hasta {len(picked.sample_violations)} primeras):**")
+                st.dataframe(pd.DataFrame(picked.sample_violations), width='stretch', hide_index=True)
+            else:
+                st.info("Esta regla no expone muestras de violaciones.")
 
 
 # ----------------------------------------------------------------------------
@@ -634,6 +974,137 @@ with tab_locks:
 
 
 # ----------------------------------------------------------------------------
+# TAB 3.6: RUNS — historical run browser (M3 basic; full diff in M4)
+# ----------------------------------------------------------------------------
+
+with tab_runs:
+    if not st.session_state.get("persist_enabled"):
+        st.info("Activa 'Save runs to SQLite' en el sidebar para ver el histórico de corridas.")
+    else:
+        db = _get_db()
+        run_repo = RunRepo(db)
+        bundle_repo = InputBundleRepo(db)
+        rules_repo = RuleConfigRepo(db)
+
+        runs = run_repo.list_all(limit=50)
+        st.subheader(f"Histórico ({len(runs)} corrida(s))")
+
+        if not runs:
+            st.info("No hay corridas guardadas todavía. Corre el solver con persistencia activa para ver corridas aquí.")
+        else:
+            run_rows = []
+            for r in runs:
+                run_rows.append({
+                    "ID": r.id,
+                    "Label": r.label,
+                    "Created": r.created_at[:19].replace("T", " "),
+                    "Status": r.status,
+                    "Bundle": r.bundle_id,
+                    "RuleCfg": r.rule_config_id,
+                    "Master (s)": f"{r.master_seconds:.1f}" if r.master_seconds else "-",
+                    "Student (s)": f"{r.student_seconds:.1f}" if r.student_seconds else "-",
+                    "Objective": f"{r.objective:.0f}" if r.objective else "-",
+                })
+            st.dataframe(pd.DataFrame(run_rows), width='stretch', hide_index=True)
+
+            st.divider()
+            st.subheader("Comparar runs")
+            compare_ids = st.multiselect(
+                "Selecciona 2+ runs para diff",
+                options=[r.id for r in runs],
+                format_func=lambda i: f"#{i} — {next(r.label for r in runs if r.id == i)}",
+                default=[],
+            )
+            if len(compare_ids) >= 2:
+                # KPI matrix: rows = metrics, cols = run ids
+                metric_grid: dict[str, dict[int, float]] = defaultdict(dict)
+                for rid in compare_ids:
+                    for (metric, scope, key, value) in run_repo.get_kpis(rid):
+                        if scope != "global":
+                            continue
+                        col_label = f"{metric}" if key == "all" else f"{metric}.{key}"
+                        metric_grid[col_label][rid] = value
+                kpi_diff_rows = []
+                for metric in sorted(metric_grid):
+                    row = {"Métrica": metric}
+                    for rid in compare_ids:
+                        row[f"#{rid}"] = metric_grid[metric].get(rid, "-")
+                    kpi_diff_rows.append(row)
+                if kpi_diff_rows:
+                    st.markdown("**KPIs globales**")
+                    st.dataframe(pd.DataFrame(kpi_diff_rows), width='stretch', hide_index=True)
+
+                # Compliance matrix: rows = rules, cols = run ids (% Cumplimiento)
+                comp_grid: dict[str, dict[int, float]] = defaultdict(dict)
+                for rid in compare_ids:
+                    for (rule_id, sat, vio, pct, _) in run_repo.get_compliance(rid):
+                        comp_grid[rule_id][rid] = pct
+                comp_rows = []
+                for rule_id in sorted(comp_grid):
+                    rule = RULE_REGISTRY.get(rule_id)
+                    label = rule.label if rule else rule_id
+                    row = {"Regla": label}
+                    for rid in compare_ids:
+                        v = comp_grid[rule_id].get(rid)
+                        row[f"#{rid} %"] = round(v, 1) if v is not None else "-"
+                    comp_rows.append(row)
+                if comp_rows:
+                    st.markdown("**% cumplimiento por regla**")
+                    st.dataframe(pd.DataFrame(comp_rows), width='stretch', hide_index=True)
+
+            st.divider()
+            st.subheader("Detalle de corrida")
+            selected = st.selectbox(
+                "Selecciona run",
+                options=[r.id for r in runs],
+                format_func=lambda i: f"#{i} — {next(r.label for r in runs if r.id == i)}",
+            )
+            if selected:
+                meta = run_repo.get(selected)
+                cols = st.columns(4)
+                cols[0].metric("Status", meta.status)
+                cols[1].metric("Master (s)", f"{meta.master_seconds:.1f}" if meta.master_seconds else "-")
+                cols[2].metric("Student (s)", f"{meta.student_seconds:.1f}" if meta.student_seconds else "-")
+                cols[3].metric("Objective", f"{meta.objective:.0f}" if meta.objective else "-")
+
+                kpis = run_repo.get_kpis(selected)
+                if kpis:
+                    st.markdown("**KPIs globales**")
+                    kpi_rows = [
+                        {"Métrica": m, "Scope": s, "Key": k, "Valor": v}
+                        for (m, s, k, v) in kpis
+                    ]
+                    st.dataframe(pd.DataFrame(kpi_rows), width='stretch', hide_index=True)
+
+                comp_rows_one = run_repo.get_compliance(selected)
+                if comp_rows_one:
+                    st.markdown("**Cumplimiento por regla**")
+                    rows_view = []
+                    for (rid, sat, vio, pct, _) in comp_rows_one:
+                        rule = RULE_REGISTRY.get(rid)
+                        rows_view.append({
+                            "Regla": rule.label if rule else rid,
+                            "Tipo": rule.kind if rule else "?",
+                            "Cumplidas": sat,
+                            "Violadas": vio,
+                            "%": round(pct, 1),
+                        })
+                    st.dataframe(pd.DataFrame(rows_view), width='stretch', hide_index=True)
+
+                if st.button("Cargar este run como dataset activo"):
+                    bmeta, ds_loaded = bundle_repo.get(meta.bundle_id)
+                    rmeta, hard, soft, _ = rules_repo.get(meta.rule_config_id)
+                    new_cfg = ds_loaded.config.model_copy(update={"hard": hard, "soft": soft})
+                    ds_loaded = ds_loaded.model_copy(update={"config": new_cfg})
+                    _set_dataset(ds_loaded, f"run #{selected} (bundle #{bmeta.id})")
+                    st.session_state["bundle_id"] = bmeta.id
+                    st.session_state["rule_config_id"] = rmeta.id
+                    st.session_state["last_run_id"] = selected
+                    st.success(f"Cargado run #{selected}. Ve a la tab Solve o Browse.")
+                    st.rerun()
+
+
+# ----------------------------------------------------------------------------
 # TAB 4: SCENARIOS
 # ----------------------------------------------------------------------------
 
@@ -654,16 +1125,81 @@ with tab_scenarios:
         st.caption(f"Will run {len(specs)} scenario(s). Estimated total time: "
                    f"{(sc_master_time + sc_student_time) * len(specs)}s.")
 
+        # v4.27 — option to persist each scenario as a separate run.
+        persist_scenarios = False
+        if st.session_state.get("persist_enabled"):
+            persist_scenarios = st.checkbox(
+                "Persistir cada escenario como run en SQLite",
+                value=True,
+                help="Cada escenario crea un run separado con su rule_config y compliance, "
+                     "comparable luego en la tab Runs.",
+            )
+
         if st.button("▶️ Run scenarios", type="primary", width='stretch'):
             results = []
+            persisted_run_ids: list[int] = []
             progress = st.progress(0.0, text="Running scenarios...")
             log_area = st.empty()
             log_lines: list[str] = []
 
+            from src.scheduler.scenarios import _apply_overrides as scenario_apply
+            db = _get_db() if persist_scenarios else None
+
             for i, spec in enumerate(specs, 1):
                 progress.progress((i - 1) / len(specs), text=f"[{i}/{len(specs)}] {spec.name}...")
-                from src.scheduler.scenarios import run_scenario
-                r = run_scenario(ds, spec, master_time=sc_master_time, student_time=sc_student_time)
+                if db is not None:
+                    # Persistence path: build a per-scenario dataset and route through runner
+                    import copy
+                    ds_run = copy.deepcopy(ds)
+                    scenario_apply(ds_run, spec.overrides)
+                    try:
+                        outcome = solve_and_persist(
+                            ds_run,
+                            db=db,
+                            bundle_id=st.session_state.get("bundle_id"),
+                            bundle_label=f"scenarios-{preset}",
+                            bundle_source_kind=(
+                                "xlsx" if st.session_state["dataset_source"].startswith("columbus")
+                                else "sample"
+                            ),
+                            rule_config_label=f"scenario:{spec.name}",
+                            run_label=f"scenario:{spec.name}",
+                            master_time=sc_master_time,
+                            student_time=sc_student_time,
+                        )
+                        if outcome.run_id:
+                            persisted_run_ids.append(outcome.run_id)
+                        # Adapt to the same shape as run_scenario for the comparison table.
+                        from src.scheduler.scenarios import ScenarioResult
+                        r = ScenarioResult(
+                            name=spec.name,
+                            description=spec.description,
+                            overrides=spec.overrides,
+                            master_status=outcome.master_status,
+                            student_status=outcome.student_status,
+                            master_solve_seconds=outcome.result.solve_seconds * 0.5,
+                            student_solve_seconds=outcome.result.solve_seconds * 0.5,
+                            kpi=outcome.kpi if outcome.result.master else None,
+                            n_unmet_rank1=len(outcome.result.unscheduled_requests),
+                            error=None if outcome.result.master else f"infeasible: {outcome.master_status}",
+                        )
+                    except Exception as exc:
+                        from src.scheduler.scenarios import ScenarioResult
+                        r = ScenarioResult(
+                            name=spec.name,
+                            description=spec.description,
+                            overrides=spec.overrides,
+                            master_status="ERROR",
+                            student_status="ERROR",
+                            master_solve_seconds=0.0,
+                            student_solve_seconds=0.0,
+                            kpi=None,
+                            n_unmet_rank1=0,
+                            error=f"{type(exc).__name__}: {exc}",
+                        )
+                else:
+                    from src.scheduler.scenarios import run_scenario
+                    r = run_scenario(ds, spec, master_time=sc_master_time, student_time=sc_student_time)
                 results.append(r)
                 if r.error:
                     log_lines.append(f"❌ {spec.name}: {r.error}")
@@ -676,6 +1212,8 @@ with tab_scenarios:
                     log_lines.append(f"⚠️ {spec.name}: {r.master_status}/{r.student_status}")
                 log_area.markdown("\n\n".join(log_lines))
             progress.progress(1.0, text="Done")
+            if persisted_run_ids:
+                st.success(f"Persistidos {len(persisted_run_ids)} run(s): {persisted_run_ids}. Ve a la tab Runs para comparar.")
 
             # Comparison table
             st.subheader("Comparison")
@@ -721,14 +1259,61 @@ with tab_scenarios:
 # ----------------------------------------------------------------------------
 
 with tab_export:
-    if not _has_solution():
-        st.info("Run a solve first (tab 2).")
+    # v4.27 — optional run-picker: export from history instead of session.
+    export_source = "session"
+    history_run_id: int | None = None
+    if st.session_state.get("persist_enabled"):
+        db = _get_db()
+        run_repo_e = RunRepo(db)
+        bundles_e = InputBundleRepo(db)
+        rules_e = RuleConfigRepo(db)
+        runs_avail = run_repo_e.list_all(limit=50)
+        completed_runs = [r for r in runs_avail if r.status == "completed"]
+        if completed_runs:
+            export_source = st.radio(
+                "Fuente de export",
+                options=["session", "history"],
+                format_func=lambda x: "Sesión actual" if x == "session" else "Run histórico",
+                horizontal=True,
+            )
+            if export_source == "history":
+                history_run_id = st.selectbox(
+                    "Selecciona run",
+                    options=[r.id for r in completed_runs],
+                    format_func=lambda i: f"#{i} — {next(r.label for r in completed_runs if r.id == i)}",
+                )
+
+    # Resolve (ds, master, students, unmet) based on export_source.
+    if export_source == "history" and history_run_id is not None:
+        try:
+            from src.scheduler.persistence.serialize import (
+                master_from_blob,
+                students_from_blob,
+                unmet_from_blob,
+            )
+            meta_e = run_repo_e.get(history_run_id)
+            _, ds = bundles_e.get(meta_e.bundle_id)
+            _, hard_e, soft_e, _ = rules_e.get(meta_e.rule_config_id)
+            new_cfg_e = ds.config.model_copy(update={"hard": hard_e, "soft": soft_e})
+            ds = ds.model_copy(update={"config": new_cfg_e})
+            mb, sb, ub = run_repo_e.get_result_blobs(history_run_id)
+            master = master_from_blob(mb)
+            students = students_from_blob(sb)
+            unmet = unmet_from_blob(ub)
+            st.caption(f"Exportando run histórico #{history_run_id}")
+        except Exception as exc:
+            st.error(f"No se pudo cargar el run #{history_run_id}: {exc}")
+            st.stop()
+    elif not _has_solution():
+        st.info("Run a solve first (tab 2) o activa persistencia y selecciona un run histórico.")
+        st.stop()
     else:
         ds = st.session_state["dataset"]
         master = st.session_state["master"]
         students = st.session_state["students"]
         unmet = st.session_state["unmet"] or []
 
+    if True:
         st.subheader("PowerSchool-compatible exports")
         st.caption("Three CSV files + a field mapping doc, ready to import into PowerSchool sandbox.")
 

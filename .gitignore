@@ -47,6 +47,13 @@ scheduler/data/exports/
 scheduler/data/columbus/
 scheduler/data/columbus_exports/
 
+# SQLite databases — created by persistence layer (v4.27+).
+# Default path: scheduler/data/columbus.sqlite (override via $COLUMBUS_DB).
+scheduler/data/*.sqlite
+scheduler/data/*.sqlite-journal
+scheduler/data/*.sqlite-wal
+scheduler/data/*.sqlite-shm
+
 # Streamlit
 .streamlit/
 

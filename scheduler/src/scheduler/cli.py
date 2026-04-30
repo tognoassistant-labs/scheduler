@@ -91,16 +91,51 @@ def cmd_solve(args: argparse.Namespace) -> int:
         ds.config.hard.enforce_coplanning_groups = True
         print(f"Coplanning HARD enabled — {len(ds.coplanning_groups)} groups must share a free scheme")
 
-    print(f"\n=== Stage 1: master schedule (sections={len(ds.sections)}) ===")
-    master, _, m_status = solve_master(ds, time_limit_s=args.master_time, verbose=args.verbose)
-    print(f"Status: {m_status}, assignments: {len(master)}")
-    if not master:
-        print("ABORTING: master schedule infeasible.", file=sys.stderr)
-        return 3
+    db = None
+    if args.persist:
+        from .persistence import open_db
+        db = open_db(args.db_path)
+        print(f"\nPersistence: ON — db={db.path}")
 
-    print(f"\n=== Stage 2: student assignment (mode={args.mode}, students={len(ds.students)}) ===")
-    student_assigns, unmet, _, s_status = solve_students(ds, master, time_limit_s=args.student_time, mode=args.mode, verbose=args.verbose)
-    print(f"Status: {s_status}, students placed: {len(student_assigns)}, unmet rank-1: {len(unmet)}")
+    if db is not None:
+        from .runner import solve_and_persist
+
+        bundle_label = args.run_label or in_dir.name or "cli"
+        outcome = solve_and_persist(
+            ds,
+            db=db,
+            bundle_label=bundle_label,
+            bundle_source_kind="csv",
+            rule_config_label=args.run_label or "default",
+            run_label=args.run_label or f"cli-{in_dir.name}",
+            master_time=args.master_time,
+            student_time=args.student_time,
+            mode=args.mode,
+            verbose=args.verbose,
+        )
+        master = outcome.result.master
+        student_assigns = outcome.result.students
+        unmet = outcome.result.unscheduled_requests
+        m_status = outcome.master_status
+        s_status = outcome.student_status
+        print(f"Stage 1 status: {m_status}, assignments: {len(master)}")
+        if not master:
+            print("ABORTING: master schedule infeasible.", file=sys.stderr)
+            return 3
+        print(f"Stage 2 status: {s_status}, students placed: {len(student_assigns)}, unmet rank-1: {len(unmet)}")
+        if outcome.run_id is not None:
+            print(f"\nRun persisted: id={outcome.run_id} bundle={outcome.bundle_id} rule_config={outcome.rule_config_id}")
+    else:
+        print(f"\n=== Stage 1: master schedule (sections={len(ds.sections)}) ===")
+        master, _, m_status = solve_master(ds, time_limit_s=args.master_time, verbose=args.verbose)
+        print(f"Status: {m_status}, assignments: {len(master)}")
+        if not master:
+            print("ABORTING: master schedule infeasible.", file=sys.stderr)
+            return 3
+
+        print(f"\n=== Stage 2: student assignment (mode={args.mode}, students={len(ds.students)}) ===")
+        student_assigns, unmet, _, s_status = solve_students(ds, master, time_limit_s=args.student_time, mode=args.mode, verbose=args.verbose)
+        print(f"Status: {s_status}, students placed: {len(student_assigns)}, unmet rank-1: {len(unmet)}")
 
     print("\n=== Stage 3: reports ===")
     md_path = write_reports(ds, master, student_assigns, unmet, reports_dir)
@@ -248,6 +283,14 @@ def main(argv: list[str] | None = None) -> int:
                    help="Enforce coplanning groups (HardConstraints.enforce_coplanning_groups). "
                         "Default OFF; turning ON costs ~50 unmet on real Columbus.")
     s.add_argument("--verbose", action="store_true")
+    s.add_argument("--persist", action="store_true",
+                   help="Save bundle, rule config, and run results to SQLite (v4.27+). "
+                        "DB path: $COLUMBUS_DB or scheduler/data/columbus.sqlite. "
+                        "Without this flag, behavior is identical to v4.26.")
+    s.add_argument("--db-path", default=None,
+                   help="Override SQLite path (otherwise $COLUMBUS_DB or default).")
+    s.add_argument("--run-label", default=None,
+                   help="Label for the persisted run row (only used with --persist).")
     s.set_defaults(func=cmd_solve)
 
     sc = sub.add_parser("scenarios", help="Run a preset of scenarios and compare KPIs")
