@@ -54,6 +54,13 @@ scheduler/data/*.sqlite-journal
 scheduler/data/*.sqlite-wal
 scheduler/data/*.sqlite-shm
 
+# Real student data — NEVER commit. Includes names, IDs, and counselor notes.
+# The cleanup folder is a working area for transforming real xlsx files.
+scheduler/data/cleanup/
+scheduler/data/*.xlsx
+# Whitelist sample/template xlsx files explicitly if any get added.
+!scheduler/data/sample_template.xlsx
+
 # Streamlit — ignore everywhere EXCEPT the deployable config we ship.
 .streamlit/
 !scheduler/.streamlit/
