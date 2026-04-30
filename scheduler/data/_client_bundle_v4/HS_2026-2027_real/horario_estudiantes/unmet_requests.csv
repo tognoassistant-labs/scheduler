@@ -1,117 +1,204 @@
 student_id,course_id,course_name,is_required,reason
+28070,OC1307,Drawing I,False,grid_clash
 27023,OB1532,AP Research,False,grid_clash
-30105,G0901,Español & Literatura 9,False,grid_clash
+30051,I0903,Algebra I 9,False,unknown
+30080,J0903,FRC 9,False,grid_clash
+29111,B1006,Cultural Studies,False,grid_clash
+28158,OA1319,AP Physics 1,False,grid_clash
 30107,OC1305,Painting I,False,grid_clash
+27067,L1302,Introduction to Law,False,grid_clash
+27066,L1303,Pensar nuestro tiempo,False,grid_clash
 28177,OH1305,Art of Fiction Intermediate Level,False,grid_clash
 28177,OC1306,Sculpture I,False,grid_clash
-30026,C0904,Band Level I,False,separation
-30050,J0903,FRC 9,False,grid_clash
+27104,J1203,Tech. and Innovation for Social Change,False,grid_clash
+28094,OJ1203,Entrepreneurship Business Technology,False,grid_clash
+27074,I1204,AP Calculus AB,False,grid_clash
+30026,I0903,Algebra I 9,False,separation
+30050,OC1305,Painting I,False,grid_clash
+27180,L1304,Life Purpose,False,grid_clash
 28075,I1204,AP Calculus AB,False,grid_clash
-29073,B1006,Cultural Studies,False,grid_clash
-30169,J0903,FRC 9,False,grid_clash
-30032,OC1305,Painting I,False,grid_clash
+30169,OC1305,Painting I,False,grid_clash
+29118,OJ1306,AP Computer Science Principles,False,grid_clash
 28160,C0905,Band Level II,False,grid_clash
-27141,J1203,Tech. and Innovation for Social Change,False,grid_clash
-27116,OC1314,AP Drawing,False,grid_clash
+28095,OH1305,Art of Fiction Intermediate Level,False,grid_clash
+28038,L1302,Introduction to Law,False,unknown
+27141,L1301,AP Psychology,False,grid_clash
+27116,I1204,AP Calculus AB,False,grid_clash
+27116,L1301,AP Psychology,False,grid_clash
 28090,OH1305,Art of Fiction Intermediate Level,False,grid_clash
-27041,L1301,AP Psychology,False,grid_clash
-29020,H1001,English 10,False,grid_clash
-27120,OH1501,Journalism Higher Level,False,grid_clash
+28090,OC1305,Painting I,False,grid_clash
+29156,H1001,English 10,False,grid_clash
+28121,OB1520,AP Statistics,False,grid_clash
+27041,OC1306,Sculpture I,False,grid_clash
+27041,I1204,AP Calculus AB,False,grid_clash
+28104,VHS0052,"Spanish Film, Art, and Literature",False,grid_clash
+28093,H1206,AP English Language & Composition,False,grid_clash
 27103,L1303,Pensar nuestro tiempo,False,grid_clash
-30047,OC1305,Painting I,False,grid_clash
-30014,G0901,Español & Literatura 9,False,grid_clash
-29137,OZ1323,AP Human Geography,False,grid_clash
-30019,C0904,Band Level I,False,grid_clash
+28097,H1206,AP English Language & Composition,False,grid_clash
+28112,OH1305,Art of Fiction Intermediate Level,False,grid_clash
+29041,OZ1207,Anatomy and Physiology,False,grid_clash
+29056,C0905,Band Level II,False,grid_clash
+30047,J0903,FRC 9,False,grid_clash
+30114,I0903,Algebra I 9,False,grid_clash
+29040,B1006,Cultural Studies,False,grid_clash
+29137,C0905,Band Level II,False,grid_clash
+27019,OH1501,Journalism Higher Level,False,grid_clash
 28044,OH1401,Journalism Intermediate Level,False,grid_clash
-27018,J1203,Tech. and Innovation for Social Change,False,grid_clash
-27071,OA1318,AP Environmental Science,False,grid_clash
+27071,L1303,Pensar nuestro tiempo,False,grid_clash
 28047,OI1303,Financial Math,False,grid_clash
 28047,OC1305,Painting I,False,grid_clash
-29011,I1214,AP Seminar,False,grid_clash
-30092,OC1305,Painting I,False,grid_clash
-27014,OH1501,Journalism Higher Level,False,grid_clash
+29083,I1003,Geometry,False,grid_clash
+27005,OA1322,AP Physics 2,False,grid_clash
+27005,OI1303,Financial Math,False,grid_clash
+28163,C0905,Band Level II,False,grid_clash
+30092,J0903,FRC 9,False,grid_clash
+30182,I0903,Algebra I 9,False,grid_clash
+27010,OH1501,Journalism Higher Level,False,grid_clash
+29119,I1211,AP Precalculus,False,grid_clash
 27106,OH1501,Journalism Higher Level,False,grid_clash
-30003,C0904,Band Level I,False,grid_clash
-28013,L1301,AP Psychology,False,grid_clash
-30072,OC1305,Painting I,False,grid_clash
-30085,J0903,FRC 9,False,grid_clash
-30076,OC1305,Painting I,False,grid_clash
-27025,OH1501,Journalism Higher Level,False,grid_clash
-30111,OC1305,Painting I,False,grid_clash
-30125,J0903,FRC 9,False,grid_clash
-30055,C0904,Band Level I,False,grid_clash
-28178,E1101,Physical Education and Health 11,True,grid_clash
-30058,G0901,Español & Literatura 9,False,grid_clash
-29135,OJ1306,AP Computer Science Principles,False,grid_clash
-30010,OC1305,Painting I,False,grid_clash
+28036,L1304,Life Purpose,False,grid_clash
+29080,I1211,AP Precalculus,False,grid_clash
+28061,L1301,AP Psychology,False,grid_clash
+30066,J0903,FRC 9,False,grid_clash
+28137,OA1304,AP Biology,False,grid_clash
+27006,OH1501,Journalism Higher Level,False,grid_clash
+28166,OC1307,Drawing I,False,grid_clash
+29046,OJ1204,Creative Design,False,grid_clash
+29027,OJ1306,AP Computer Science Principles,False,grid_clash
+27097,OA1322,AP Physics 2,False,grid_clash
+29014,OC1306,Sculpture I,False,grid_clash
+28164,L1302,Introduction to Law,False,grid_clash
+27025,G1202,AP Spanish Literature and Culture,False,grid_clash
+30079,J0903,FRC 9,False,grid_clash
+30125,OC1305,Painting I,False,grid_clash
+29089,H1001,English 10,False,grid_clash
+29173,I1211,AP Precalculus,False,grid_clash
+29018,OZ1323,AP Human Geography,False,grid_clash
+27085,OH1306,Art of Fiction Higher Level,False,grid_clash
+28178,VHS0052,"Spanish Film, Art, and Literature",False,grid_clash
+28178,OA1319,AP Physics 1,False,grid_clash
+30043,C0904,Band Level I,False,grid_clash
+29106,I1211,AP Precalculus,False,grid_clash
+29122,I1003,Geometry,False,grid_clash
+30109,OC1305,Painting I,False,grid_clash
+30054,I0903,Algebra I 9,False,grid_clash
+30010,J0903,FRC 9,False,grid_clash
+27059,L1301,AP Psychology,False,grid_clash
 28111,I1204,AP Calculus AB,False,grid_clash
-29066,A1006,Chemistry 10,False,grid_clash
 28028,C0904,Band Level I,False,grid_clash
-30081,G0901,Español & Literatura 9,False,grid_clash
-28175,E1101,Physical Education and Health 11,True,grid_clash
-30065,OC1305,Painting I,False,grid_clash
-27108,J1203,Tech. and Innovation for Social Change,False,grid_clash
+28028,I1204,AP Calculus AB,False,grid_clash
+30148,OC1305,Painting I,False,grid_clash
+30009,OC1305,Painting I,False,grid_clash
+27108,OH1306,Art of Fiction Higher Level,False,grid_clash
+28171,I1211,AP Precalculus,False,grid_clash
+28034,VHS0052,"Spanish Film, Art, and Literature",False,grid_clash
+28079,C0904,Band Level I,False,grid_clash
+28024,VHS0052,"Spanish Film, Art, and Literature",False,grid_clash
+28024,OB1520,AP Statistics,False,grid_clash
 28014,OC1307,Drawing I,False,grid_clash
+28105,OH1305,Art of Fiction Intermediate Level,False,grid_clash
+100052,I1204,AP Calculus AB,False,grid_clash
+28083,I1204,AP Calculus AB,False,grid_clash
+29077,H1001,English 10,False,grid_clash
+29112,OI1003,Algebra II,False,grid_clash
 28058,L1302,Introduction to Law,False,grid_clash
 28058,H1201B,AP English Literature and Composition,False,grid_clash
-30059,OC1305,Painting I,False,grid_clash
-27123,OB1532,AP Research,False,grid_clash
-27174,E1201,Physical Education and Health 12,True,grid_clash
-30057,OC1305,Painting I,False,grid_clash
-27086,OC1310,Painting II,False,grid_clash
-30127,J0903,FRC 9,False,grid_clash
-28176,OH1305,Art of Fiction Intermediate Level,False,grid_clash
+29124,OJ1204,Creative Design,False,grid_clash
+27123,OA1318,AP Environmental Science,False,grid_clash
+30057,J0903,FRC 9,False,grid_clash
+29016,I1211,AP Precalculus,False,grid_clash
+27086,A1204,Environmental Science,False,grid_clash
+30146,I0903,Algebra I 9,False,grid_clash
+30127,I0903,Algebra I 9,False,separation
+30127,J0903,FRC 9,False,separation
+30127,C0904,Band Level I,False,grid_clash
+28176,VHS0052,"Spanish Film, Art, and Literature",False,grid_clash
+28074,L1302,Introduction to Law,False,grid_clash
+27008,OH1305,Art of Fiction Intermediate Level,False,grid_clash
 28159,I1204,AP Calculus AB,False,grid_clash
-30117,B0901,Social Studies 9,False,grid_clash
-29085,E1001,Physical Education and Health 10,True,grid_clash
-30106,J0903,FRC 9,False,grid_clash
-30034,C0904,Band Level I,False,separation
-30034,J0903,FRC 9,False,grid_clash
-29012,H1001,English 10,False,grid_clash
-27028,OB1532,AP Research,False,grid_clash
-27046,J1203,Tech. and Innovation for Social Change,False,grid_clash
+27079,OB1520,AP Statistics,False,grid_clash
+28041,VHS0052,"Spanish Film, Art, and Literature",False,grid_clash
+28103,OC1307,Drawing I,False,grid_clash
+30033,J0903,FRC 9,False,grid_clash
+29129,I1214,AP Seminar,False,grid_clash
+29049,H1001,English 10,False,grid_clash
+28017,H1206,AP English Language & Composition,False,grid_clash
+29159,I1214,AP Seminar,False,grid_clash
+30034,C0904,Band Level I,False,grid_clash
+28025,VHS0052,"Spanish Film, Art, and Literature",False,grid_clash
+28003,OC1307,Drawing I,False,grid_clash
+28170,OC1306,Sculpture I,False,grid_clash
+27139,J1203,Tech. and Innovation for Social Change,False,grid_clash
+29138,C0905,Band Level II,False,grid_clash
+28039,OH1305,Art of Fiction Intermediate Level,False,grid_clash
+27046,OA1322,AP Physics 2,False,grid_clash
 27151,L1303,Pensar nuestro tiempo,False,grid_clash
 27151,OZ1313,AP Computer Science A,False,grid_clash
 30119,OC1305,Painting I,False,grid_clash
+27001,OA1318,AP Environmental Science,False,grid_clash
 27001,OB1532,AP Research,False,grid_clash
-29004,C0905,Band Level II,False,grid_clash
-30062,OC1305,Painting I,False,grid_clash
-29115,OZ1323,AP Human Geography,False,grid_clash
-28120,I1204,AP Calculus AB,False,grid_clash
+28120,OI1303,Financial Math,False,grid_clash
+26024,OI1303,Financial Math,False,grid_clash
 27101,OZ1313,AP Computer Science A,False,grid_clash
-27061,A1204,Environmental Science,False,grid_clash
-29045,OJ1306,AP Computer Science Principles,False,grid_clash
-30097,H0904,English 9,False,grid_clash
-27113,OZ1313,AP Computer Science A,False,grid_clash
-28157,I1214,AP Seminar,False,grid_clash
-28157,OI1303,Financial Math,False,grid_clash
-30176,I0903,Algebra I 9,False,grid_clash
-29091,A1006,Chemistry 10,False,grid_clash
-28100,H1206,AP English Language & Composition,False,grid_clash
-29148,I1214,AP Seminar,False,grid_clash
-30160,B0901,Social Studies 9,False,grid_clash
-27009,G1203,Español & Literatura 11,False,grid_clash
-27063,OB1532,AP Research,False,grid_clash
-28057,OA1304,AP Biology,False,grid_clash
-27126,OH1501,Journalism Higher Level,False,grid_clash
-27002,G1202,AP Spanish Literature and Culture,False,grid_clash
-27124,I1208,AP Calculus BC,False,grid_clash
-27172,I1208,AP Calculus BC,False,grid_clash
-27172,OB1532,AP Research,False,grid_clash
-27036,OH1501,Journalism Higher Level,False,grid_clash
-27109,OA1322,AP Physics 2,False,grid_clash
+29096,B1006,Cultural Studies,False,grid_clash
+29131,H1001,English 10,False,grid_clash
+30166,OC1305,Painting I,False,grid_clash
+30097,OC1305,Painting I,False,grid_clash
+27113,L1301,AP Psychology,False,grid_clash
+27113,OB1532,AP Research,False,grid_clash
+28157,C0905,Band Level II,False,grid_clash
+28157,I1204,AP Calculus AB,False,grid_clash
+30158,OC1305,Painting I,False,grid_clash
+29042,B1006,Cultural Studies,False,grid_clash
+28030,A1105,Physics 11,False,grid_clash
+29074,OZ1323,AP Human Geography,False,grid_clash
+28048,I1204,AP Calculus AB,False,grid_clash
+28100,L1302,Introduction to Law,False,grid_clash
+27179,L1302,Introduction to Law,False,grid_clash
+27163,OA1317,AP Chemistry,False,grid_clash
+30160,OC1305,Painting I,False,grid_clash
+29030,OH1401,Journalism Intermediate Level,False,grid_clash
+27009,I1211,AP Precalculus,False,grid_clash
+27063,OA1318,AP Environmental Science,False,grid_clash
+27126,G1201,Español & Literatura 12,False,grid_clash
+27124,C0907,Band Level III,False,grid_clash
+29098,I1214,AP Seminar,False,grid_clash
+29024,B1006,Cultural Studies,False,grid_clash
+28016,A1105,Physics 11,False,grid_clash
+30162,OC1305,Painting I,False,grid_clash
+27036,L1302,Introduction to Law,False,grid_clash
+30103,OC1305,Painting I,False,grid_clash
+28042,H1201B,AP English Literature and Composition,False,grid_clash
+27020,L1301,AP Psychology,False,grid_clash
+27109,L1303,Pensar nuestro tiempo,False,grid_clash
+28035,L1302,Introduction to Law,False,grid_clash
 26012,OC1314,AP Drawing,False,grid_clash
+28066,L1304,Life Purpose,False,grid_clash
+27044,OA1322,AP Physics 2,False,grid_clash
 28063,OC1306,Sculpture I,False,grid_clash
-27132,OH1501,Journalism Higher Level,False,grid_clash
-30141,G0901,Español & Literatura 9,False,grid_clash
+28063,OH1305,Art of Fiction Intermediate Level,False,grid_clash
+28088,A1105,Physics 11,False,grid_clash
+29053,OJ1204,Creative Design,False,grid_clash
+27132,OA1322,AP Physics 2,False,grid_clash
+27132,OI1303,Financial Math,False,grid_clash
+30141,OC1305,Painting I,False,grid_clash
 28071,H1201B,AP English Literature and Composition,False,grid_clash
-28011,OA1319,AP Physics 1,False,grid_clash
-29101,H1001,English 10,False,grid_clash
-29058,C0907,Band Level III,False,grid_clash
-29132,E1001,Physical Education and Health 10,True,grid_clash
-28040,E1101,Physical Education and Health 11,True,grid_clash
+28011,L1304,Life Purpose,False,grid_clash
+29101,OZ1323,AP Human Geography,False,grid_clash
+30147,I0903,Algebra I 9,False,grid_clash
+28174,C0904,Band Level I,False,grid_clash
+30101,J0903,FRC 9,False,grid_clash
+27162,OA1322,AP Physics 2,False,grid_clash
+29132,C0905,Band Level II,False,grid_clash
+28062,H1201B,AP English Literature and Composition,False,grid_clash
+27095,L1303,Pensar nuestro tiempo,False,grid_clash
+28040,I1204,AP Calculus AB,False,grid_clash
+29072,OZ1323,AP Human Geography,False,grid_clash
 30004,OC1305,Painting I,False,grid_clash
-28076,OC1305,Painting I,False,grid_clash
+27146,H1201B,AP English Literature and Composition,False,grid_clash
+28076,H1201B,AP English Literature and Composition,False,grid_clash
 28076,G1202,AP Spanish Literature and Culture,False,grid_clash
-30052,J0903,FRC 9,False,grid_clash
+30052,I0903,Algebra I 9,False,grid_clash
 28165,I1215,AP 3-D Art and Design,False,grid_clash
+27119,L1303,Pensar nuestro tiempo,False,grid_clash
+30084,J0903,FRC 9,False,grid_clash

@@ -1,25 +1,20 @@
 """Canonical PowerSchool ingester (replaces xlsx-derived ps_ingest.py for v4+).
 
-Reads the official Columbus PowerSchool catalog xlsx exported from PS itself
-(`reference/columbus_official_2026-2027.xlsx`) and produces a Dataset with
-**real PS IDs** — no slugs, no heuristics.
+Reads the official Columbus PowerSchool catalog xlsx and produces a Dataset
+with **real PS IDs** — no slugs, no heuristics.
 
-5 sheets:
-    courses              — Course catalog with COURSE_NUMBER (real PS), MAXCLASSSIZE,
-                            MULTITERM, SCHED_FREQUENCY, SCHED_DEMAND
-    rooms                — Room catalog with DCID, ROOMNUMBER, DEPARTMENT, MAXIMUM
-    teachers             — Teacher catalog with DCID, LASTFIRST, PREFERRED_ROOM,
-                            SCHED_DEPARTMENT
-    teacher_assignments  — Per-(teacher, course) assignments with SECTIONS_PER_COURSE
-    requests             — Per-student requests with COURSENUMBER, STUDENT_NUMBER
-
-Fixes applied (consolidated from ps_ingest.py history):
-    - All requests are is_required=True / rank=1 (client B6: no alternates 2026-2027)
-    - PREFERRED_ROOM → Teacher.home_room_id (HC4)
-    - max_consecutive_classes per teacher: default 4, override 5 only for the
-      pigeonhole-impossible cases (≥7 academic sections)
-    - Multi-room teachers (PREFERRED_ROOM blank in source) stay floating
-    - Semester courses (MULTITERM='S1' or 'S2') are flagged via Course.term
+Sheets (v5):
+    courses              — Course catalog
+    rooms                — Room catalog
+    teachers             — Teacher catalog
+    teacher_assignments  — Per-(teacher, course) assignments
+    student_requests     — Per-student requests (renamed from 'requests' in v5)
+    course_relationships — Linked/multi-level courses
+    conselours_recommendations — Separation/grouping pairs
+    teacher_avoid        — Student-teacher restrictions
+    co-planning          — Co-planning teacher groups
+    required_courses     — Official required courses by grade (v5)
+    teacher_assistants   — TA student mappings (v5)
 """
 from __future__ import annotations
 
@@ -516,7 +511,7 @@ def _audit_teacher_assignment_constraints(assignment_rows: list[dict]) -> None:
 
 
 def _read_requests(wb) -> list[dict]:
-    ws = wb["requests"]
+    ws = wb["student_requests"] if "student_requests" in wb.sheetnames else wb["requests"]
     rows = list(ws.iter_rows(values_only=True))
     headers = list(rows[0])
     out = []
@@ -528,6 +523,54 @@ def _read_requests(wb) -> list[dict]:
             continue
         out.append(d)
     return out
+
+
+def _read_required_courses(wb) -> dict[int, set[str]]:
+    """Read the required_courses sheet → {grade_level: {course_number, ...}}."""
+    if "required_courses" not in wb.sheetnames:
+        return {}
+    ws = wb["required_courses"]
+    rows = list(ws.iter_rows(values_only=True))
+    if len(rows) < 2:
+        return {}
+    headers = [str(h).strip().lower() if h else "" for h in rows[0]]
+    cn_idx = headers.index("course_number") if "course_number" in headers else 0
+    gl_idx = headers.index("grade_level") if "grade_level" in headers else 2
+    out: dict[int, set[str]] = {}
+    for raw in rows[1:]:
+        if not raw or not raw[cn_idx]:
+            continue
+        course_number = _safe_str(raw[cn_idx])
+        grade = _safe_int(raw[gl_idx], default=0)
+        if course_number and grade:
+            out.setdefault(grade, set()).add(course_number)
+    return out
+
+
+def _read_teacher_assistants(wb) -> set[str]:
+    """Read the teacher_assistants sheet → set of student numbers who are TAs.
+
+    TAs are excluded from normal scheduling — they don't generate demand.
+    Students marked "Sale de TA y pasa a clase normal" are NOT excluded.
+    """
+    if "teacher_assistants" not in wb.sheetnames:
+        return set()
+    ws = wb["teacher_assistants"]
+    rows = list(ws.iter_rows(values_only=True))
+    if len(rows) < 2:
+        return set()
+    headers = [str(h).strip().upper() if h else "" for h in rows[0]]
+    sn_idx = headers.index("STUDENT_NUMBER") if "STUDENT_NUMBER" in headers else 0
+    assist_idx = headers.index("COURSENAME_TO_ASSIST") if "COURSENAME_TO_ASSIST" in headers else 4
+    ta_students: set[str] = set()
+    for raw in rows[1:]:
+        if not raw or not raw[sn_idx]:
+            continue
+        assist_course = _safe_str(raw[assist_idx])
+        if "clase normal" in assist_course.lower():
+            continue
+        ta_students.add(_safe_str(raw[sn_idx]))
+    return ta_students
 
 
 # ---------------------------------------------------------------------------
@@ -558,6 +601,8 @@ def build_dataset_from_official_xlsx(
     teacher_rows = _read_teachers(wb)
     assignment_rows = _read_teacher_assignments(wb)
     request_rows = _read_requests(wb)
+    required_by_grade = _read_required_courses(wb)
+    ta_student_ids = _read_teacher_assistants(wb)
 
     # ------------------------------------------------------------------ rooms
     room_dcid_by_number: dict[str, str] = {}
@@ -590,11 +635,8 @@ def build_dataset_from_official_xlsx(
             max_size = 25
         meetings = _safe_int(c.get("SCHED_FREQUENCY"), default=3) or 3
         is_advisory = course_number.upper().startswith("ADV")
-        # Per client B6: only PE is curricularly "required". The rest is variable
-        # but every student request must still be assigned (handled at request level).
-        is_required_course = course_number.upper().startswith("E") and any(
-            course_number.upper().endswith(suffix) for suffix in ("0901", "1001", "1101", "1201")
-        )
+        all_required_codes = set().union(*required_by_grade.values()) if required_by_grade else set()
+        is_required_course = course_number in all_required_codes
         # MULTITERM 'S1' / 'S2' → semester course; everything else year-long
         multiterm = _safe_str(c.get("MULTITERM"))
         term = Term.SEMESTER if multiterm in ("S1", "S2") else Term.YEAR
@@ -796,27 +838,29 @@ def build_dataset_from_official_xlsx(
     course_by_number = {c.course_id: c for c in courses}
 
     # ----------------------------------------------------------------- students
+    if ta_student_ids:
+        print(f"[INFO] {len(ta_student_ids)} TA students excluded from scheduling")
     students_map: dict[str, Student] = {}
     for r in request_rows:
         sid = _safe_str(r["STUDENT_NUMBER"])
         course_number = _safe_str(r["COURSENUMBER"])
         if not sid or not course_number:
             continue
+        if sid in ta_student_ids:
+            continue
         if course_number not in course_by_number:
-            continue  # request for a course not in catalog — skip
+            continue
         if sid not in students_map:
-            # Infer grade from the courses they request (highest grade-suffixed course wins)
             students_map[sid] = Student(
                 student_id=sid,
-                name=f"Student_{sid}",  # real names not in this sheet; PS provides them later
-                grade=12,  # placeholder; updated below if their requests reveal a grade
+                name=f"Student_{sid}",
+                grade=12,  # placeholder; updated below
                 requested_courses=[],
             )
-        # Per client B6: ALL requests for 2026-2027 are mandatory.
         students_map[sid].requested_courses.append(CourseRequest(
             student_id=sid,
             course_id=course_number,
-            is_required=True,
+            is_required=True,  # updated below after grade inference
             rank=1,
         ))
 
@@ -832,21 +876,44 @@ def build_dataset_from_official_xlsx(
                     rank=1,
                 ))
 
-    # Infer student grade from grade suffixes in their requested course names
+    # Infer student grade: prefer explicit STUDENT_GRADE_LEVEL_NEXT_YEAR from
+    # the request rows, fall back to course-name heuristic.
+    grade_from_data: dict[str, int] = {}
+    for r in request_rows:
+        sid = _safe_str(r["STUDENT_NUMBER"])
+        gl = _safe_int(r.get("STUDENT_GRADE_LEVEL_NEXT_YEAR"), default=0)
+        if sid and gl in (9, 10, 11, 12):
+            grade_from_data[sid] = gl
     for s in students_map.values():
-        grade_votes: dict[int, int] = defaultdict(int)
-        for r in s.requested_courses:
-            c = course_by_number.get(r.course_id)
-            if not c:
-                continue
-            for g in c.grade_eligibility:
-                if g in (9, 10, 11, 12):
-                    grade_votes[g] += 1
-        if grade_votes:
-            # Pick the LOWEST grade with the most votes — usually their home grade.
-            # (e.g. a grade-11 student takes some grade-10 courses; lowest is correct.)
-            top = max(grade_votes.values())
-            s.grade = min(g for g, v in grade_votes.items() if v == top)
+        if s.student_id in grade_from_data:
+            s.grade = grade_from_data[s.student_id]
+        else:
+            grade_votes: dict[int, int] = defaultdict(int)
+            for r in s.requested_courses:
+                c = course_by_number.get(r.course_id)
+                if not c:
+                    continue
+                for g in c.grade_eligibility:
+                    if g in (9, 10, 11, 12):
+                        grade_votes[g] += 1
+            if grade_votes:
+                top = max(grade_votes.values())
+                s.grade = min(g for g, v in grade_votes.items() if v == top)
+
+    # Set is_required per student-course pair using the required_courses lookup.
+    # A course is required for a student if it appears in required_by_grade[student.grade].
+    if required_by_grade:
+        n_required = 0
+        n_elective = 0
+        for s in students_map.values():
+            req_codes = required_by_grade.get(s.grade, set())
+            for cr in s.requested_courses:
+                cr.is_required = cr.course_id in req_codes
+                if cr.is_required:
+                    n_required += 1
+                else:
+                    n_elective += 1
+        print(f"[INFO] required_courses: {n_required} required, {n_elective} elective requests")
 
     students = list(students_map.values())
 

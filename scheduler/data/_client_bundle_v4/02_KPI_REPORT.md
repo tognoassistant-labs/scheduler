@@ -2,18 +2,18 @@
 
 **Fecha:** 2026-04-28
 **Datos:** PowerSchool canónicos (`columbus_official_2026-2027.xlsx`)
-**Tiempo total de solve:** 303.8s
+**Tiempo total de solve:** 303.7s
 
 ## Datos de entrada
 
 | | |
 |---|---|
-| Estudiantes | 509 |
+| Estudiantes | 483 |
 | Secciones | 248 |
 | Profesores | 48 |
 | Salones | 38 |
 | Cursos | 67 |
-| Requests rank-1 | 4636 |
+| Requests rank-1 | 4398 |
 
 ## Resultados del solve
 
@@ -22,9 +22,9 @@
 | Master status | `OPTIMAL` |
 | Master assignments | 248 |
 | Student status | `FEASIBLE` |
-| Estudiantes asignados | 509/509 |
-| Requests no satisfechos | 116 |
-| **Cobertura** | **97.5%** |
+| Estudiantes asignados | 483/483 |
+| Requests no satisfechos | 203 |
+| **Cobertura** | **95.4%** |
 
 ## Rules relaxed in this run
 
@@ -39,8 +39,9 @@ Each row below documents a school rule the engine had to relax to produce a feas
 
 | Reason | Count |
 |---|---|
-| `grid_clash` | 114 |
-| `separation` | 2 |
+| `grid_clash` | 198 |
+| `separation` | 3 |
+| `unknown` | 2 |
 
 ## KPI breakdown
 
@@ -49,11 +50,11 @@ Each row below documents a school rule the engine had to relax to produce a feas
 
 | Metric | Value | Target | Met |
 |---|---|---|---|
-| Fully scheduled students | 78.8% | ≥98% | ❌ |
-| Required course fulfillment | 97.5% | ≥98% | ❌ |
-| First-choice electives | 0.0% | ≥80% | ❌ |
-| Section balance (max dev from mean) | 15 students | ≤3 | ❌ |
-| Unscheduled (missing required) | 108 | 0 | ❌ |
+| Fully scheduled students | 100.0% | ≥98% | ✅ |
+| Required course fulfillment | 100.0% | ≥98% | ✅ |
+| First-choice electives | 93.5% | ≥80% | ✅ |
+| Section balance (max dev from mean) | 14 students | ≤3 | ❌ |
+| Unscheduled (missing required) | 0 | 0 | ✅ |
 | Time conflicts | 0 | 0 | ✅ (enforced by solver) |
 ```
 

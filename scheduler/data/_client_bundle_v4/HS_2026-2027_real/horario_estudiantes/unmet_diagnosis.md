@@ -1,6 +1,6 @@
 # Unmet diagnosis
 
-Total unmet (student, course) pairs: **116**.
+Total unmet (student, course) pairs: **203**.
 
 Each unmet has been classified into one of:
 
@@ -15,42 +15,43 @@ Each unmet has been classified into one of:
 
 | Reason | Count | % |
 |---|---|---|
-| `grid_clash` | 114 | 98.3% |
-| `separation` | 2 | 1.7% |
+| `grid_clash` | 198 | 97.5% |
+| `separation` | 3 | 1.5% |
+| `unknown` | 2 | 1.0% |
 
 ## Top 20 courses by unmet count
 
 | Course | Total unmet | Dominant reason |
 |---|---|---|
-| `OC1305` (Painting I) | 16 | `grid_clash` (16) |
-| `J0903` (FRC 9) | 8 | `grid_clash` (8) |
-| `OH1501` (Journalism Higher Level) | 7 | `grid_clash` (7) |
-| `OB1532` (AP Research) | 6 | `grid_clash` (6) |
-| `C0904` (Band Level I) | 6 | `grid_clash` (4) |
-| `G0901` (Español & Literatura 9) | 5 | `grid_clash` (5) |
-| `I1204` (AP Calculus AB) | 4 | `grid_clash` (4) |
-| `J1203` (Tech. and Innovation for Social Change) | 4 | `grid_clash` (4) |
-| `OH1305` (Art of Fiction Intermediate Level) | 3 | `grid_clash` (3) |
-| `H1001` (English 10) | 3 | `grid_clash` (3) |
-| `I1214` (AP Seminar) | 3 | `grid_clash` (3) |
-| `E1101` (Physical Education and Health 11) | 3 | `grid_clash` (3) |
-| `OZ1313` (AP Computer Science A) | 3 | `grid_clash` (3) |
-| `OC1306` (Sculpture I) | 2 | `grid_clash` (2) |
-| `C0905` (Band Level II) | 2 | `grid_clash` (2) |
-| `OC1314` (AP Drawing) | 2 | `grid_clash` (2) |
-| `L1301` (AP Psychology) | 2 | `grid_clash` (2) |
-| `L1303` (Pensar nuestro tiempo) | 2 | `grid_clash` (2) |
-| `OZ1323` (AP Human Geography) | 2 | `grid_clash` (2) |
-| `OI1303` (Financial Math) | 2 | `grid_clash` (2) |
+| `OC1305` (Painting I) | 18 | `grid_clash` (18) |
+| `I1204` (AP Calculus AB) | 12 | `grid_clash` (12) |
+| `J0903` (FRC 9) | 11 | `grid_clash` (10) |
+| `I0903` (Algebra I 9) | 9 | `grid_clash` (6) |
+| `L1302` (Introduction to Law) | 9 | `grid_clash` (8) |
+| `OH1305` (Art of Fiction Intermediate Level) | 8 | `grid_clash` (8) |
+| `L1303` (Pensar nuestro tiempo) | 7 | `grid_clash` (7) |
+| `C0905` (Band Level II) | 7 | `grid_clash` (7) |
+| `VHS0052` (Spanish Film, Art, and Literature) | 7 | `grid_clash` (7) |
+| `I1211` (AP Precalculus) | 7 | `grid_clash` (7) |
+| `L1301` (AP Psychology) | 6 | `grid_clash` (6) |
+| `OA1322` (AP Physics 2) | 6 | `grid_clash` (6) |
+| `C0904` (Band Level I) | 6 | `grid_clash` (6) |
+| `H1201B` (AP English Literature and Composition) | 6 | `grid_clash` (6) |
+| `OC1307` (Drawing I) | 5 | `grid_clash` (5) |
+| `B1006` (Cultural Studies) | 5 | `grid_clash` (5) |
+| `OC1306` (Sculpture I) | 5 | `grid_clash` (5) |
+| `H1001` (English 10) | 5 | `grid_clash` (5) |
+| `OI1303` (Financial Math) | 5 | `grid_clash` (5) |
+| `L1304` (Life Purpose) | 4 | `grid_clash` (4) |
 
 ## By grade
 
 | Grade | `no_section` | `grid_clash` | `capacity` | `restriction` | `separation` | `unknown` |
 |---|---|---|---|---|---|---|
-| 9 | 0 | 34 | 0 | 0 | 2 | 0 |
-| 10 | 0 | 18 | 0 | 0 | 0 | 0 |
-| 11 | 0 | 29 | 0 | 0 | 0 | 0 |
-| 12 | 0 | 33 | 0 | 0 | 0 | 0 |
+| 9 | 0 | 36 | 0 | 0 | 3 | 1 |
+| 10 | 0 | 37 | 0 | 0 | 0 | 0 |
+| 11 | 0 | 73 | 0 | 0 | 0 | 1 |
+| 12 | 0 | 52 | 0 | 0 | 0 | 0 |
 
 ## How to use this report
 
