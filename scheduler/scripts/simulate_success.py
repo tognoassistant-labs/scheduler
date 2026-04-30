@@ -17,10 +17,16 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+# Allow running from anywhere — make the scheduler root importable.
+_SCHEDULER_ROOT = Path(__file__).resolve().parent.parent
+if str(_SCHEDULER_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SCHEDULER_ROOT))
 
 from src.scheduler.persistence import open_db
 from src.scheduler.ps_ingest_official import build_dataset_from_official_xlsx

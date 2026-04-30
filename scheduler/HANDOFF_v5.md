@@ -105,6 +105,37 @@ Smoke test ejecutado con `/Users/hector/Downloads/schedule_master_data_hs.xlsx`:
 - **Resultado:** 100% fully scheduled, 100% required, 88.5% first-choice electivas, balance dev 3
 - Compliance 19/19: todas las reglas duras al 100%, soft variando entre 83.3% y 100%
 
+### Simulación de probabilidad de éxito (2026-05-01)
+
+`scripts/simulate_success.py` corre 6 configuraciones contra el dataset
+limpio (`master_data_hs_CLEANED.xlsx`) y reporta cuántas cumplen los 4
+targets v2 §10 simultáneamente.
+
+**Probabilidad global: 50% (3/6 escenarios cumplen todos los targets).**
+
+| Escenario | Required | Electivas | Balance | Total |
+|---|---|---|---|---|
+| baseline | 100% | 83.6% | 3 | ✅ |
+| coplanning_hard | 100% | 82.7% | 3 | ✅ |
+| **elective_boost** | 100% | 85.1% | 3 | ✅ ← recomendado |
+| balance_strict | 99.8% | 77.9% | 2 | ❌ electivas |
+| balance_loose | 100% | 85.7% | 4 | ❌ balance |
+| lexmin | 25.2% | 98.3% | 4 | ❌ ❌ |
+
+**Conclusiones:**
+1. Coplanning ON ya NO causa infeasible con el archivo limpio — antes fallaba el master, ahora corre perfecto
+2. `lexmin` colapsa required a 25% — la prioridad estricta de electivas saca a estudiantes de cursos requeridos. **No usar lexmin con datos del Colegio**
+3. `balance_strict` (K=3) sacrifica electivas — el coordinador debe elegir
+4. `elective_boost` (peso 50) es la mejor configuración: maximiza electivas sin romper otros targets
+
+Hit rate por target:
+- fully_scheduled ≥ 98%: **83% de los escenarios cumplen**
+- required ≥ 98%: **83%**
+- first_choice ≥ 80%: **83%**
+- balance ≤ 3: **67%**
+
+Reporte completo: `data/SIMULATION_REPORT.md` — runs persistidas en `data/sim.sqlite`.
+
 ## Reglas builtin (19) — agrupadas
 
 ### Hard — toggles

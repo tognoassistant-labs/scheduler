@@ -496,30 +496,214 @@ with tab_rules:
                 })
             st.dataframe(pd.DataFrame(diff_rows), width='stretch', hide_index=True)
 
-        # M6 — Phase 2 placeholder: custom rule editor
+        # ============================================================
+        # Reglas personalizadas — Fase 2 funcional (v4.27.7)
+        # ============================================================
         st.divider()
-        with st.expander("➕ Reglas personalizadas (próximamente — Fase 2)"):
-            st.markdown(
-                "**Estado:** la arquitectura ya soporta reglas custom serializadas en "
-                "`rule_config.registry_overrides_json`. La UI de autoría y el "
-                "evaluador de DSL llegan en una segunda fase."
+        st.subheader("➕ Reglas personalizadas")
+        st.caption(
+            "Reglas que extienden el comportamiento por defecto. Se aplican al "
+            "próximo solve y se persisten con el rule_config si activas DB."
+        )
+
+        from src.scheduler.rules.custom import (
+            CustomRuleSpec,
+            supported_opcodes,
+            serialize_custom_rules,
+            deserialize_custom_rules,
+        )
+
+        # session_state list of CustomRuleSpec (as dicts for easier JSON-ability)
+        if "custom_rules" not in st.session_state:
+            st.session_state["custom_rules"] = []
+
+        # ----- Formulario para agregar nueva regla -----
+        with st.expander("Agregar nueva regla", expanded=False):
+            cr_cols = st.columns([2, 2, 1])
+            with cr_cols[0]:
+                cr_id = st.text_input("ID único", key="cr_new_id", placeholder="ej. user_pe_no_block5")
+                cr_label = st.text_input("Etiqueta", key="cr_new_label", placeholder="ej. PE no en bloque 5")
+            with cr_cols[1]:
+                cr_op = st.selectbox("Opcode", supported_opcodes(), key="cr_new_op")
+                cr_kind = st.selectbox("Tipo", ["hard", "soft"], key="cr_new_kind")
+            with cr_cols[2]:
+                st.write("")
+                st.write("")
+                cr_enabled = st.checkbox("Activa", value=True, key="cr_new_enabled")
+
+            # Params dinámicos según opcode
+            params: dict = {}
+            help_text = {
+                "forbid_pair": "Estudiantes A y B nunca en la misma sección",
+                "forbid_slot": "Teacher T no puede dictar en cierto bloque (1-5)",
+                "require_room": "Curso C solo en sala R",
+                "require_room_type": "Curso C solo en salas tipo {gym, science_lab, music, art, computer_lab, special_ed}",
+                "prefer_teacher": "Estudiante S debe quedar con teacher T en curso C",
+                "cohort_together": "Lista de estudiantes (separados por coma) deben compartir secciones",
+            }
+            st.caption(help_text.get(cr_op, ""))
+
+            if cr_op == "forbid_pair":
+                p_cols = st.columns(2)
+                params["student_a"] = p_cols[0].text_input("Student A", key="cr_p_sa")
+                params["student_b"] = p_cols[1].text_input("Student B", key="cr_p_sb")
+            elif cr_op == "forbid_slot":
+                p_cols = st.columns(2)
+                params["teacher_id"] = p_cols[0].text_input("Teacher ID", key="cr_p_tid")
+                params["block"] = p_cols[1].number_input("Block (1-5)", min_value=1, max_value=5, value=1, key="cr_p_blk")
+            elif cr_op == "require_room":
+                p_cols = st.columns(2)
+                params["course_id"] = p_cols[0].text_input("Course ID", key="cr_p_cid")
+                params["room_id"] = p_cols[1].text_input("Room ID", key="cr_p_rid")
+            elif cr_op == "require_room_type":
+                p_cols = st.columns(2)
+                params["course_id"] = p_cols[0].text_input("Course ID", key="cr_p_crt_cid")
+                params["room_type"] = p_cols[1].selectbox(
+                    "Room type",
+                    ["standard", "science_lab", "computer_lab", "art", "music", "gym", "special_ed"],
+                    key="cr_p_crt_rt",
+                )
+            elif cr_op == "prefer_teacher":
+                p_cols = st.columns(3)
+                params["student_id"] = p_cols[0].text_input("Student ID", key="cr_p_sid")
+                params["course_id"] = p_cols[1].text_input("Course ID", key="cr_p_pt_cid")
+                params["teacher_id"] = p_cols[2].text_input("Teacher ID", key="cr_p_pt_tid")
+            elif cr_op == "cohort_together":
+                params["student_ids_csv"] = st.text_area(
+                    "Student IDs (separados por coma)",
+                    key="cr_p_cohort",
+                    placeholder="27001, 27002, 27003",
+                )
+
+            if st.button("➕ Agregar regla"):
+                if not cr_id or not cr_label:
+                    st.error("ID y Etiqueta son requeridos.")
+                elif any(r["id"] == cr_id for r in st.session_state["custom_rules"]):
+                    st.error(f"Ya existe una regla con id `{cr_id}`.")
+                else:
+                    final_params = {k: v for k, v in params.items() if v != ""}
+                    if cr_op == "cohort_together" and "student_ids_csv" in final_params:
+                        ids = [s.strip() for s in final_params["student_ids_csv"].split(",") if s.strip()]
+                        final_params = {"student_ids": ids}
+                    new_rule = {
+                        "id": cr_id,
+                        "kind": cr_kind,
+                        "label": cr_label,
+                        "solver_op": cr_op,
+                        "params": final_params,
+                        "enabled": cr_enabled,
+                    }
+                    st.session_state["custom_rules"].append(new_rule)
+                    st.success(f"Agregada `{cr_id}` ({cr_op}).")
+                    st.rerun()
+
+        # ----- Importadores: course_room_type / free_text_rules_log -----
+        with st.expander("📥 Importar reglas desde xlsx (course_room_type / free_text_rules_log)"):
+            xlsx_path = st.text_input(
+                "Ruta a xlsx con hojas",
+                value="data/cleanup/master_data_hs_CLEANED.xlsx",
+                key="cr_import_path",
             )
-            st.code(
-                """# Ejemplo de spec custom (CustomRuleSpec):
-{
-  "id": "user_no_friday_pe",
-  "kind": "hard",
-  "label": "No PE on Fridays",
-  "solver_op": "forbid_slot",
-  "params": {"course_id": "PE12", "day": "E"},
-  "enabled": true
-}""",
-                language="json",
-            )
+            cols_imp = st.columns(2)
+            with cols_imp[0]:
+                if st.button("📥 Importar `course_room_type` (STATUS=ACTIVE)"):
+                    try:
+                        from openpyxl import load_workbook
+                        wb = load_workbook(xlsx_path, data_only=True)
+                        if "course_room_type" not in wb.sheetnames:
+                            st.warning("Hoja `course_room_type` no encontrada.")
+                        else:
+                            ws = wb["course_room_type"]
+                            n_imported = 0
+                            for row in ws.iter_rows(min_row=2, values_only=True):
+                                if not row or row[0] is None:
+                                    continue
+                                course = str(row[0]).strip()
+                                room_type = str(row[2] or "").strip().lower()
+                                status = str(row[3] or "").upper().strip()
+                                if status != "ACTIVE":
+                                    continue
+                                rid = f"crt_{course}"
+                                if any(r["id"] == rid for r in st.session_state["custom_rules"]):
+                                    continue
+                                st.session_state["custom_rules"].append({
+                                    "id": rid,
+                                    "kind": "hard",
+                                    "label": f"Sala {room_type} para {course}",
+                                    "solver_op": "require_room_type",
+                                    "params": {"course_id": course, "room_type": room_type},
+                                    "enabled": True,
+                                })
+                                n_imported += 1
+                            st.success(f"Importadas {n_imported} reglas. (Las que están en STATUS≠ACTIVE se ignoran.)")
+                            st.rerun()
+                    except Exception as e:
+                        st.error(f"Falló: {e}")
+            with cols_imp[1]:
+                if st.button("📥 Importar `free_text_rules_log` (STATUS=ACTIVE)"):
+                    try:
+                        from openpyxl import load_workbook
+                        import json as _json
+                        wb = load_workbook(xlsx_path, data_only=True)
+                        if "free_text_rules_log" not in wb.sheetnames:
+                            st.warning("Hoja `free_text_rules_log` no encontrada.")
+                        else:
+                            ws = wb["free_text_rules_log"]
+                            n_imported = 0
+                            for row in ws.iter_rows(min_row=2, values_only=True):
+                                if not row or row[0] is None:
+                                    continue
+                                rule_id = str(row[0]).strip()
+                                op = str(row[2] or "").strip()
+                                params_raw = str(row[3] or "").strip()
+                                status = str(row[4] or "").upper().strip()
+                                if status != "ACTIVE" or not op or not params_raw:
+                                    continue
+                                try:
+                                    params_parsed = _json.loads(params_raw)
+                                except Exception:
+                                    continue
+                                rid = f"ft_{rule_id}"
+                                if any(r["id"] == rid for r in st.session_state["custom_rules"]):
+                                    continue
+                                st.session_state["custom_rules"].append({
+                                    "id": rid,
+                                    "kind": "hard",
+                                    "label": f"Free-text {rule_id}",
+                                    "solver_op": op,
+                                    "params": params_parsed,
+                                    "enabled": True,
+                                })
+                                n_imported += 1
+                            st.success(f"Importadas {n_imported} reglas free-text.")
+                            st.rerun()
+                    except Exception as e:
+                        st.error(f"Falló: {e}")
+
+        # ----- Lista de custom rules activas -----
+        rules_list = st.session_state["custom_rules"]
+        if rules_list:
+            st.markdown(f"**{len(rules_list)} regla(s) personalizada(s):**")
+            for idx, r in enumerate(list(rules_list)):
+                cols_r = st.columns([3, 2, 2, 1, 1])
+                cols_r[0].markdown(f"**{r['label']}**\n\n_{r['id']}_")
+                cols_r[1].caption(f"Op: `{r['solver_op']}` ({r['kind']})")
+                cols_r[2].caption(f"Params: `{r['params']}`")
+                with cols_r[3]:
+                    new_enabled = st.checkbox("On", value=r["enabled"], key=f"cr_en_{idx}")
+                    if new_enabled != r["enabled"]:
+                        st.session_state["custom_rules"][idx]["enabled"] = new_enabled
+                        st.rerun()
+                with cols_r[4]:
+                    if st.button("🗑", key=f"cr_del_{idx}"):
+                        st.session_state["custom_rules"].pop(idx)
+                        st.rerun()
             st.caption(
-                "Cuando la Fase 2 esté lista, esta sección permitirá escribir, probar y "
-                "guardar reglas custom directamente desde la UI."
+                "Las reglas se aplican automáticamente en el próximo solve. "
+                "Solo las que están `On` se evalúan."
             )
+        else:
+            st.info("No hay reglas personalizadas todavía. Agrega una arriba o importa desde xlsx.")
 
 
 # ----------------------------------------------------------------------------
@@ -569,6 +753,27 @@ with tab_solve:
             ds_run.config.soft.grouping_codes = grouping_w
             ds_run.config.soft.co_planning = coplan_w
             ds_run.config.soft.teacher_load_balance = teacher_load_w
+
+            # Aplicar reglas personalizadas (Phase 2 DSL) si existen
+            cr_list = st.session_state.get("custom_rules") or []
+            if cr_list:
+                from src.scheduler.rules.custom import (
+                    CustomRuleSpec,
+                    apply_custom_rules_to_dataset,
+                )
+                specs = [
+                    CustomRuleSpec(
+                        id=r["id"],
+                        kind=r["kind"],
+                        label=r["label"],
+                        solver_op=r["solver_op"],
+                        params=r["params"],
+                        enabled=r["enabled"],
+                    )
+                    for r in cr_list
+                ]
+                ds_run = apply_custom_rules_to_dataset(ds_run, specs)
+                st.info(f"Aplicadas {sum(1 for r in cr_list if r['enabled'])} regla(s) personalizada(s) al dataset.")
 
             db = _get_db() if st.session_state.get("persist_enabled") else None
 
