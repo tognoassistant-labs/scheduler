@@ -1,0 +1,90 @@
+student_id,course_id,course_name,is_required
+26041,OI1305,Calculus,False
+26041,G1201,Español & Literatura 12,False
+27090,OI1303,Financial Math,False
+27090,G1201,Español & Literatura 12,False
+27023,H1201B,AP English Literature and Composition,False
+27023,I1208,AP Calculus BC,False
+27042,OH1501,Journalism Higher Level,False
+27067,J1203,Tech. and Innovation for Social Change,False
+27066,OI1305,Calculus,False
+27104,OH1501,Journalism Higher Level,False
+27180,OI1305,Calculus,False
+27116,OB1532,AP Research,False
+27103,L1303,Pensar nuestro tiempo,False
+27103,OB1532,AP Research,False
+27071,OI1305,Calculus,False
+27005,OH1501,Journalism Higher Level,False
+27005,OB1532,AP Research,False
+27010,OH1501,Journalism Higher Level,False
+27106,OH1501,Journalism Higher Level,False
+27142,H1201B,AP English Literature and Composition,False
+27006,J1203,Tech. and Innovation for Social Change,False
+27130,OH1501,Journalism Higher Level,False
+26106,OI1305,Calculus,False
+26106,OA1322,AP Physics 2,False
+27097,OH1501,Journalism Higher Level,False
+27035,OB1532,AP Research,False
+27081,OB1532,AP Research,False
+27131,OI1303,Financial Math,False
+27131,OA1322,AP Physics 2,False
+27085,OI1303,Financial Math,False
+27022,OH1501,Journalism Higher Level,False
+27040,OH1501,Journalism Higher Level,False
+27055,OB1532,AP Research,False
+27123,OB1532,AP Research,False
+27086,OI1303,Financial Math,False
+27086,J1203,Tech. and Innovation for Social Change,False
+27127,OB1532,AP Research,False
+26009,OI1305,Calculus,False
+27043,OB1532,AP Research,False
+27079,OB1532,AP Research,False
+27073,H1201B,AP English Literature and Composition,False
+27073,OB1532,AP Research,False
+27028,OB1532,AP Research,False
+27129,OA1322,AP Physics 2,False
+27151,L1303,Pensar nuestro tiempo,False
+27151,OB1532,AP Research,False
+27148,H1201B,AP English Literature and Composition,False
+27148,OB1532,AP Research,False
+27001,OB1532,AP Research,False
+27093,OI1303,Financial Math,False
+28120,OA1322,AP Physics 2,False
+27101,OZ1313,AP Computer Science A,False
+27061,OI1303,Financial Math,False
+27113,H1201B,AP English Literature and Composition,False
+27113,OB1532,AP Research,False
+27078,OH1501,Journalism Higher Level,False
+27179,OI1303,Financial Math,False
+27163,OA1317,AP Chemistry,False
+27063,OB1532,AP Research,False
+27032,OI1305,Calculus,False
+27032,OA1317,AP Chemistry,False
+27126,OI1303,Financial Math,False
+27124,H1201B,AP English Literature and Composition,False
+27124,OB1532,AP Research,False
+27134,H1201B,AP English Literature and Composition,False
+27134,OB1532,AP Research,False
+27068,OB1532,AP Research,False
+27172,OB1532,AP Research,False
+27020,OI1305,Calculus,False
+27002,OB1532,AP Research,False
+27109,I1208,AP Calculus BC,False
+27109,H1201B,AP English Literature and Composition,False
+26012,H1201B,AP English Literature and Composition,False
+27044,OI1305,Calculus,False
+27164,H1201B,AP English Literature and Composition,False
+27132,OH1501,Journalism Higher Level,False
+27048,OI1305,Calculus,False
+27162,OA1322,AP Physics 2,False
+27162,OB1532,AP Research,False
+27147,OA1322,AP Physics 2,False
+27076,OH1501,Journalism Higher Level,False
+27146,H1201B,AP English Literature and Composition,False
+27096,H1201B,AP English Literature and Composition,False
+27096,OB1532,AP Research,False
+27077,OB1532,AP Research,False
+27110,OI1303,Financial Math,False
+27030,OA1322,AP Physics 2,False
+27119,L1303,Pensar nuestro tiempo,False
+27118,H1201B,AP English Literature and Composition,False
