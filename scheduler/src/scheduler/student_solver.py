@@ -444,6 +444,158 @@ def solve_students(
     return assignments, unmet, solver, status_name
 
 
+def repair_overfill(
+    ds: Dataset,
+    master: list[MasterAssignment],
+    assignments: list[StudentAssignment],
+    unmet: list[tuple[str, str]],
+    over_fill_budget: int = 1,
+    verbose: bool = True,
+) -> tuple[list[StudentAssignment], list[tuple[str, str]], list[tuple[str, str, str]]]:
+    """F1 (v4.14): post-solve greedy repair allowing per-section over-fill.
+
+    For each unmet (student, course), try to find a section that fits the
+    student in their existing schedule (no time conflicts, no broken
+    separations, no restricted teachers). Allow the section to exceed its
+    max_size by up to `over_fill_budget` extra seats.
+
+    This is a SAFE post-pass: it only ADDS assignments. It never moves
+    existing students out of sections. Returns updated assignments, the
+    remaining unmet, and a log of what was repaired so the school can
+    audit the over-fills.
+
+    Args:
+        over_fill_budget: How many extra students per section above max_size.
+            Default 1 → "squeeze 26 in a 25-seat section if it saves an unmet."
+
+    Returns:
+        (new_assignments, remaining_unmet, repaired_log)
+        where repaired_log = [(student_id, course_id, section_id), ...]
+    """
+    if not unmet:
+        return assignments, unmet, []
+
+    sections_by_id = {s.section_id: s for s in ds.sections}
+    sections_by_course: dict[str, list] = defaultdict(list)
+    for s in ds.sections:
+        sections_by_course[s.course_id].append(s)
+        # Linked courses (multi-level) — section also covers these for student requests
+        for linked in s.linked_course_ids:
+            sections_by_course[linked].append(s)
+
+    master_by_section = {m.section_id: m for m in master}
+    student_by_id = {s.student_id: s for s in ds.students}
+
+    # Track current state: per-section enrollment + per-student section list + per-student busy slots
+    current_assigns: dict[str, set[str]] = defaultdict(set)
+    enrollment: dict[str, int] = defaultdict(int)
+    student_busy: dict[str, set[tuple[str, int]]] = defaultdict(set)
+    for sa in assignments:
+        for sid in sa.section_ids:
+            current_assigns[sa.student_id].add(sid)
+            enrollment[sid] += 1
+            m = master_by_section.get(sid)
+            if m:
+                for slot in m.slots:
+                    student_busy[sa.student_id].add(slot)
+
+    # Build separation lookup: per-student → set of forbidden peer ids
+    forbidden_peer: dict[str, set[str]] = defaultdict(set)
+    for a, b in ds.behavior.separations:
+        forbidden_peer[a].add(b)
+        forbidden_peer[b].add(a)
+
+    # For each section, who's already in it (to test separations quickly)
+    section_students: dict[str, set[str]] = defaultdict(set)
+    for sa in assignments:
+        for sid in sa.section_ids:
+            section_students[sid].add(sa.student_id)
+
+    repaired: list[tuple[str, str, str]] = []
+    repaired_set: set[tuple[str, str]] = set()
+    remaining: list[tuple[str, str]] = []
+
+    for stu_id, course_id in unmet:
+        student = student_by_id.get(stu_id)
+        if student is None:
+            remaining.append((stu_id, course_id))
+            continue
+
+        candidates = sections_by_course.get(course_id, [])
+        # Sort by current enrollment ascending — try emptier sections first
+        candidates_sorted = sorted(candidates, key=lambda s: enrollment[s.section_id])
+
+        placed = False
+        for sec in candidates_sorted:
+            sid = sec.section_id
+            # Already enrolled? (shouldn't happen but defensive)
+            if sid in current_assigns[stu_id]:
+                placed = True
+                break
+            # Section must have a master assignment (was scheduled)
+            m = master_by_section.get(sid)
+            if m is None:
+                continue
+            # Time conflict
+            if any(slot in student_busy[stu_id] for slot in m.slots):
+                continue
+            # Restricted teacher
+            if sec.teacher_id in (student.restricted_teacher_ids or []):
+                continue
+            # Capacity with over-fill budget
+            if enrollment[sid] + 1 > sec.max_size + over_fill_budget:
+                continue
+            # Separations (don't put adversaries together)
+            peers_in = section_students[sid]
+            if peers_in & forbidden_peer.get(stu_id, set()):
+                continue
+            # All checks pass — place
+            current_assigns[stu_id].add(sid)
+            enrollment[sid] += 1
+            section_students[sid].add(stu_id)
+            for slot in m.slots:
+                student_busy[stu_id].add(slot)
+            repaired.append((stu_id, course_id, sid))
+            repaired_set.add((stu_id, course_id))
+            placed = True
+            break
+
+        if not placed:
+            remaining.append((stu_id, course_id))
+
+    # Rebuild assignments from current_assigns
+    new_assignments = [
+        StudentAssignment(student_id=sid, section_ids=sorted(secs))
+        for sid, secs in current_assigns.items()
+    ]
+    # Preserve students who had no original assignment and stayed unassigned
+    placed_ids = {a.student_id for a in new_assignments}
+    for sa in assignments:
+        if sa.student_id not in placed_ids and not sa.section_ids:
+            new_assignments.append(sa)
+
+    if verbose:
+        print(f"[REPAIR] over-fill repair pass: budget=+{over_fill_budget}, "
+              f"recovered {len(repaired)} of {len(unmet)} unmet "
+              f"({len(remaining)} remain)")
+        if repaired:
+            from collections import Counter
+            by_course = Counter(c for _, c, _ in repaired)
+            top = ", ".join(f"{c}×{n}" for c, n in by_course.most_common(8))
+            print(f"  by course (top): {top}")
+            # Sections that ended up over-filled
+            over = [(sid, enrollment[sid] - sections_by_id[sid].max_size)
+                    for sid in {s for _, _, s in repaired}
+                    if enrollment[sid] > sections_by_id[sid].max_size]
+            if over:
+                print(f"  sections now over-filled: {len(over)}")
+                for sid, n_over in sorted(over, key=lambda x: -x[1])[:8]:
+                    sec = sections_by_id[sid]
+                    print(f"    {sid} ({sec.course_id}): {enrollment[sid]}/{sec.max_size} (+{n_over})")
+
+    return new_assignments, remaining, repaired
+
+
 if __name__ == "__main__":
     from .sample_data import make_grade_12_dataset
     from .master_solver import solve_master

@@ -49,3 +49,6 @@ scheduler/data/columbus_exports/
 
 # Streamlit
 .streamlit/
+
+# Generated demo poster HTMLs (regenerate with scheduler/scripts/generate_demo_posters.py)
+scheduler/data/**/visor_html/
