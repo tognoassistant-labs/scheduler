@@ -1,0 +1,33 @@
+# Render.com blueprint for the Columbus scheduler.
+#
+# Requires:
+#   - APP_PASSWORD env var (set in Render dashboard, NOT here)
+#   - The repo connected to Render
+#
+# Plan options:
+#   - free:     512MB RAM, sleeps after 15 min idle, no persistent disk
+#   - starter:  $7/mo, 512MB RAM, no sleep, $0.25/GB/mo persistent disk
+#
+# The persistent disk mounts at /data; we point COLUMBUS_DB at it so all
+# bundles/runs survive deploys.
+
+services:
+  - type: web
+    name: columbus-scheduler
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+    healthCheckPath: /_stcore/health
+    autoDeploy: false
+    envVars:
+      - key: COLUMBUS_DB
+        value: /data/columbus.sqlite
+      - key: APP_PASSWORD
+        sync: false  # set manually in dashboard
+      - key: PYTHON_VERSION
+        value: 3.12.7
+    disk:
+      name: columbus-data
+      mountPath: /data
+      sizeGB: 1

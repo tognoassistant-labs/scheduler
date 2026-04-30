@@ -54,8 +54,10 @@ scheduler/data/*.sqlite-journal
 scheduler/data/*.sqlite-wal
 scheduler/data/*.sqlite-shm
 
-# Streamlit
+# Streamlit — ignore everywhere EXCEPT the deployable config we ship.
 .streamlit/
+!scheduler/.streamlit/
+!scheduler/.streamlit/config.toml
 
 # Generated demo poster HTMLs — committed under HS_2026-2027_real for client preview.
 # Regenerate any time with: scheduler/scripts/generate_demo_posters.py

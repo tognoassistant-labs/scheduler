@@ -44,6 +44,39 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+
+# ============================================================================
+# Optional password gate for hosted deployments.
+#
+# Activated only when env var APP_PASSWORD is set (typical for Render /
+# Streamlit Cloud). Local dev runs are unaffected.
+# ============================================================================
+
+import os as _os
+import hmac as _hmac
+
+_REQUIRED_PASSWORD = _os.environ.get("APP_PASSWORD", "").strip()
+
+
+def _gate() -> None:
+    if not _REQUIRED_PASSWORD:
+        return  # local dev — no gate
+    if st.session_state.get("_auth_ok"):
+        return
+    st.markdown("# 🔒 Columbus Scheduling Engine")
+    st.caption("Acceso restringido. Ingresa el password compartido por el administrador.")
+    pwd = st.text_input("Password", type="password", key="_auth_pwd")
+    if st.button("Ingresar", type="primary"):
+        if _hmac.compare_digest(pwd, _REQUIRED_PASSWORD):
+            st.session_state["_auth_ok"] = True
+            st.rerun()
+        else:
+            st.error("Password incorrecto.")
+    st.stop()
+
+
+_gate()
+
 DEFAULTS = {
     "dataset": None,         # Dataset
     "dataset_source": "",    # description string
