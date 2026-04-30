@@ -280,15 +280,15 @@ def solve_students(
 
     # 4. Required-course coverage: weighted count of unmet required requests.
     #
-    # School policy 2026-04-29: prioritize satisfying older grades first
-    # ("primero los de 12, luego los de 11, luego los de 10, por último los
-    # de 9"). We implement this by weighting each unmet slack by a per-grade
-    # factor. Weights are heavy enough that the solver always prefers to
-    # satisfy a higher-grade student over a lower one in the typical case
-    # (single-swap), without overflowing int64 when multiplied by the
-    # downstream `coverage_weight` (~10^4). Strict lex across all 4 grades
-    # would need weights up to 10^16 which exceeds int64 once multiplied;
-    # this configuration is "very strong bias" not pure lex.
+    # School policy 2026-04-29 + meeting 2026-04-30: prioritize older grades.
+    # Tried strict-lex weights (12: 5e9) on 2026-04-30 evening — broke the
+    # solver (instant INFEASIBLE return, probably because in v4.22+ the
+    # `coverage_weight` itself grew to ~6e5 once the elective term kicked
+    # in, making product overflow CP-SAT's internal precision range).
+    # Reverted to "very strong bias" weights (4 orders of magnitude per
+    # grade). True strict lex needs the phased-solver implementation
+    # (separate solve_students per grade with locking) — deferred to a
+    # follow-up turn.
     GRADE_PRIORITY_WEIGHTS = {12: 10**6, 11: 10**4, 10: 10**2, 9: 1}
     grade_by_student = {s.student_id: s.grade for s in ds.students}
 

@@ -22,7 +22,10 @@ from src.scheduler.master_solver import solve_master
 from src.scheduler.student_solver import solve_students, repair_overfill
 from src.scheduler.io_csv import write_dataset
 from src.scheduler.exporter import export_powerschool
-from src.scheduler.io_oneroster import write_oneroster
+# OneRoster (LMS) export disabled per school decision 2026-04-30 — they only
+# need PowerSchool CSVs going forward. The io_oneroster module stays in the
+# codebase in case they want to re-enable it later.
+# from src.scheduler.io_oneroster import write_oneroster
 from src.scheduler.reports import write_reports, compute_kpis
 
 
@@ -163,8 +166,7 @@ def main() -> int:
     print(f"  input_data/ ✓")
     export_powerschool(ds, master, student_assigns, HS_DIR / "powerschool_upload")
     print(f"  powerschool_upload/ ✓")
-    write_oneroster(ds, master, student_assigns, HS_DIR / "lms_upload")
-    print(f"  lms_upload/ ✓")
+    # LMS / OneRoster export disabled (school 2026-04-30 — only PowerSchool needed)
     write_reports(ds, master, student_assigns, unmet, HS_DIR / "horario_estudiantes")
     _write_student_schedules_friendly(ds, master, student_assigns, HS_DIR / "horario_estudiantes" / "student_schedules_friendly.csv")
     print(f"  horario_estudiantes/ ✓")
