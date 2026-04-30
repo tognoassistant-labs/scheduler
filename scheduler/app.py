@@ -187,46 +187,46 @@ def _effective_rules(ds: Dataset) -> tuple[HardConstraints, SoftConstraintWeight
 
 with st.sidebar:
     st.title("📚 Columbus Scheduler")
-    st.caption("v2 §10-aligned scheduling engine")
+    st.caption("Motor de horarios alineado a v2 §10")
 
     st.divider()
-    st.subheader("Dataset source")
+    st.subheader("Fuente de datos")
 
     src = st.radio(
-        "Choose a source",
-        ["Built-in sample (Grade 12, 130 students)", "Canonical CSV folder", "Real Columbus xlsx"],
+        "Elige una fuente",
+        ["Sample integrado (Grado 12, 130 estudiantes)", "Carpeta canónica de CSVs", "xlsx real de Columbus"],
         label_visibility="collapsed",
     )
 
-    if src == "Built-in sample (Grade 12, 130 students)":
-        seed = st.number_input("Random seed", value=42, step=1, min_value=0)
-        n_students = st.number_input("Number of students", value=130, step=10, min_value=10, max_value=1000)
-        if st.button("🔄 Generate sample", width='stretch'):
-            with st.spinner("Generating..."):
+    if src == "Sample integrado (Grado 12, 130 estudiantes)":
+        seed = st.number_input("Semilla aleatoria", value=42, step=1, min_value=0)
+        n_students = st.number_input("Número de estudiantes", value=130, step=10, min_value=10, max_value=1000)
+        if st.button("🔄 Generar sample", width='stretch'):
+            with st.spinner("Generando..."):
                 ds = make_grade_12_dataset(n_students=int(n_students), seed=int(seed))
                 _set_dataset(ds, f"sample · seed={seed} · n={n_students}")
-            st.success(f"Loaded: {len(ds.students)} students, {len(ds.sections)} sections")
+            st.success(f"Cargado: {len(ds.students)} estudiantes, {len(ds.sections)} secciones")
             st.rerun()
 
-    elif src == "Canonical CSV folder":
-        path = st.text_input("Path to CSV folder", value="data/sample")
-        if st.button("📂 Load CSVs", width='stretch'):
+    elif src == "Carpeta canónica de CSVs":
+        path = st.text_input("Ruta a la carpeta de CSVs", value="data/sample")
+        if st.button("📂 Cargar CSVs", width='stretch'):
             try:
                 ds = read_dataset(Path(path))
                 _set_dataset(ds, f"csv · {path}")
-                st.success(f"Loaded from {path}: {len(ds.students)} students, {len(ds.sections)} sections")
+                st.success(f"Cargado desde {path}: {len(ds.students)} estudiantes, {len(ds.sections)} secciones")
                 st.rerun()
             except Exception as e:
-                st.error(f"Failed to load: {e}")
+                st.error(f"Falló la carga: {e}")
 
-    elif src == "Real Columbus xlsx":
-        st.caption("Upload the Columbus operating workbooks")
-        demand_file = st.file_uploader("Demand workbook (1._STUDENTS_PER_COURSE_*.xlsx)", type=["xlsx"], key="demand_xlsx")
-        sched_file = st.file_uploader("Schedule workbook (HS_Schedule_*.xlsx, optional)", type=["xlsx"], key="sched_xlsx")
-        grade = st.number_input("Grade", value=12, step=1, min_value=9, max_value=12)
-        year = st.text_input("Year", value="2026-2027")
-        if st.button("📥 Ingest", width='stretch', disabled=demand_file is None):
-            with st.spinner("Reading xlsx files..."):
+    elif src == "xlsx real de Columbus":
+        st.caption("Sube los workbooks operativos de Columbus")
+        demand_file = st.file_uploader("Workbook de demanda (1._STUDENTS_PER_COURSE_*.xlsx)", type=["xlsx"], key="demand_xlsx")
+        sched_file = st.file_uploader("Workbook de schedule (HS_Schedule_*.xlsx, opcional)", type=["xlsx"], key="sched_xlsx")
+        grade = st.number_input("Grado", value=12, step=1, min_value=9, max_value=12)
+        year = st.text_input("Año", value="2026-2027")
+        if st.button("📥 Ingestar", width='stretch', disabled=demand_file is None):
+            with st.spinner("Leyendo archivos xlsx..."):
                 # Save uploads to /tmp so openpyxl can read them
                 tmp = Path("/tmp/scheduler_uploads")
                 tmp.mkdir(exist_ok=True)
@@ -239,35 +239,35 @@ with st.sidebar:
                 try:
                     ds = build_dataset_from_columbus(demand_path, sched_path, grade=int(grade), year=year)
                     _set_dataset(ds, f"columbus · {demand_file.name} · grade={grade}")
-                    st.success(f"Ingested: {len(ds.students)} students, {len(ds.sections)} sections, "
-                               f"{len(ds.behavior.separations)} separations, {len(ds.behavior.groupings)} groupings")
+                    st.success(f"Ingestado: {len(ds.students)} estudiantes, {len(ds.sections)} secciones, "
+                               f"{len(ds.behavior.separations)} separaciones, {len(ds.behavior.groupings)} groupings")
                     st.rerun()
                 except Exception as e:
-                    st.error(f"Ingest failed: {e}")
+                    st.error(f"Falló la ingesta: {e}")
 
     st.divider()
     if _has_dataset():
-        st.markdown(f"**Loaded:** `{st.session_state['dataset_source']}`")
+        st.markdown(f"**Cargado:** `{st.session_state['dataset_source']}`")
         ds = st.session_state["dataset"]
-        st.caption(f"{len(ds.students)} students · {len(ds.sections)} sections · "
-                   f"{len(ds.teachers)} teachers · {len(ds.rooms)} rooms")
+        st.caption(f"{len(ds.students)} estudiantes · {len(ds.sections)} secciones · "
+                   f"{len(ds.teachers)} teachers · {len(ds.rooms)} salas")
     else:
-        st.info("Pick a dataset source above")
+        st.info("Elige una fuente de datos arriba")
 
     st.divider()
-    st.subheader("Persistence")
+    st.subheader("Persistencia")
     persist = st.checkbox(
-        "Save runs to SQLite",
+        "Guardar corridas en SQLite",
         value=st.session_state.get("persist_enabled", False),
-        help="Persist bundles, rule configs, and solve outputs so any historical "
-             "run can be browsed and re-exported. DB path: $COLUMBUS_DB or "
-             "data/columbus.sqlite.",
+        help="Guarda bundles, configs de reglas y resultados de cada solve para que "
+             "cualquier corrida pasada se pueda consultar y re-exportar. "
+             "Ruta de la BD: $COLUMBUS_DB o data/columbus.sqlite.",
     )
     st.session_state["persist_enabled"] = persist
     if persist:
         db = _get_db()
         if db is not None:
-            st.caption(f"DB: `{db.path}`")
+            st.caption(f"BD: `{db.path}`")
 
 
 # ============================================================================
@@ -286,16 +286,18 @@ st.title("Columbus Scheduling Engine")
     tab_runs,
     tab_scenarios,
     tab_export,
+    tab_help,
 ) = st.tabs([
     "1️⃣ Inputs",
-    "📋 Rules",
+    "📋 Reglas",
     "2️⃣ Solve",
-    "✅ Compliance",
-    "3️⃣ Browse",
-    "🔒 Locks & Prefs",
-    "📜 Runs",
-    "4️⃣ Scenarios",
-    "5️⃣ Export",
+    "✅ Cumplimiento",
+    "3️⃣ Explorar",
+    "🔒 Locks y Prefs",
+    "📜 Corridas",
+    "4️⃣ Escenarios",
+    "5️⃣ Exportar",
+    "❓ Ayuda",
 ])
 
 # ----------------------------------------------------------------------------
@@ -304,7 +306,7 @@ st.title("Columbus Scheduling Engine")
 
 with tab_setup:
     if not _has_dataset():
-        st.info("Pick a dataset source in the sidebar to begin.")
+        st.info("Elige una fuente de datos en el sidebar para empezar.")
     else:
         ds = st.session_state["dataset"]
         rep = validate_dataset(ds)
@@ -313,37 +315,37 @@ with tab_setup:
         with col_left:
             _readiness_card(rep.score, len(rep.errors), len(rep.warnings))
         with col_right:
-            st.subheader("Dataset overview")
+            st.subheader("Vista del dataset")
             stats_cols = st.columns(4)
-            stats_cols[0].metric("Students", len(ds.students))
-            stats_cols[1].metric("Sections", len(ds.sections))
+            stats_cols[0].metric("Estudiantes", len(ds.students))
+            stats_cols[1].metric("Secciones", len(ds.sections))
             stats_cols[2].metric("Teachers", len(ds.teachers))
-            stats_cols[3].metric("Rooms", len(ds.rooms))
+            stats_cols[3].metric("Salas", len(ds.rooms))
 
         if rep.errors:
-            st.error(f"⚠️ {len(rep.errors)} blocking error(s) — fix before solving")
+            st.error(f"⚠️ {len(rep.errors)} error(es) bloqueante(s) — corrige antes de solve")
             for issue in rep.errors:
                 st.write(f"  - **{issue.code}** · `{issue.entity_id or '-'}` · {issue.message}")
         if rep.warnings:
-            with st.expander(f"{len(rep.warnings)} warning(s)"):
+            with st.expander(f"{len(rep.warnings)} advertencia(s)"):
                 for issue in rep.warnings:
                     st.write(f"- **{issue.code}** · `{issue.entity_id or '-'}` · {issue.message}")
 
-        # v4.27 — persist the active dataset to SQLite so it survives reruns.
+        # v4.27 — persiste el dataset activo en SQLite para que sobreviva al reinicio.
         if st.session_state.get("persist_enabled"):
             db = _get_db()
             st.divider()
             cols_persist = st.columns([2, 1])
             with cols_persist[0]:
                 bundle_label = st.text_input(
-                    "Bundle label",
+                    "Etiqueta del bundle",
                     value=st.session_state["dataset_source"][:60] or "ad-hoc",
                     key="bundle_label_input",
                 )
             with cols_persist[1]:
                 st.write("")
                 st.write("")
-                if st.button("💾 Save bundle to DB", width='stretch'):
+                if st.button("💾 Guardar bundle a BD", width='stretch'):
                     repo = InputBundleRepo(db)
                     src = st.session_state["dataset_source"]
                     kind = (
@@ -353,12 +355,12 @@ with tab_setup:
                     )
                     bid = repo.save(bundle_label, kind, ds)
                     st.session_state["bundle_id"] = bid
-                    st.success(f"Saved as bundle #{bid}")
+                    st.success(f"Guardado como bundle #{bid}")
             if st.session_state.get("bundle_id"):
-                st.caption(f"Active bundle: #{st.session_state['bundle_id']}")
+                st.caption(f"Bundle activo: #{st.session_state['bundle_id']}")
 
         st.divider()
-        st.subheader("Course breakdown")
+        st.subheader("Desglose de cursos")
         rows = []
         sections_by_course = Counter(s.course_id for s in ds.sections)
         rank1_demand = Counter()
@@ -371,15 +373,15 @@ with tab_setup:
             cap = sum(s.max_size for s in ds.sections if s.course_id == c.course_id)
             demand = rank1_demand.get(c.course_id, 0)
             rows.append({
-                "Course ID": c.course_id,
-                "Name": c.name,
-                "Department": c.department,
-                "Required": "✓" if c.is_required else "",
+                "ID Curso": c.course_id,
+                "Nombre": c.name,
+                "Departamento": c.department,
+                "Requerido": "✓" if c.is_required else "",
                 "Lab": "✓" if c.is_lab else "",
-                "Sections": n_sect,
-                "Capacity": cap,
-                "Rank-1 demand": demand,
-                "Slack": cap - demand,
+                "Secciones": n_sect,
+                "Capacidad": cap,
+                "Demanda rank-1": demand,
+                "Holgura": cap - demand,
             })
         st.dataframe(pd.DataFrame(rows), width='stretch', hide_index=True)
 
@@ -390,7 +392,7 @@ with tab_setup:
 
 with tab_rules:
     if not _has_dataset():
-        st.info("Load a dataset first.")
+        st.info("Carga un dataset primero.")
     else:
         ds = st.session_state["dataset"]
         st.subheader("Reglas del motor")
@@ -526,27 +528,27 @@ with tab_rules:
 
 with tab_solve:
     if not _has_dataset():
-        st.info("Load a dataset first.")
+        st.info("Carga un dataset primero.")
     else:
         ds = st.session_state["dataset"]
 
-        st.subheader("Solver configuration")
+        st.subheader("Configuración del solver")
         cfg_cols = st.columns(3)
         with cfg_cols[0]:
-            mode = st.selectbox("Mode", ["single", "lexmin"], index=0,
-                                help="single: weighted-sum (fast). lexmin: 2-phase (electives → groupings) under hard balance cap.")
-            master_time = st.number_input("Master time budget (s)", value=30, min_value=5, max_value=600, step=5)
-            student_time = st.number_input("Student time budget (s)", value=180, min_value=10, max_value=1200, step=10)
+            mode = st.selectbox("Modo", ["single", "lexmin"], index=0,
+                                help="single: suma ponderada (rápido). lexmin: 2 fases (electivas → groupings) con cap balance hard.")
+            master_time = st.number_input("Presupuesto tiempo master (s)", value=30, min_value=5, max_value=600, step=5)
+            student_time = st.number_input("Presupuesto tiempo student (s)", value=180, min_value=10, max_value=1200, step=10)
         with cfg_cols[1]:
-            spread_cap = st.slider("Hard balance cap K (max−min per course)", 2, 10, ds.config.hard.max_section_spread_per_course,
-                                   help="K=5 → max-dev ≤ 3 (v2 §10 target). K=8 = loose; K=3 = tight (may make electives infeasible).")
-            elective_w = st.slider("First-choice elective weight", 1, 50, ds.config.soft.first_choice_electives)
-            balance_w = st.slider("Soft balance weight", 0, 30, ds.config.soft.balance_class_sizes)
+            spread_cap = st.slider("Cap balance hard K (max−min por curso)", 2, 10, ds.config.hard.max_section_spread_per_course,
+                                   help="K=5 → max-dev ≤ 3 (meta v2 §10). K=8 = laxo; K=3 = estricto (puede hacer electivas infeasible).")
+            elective_w = st.slider("Peso electiva rank-1", 1, 50, ds.config.soft.first_choice_electives)
+            balance_w = st.slider("Peso balance soft", 0, 30, ds.config.soft.balance_class_sizes)
         with cfg_cols[2]:
-            grouping_w = st.slider("Grouping pairs weight", 0, 20, ds.config.soft.grouping_codes)
-            coplan_w = st.slider("Co-planning weight (0=off)", 0, 10, ds.config.soft.co_planning,
-                                 help="Co-planning concentrates same-dept sections; >0 may hurt electives.")
-            teacher_load_w = st.slider("Teacher-load balance weight", 0, 20, ds.config.soft.teacher_load_balance)
+            grouping_w = st.slider("Peso pares grouping", 0, 20, ds.config.soft.grouping_codes)
+            coplan_w = st.slider("Peso co-planning (0=off)", 0, 10, ds.config.soft.co_planning,
+                                 help="Co-planning agrupa secciones del mismo dept; >0 puede dañar electivas.")
+            teacher_load_w = st.slider("Peso balance carga teacher", 0, 20, ds.config.soft.teacher_load_balance)
 
         # Show rule overrides badge if any are pending.
         if st.session_state.get("rule_overrides"):
@@ -572,7 +574,7 @@ with tab_solve:
 
             if db is not None:
                 # Persistence path: runner handles bundle/rule_config/run lifecycle.
-                with st.spinner("Solving (with persistence)..."):
+                with st.spinner("Resolviendo (con persistencia)..."):
                     src = st.session_state["dataset_source"]
                     bundle_label = st.session_state.get("bundle_label_input") or src[:60] or "ad-hoc"
                     kind = (
@@ -594,7 +596,7 @@ with tab_solve:
                         mode=mode,
                     )
                 if not outcome.result.master:
-                    st.error(f"Master solve failed: {outcome.master_status}")
+                    st.error(f"Falló el solve master: {outcome.master_status}")
                 else:
                     st.session_state["master"] = outcome.result.master
                     st.session_state["students"] = outcome.result.students
@@ -609,31 +611,31 @@ with tab_solve:
                     st.session_state["rule_config_id"] = outcome.rule_config_id
                     st.session_state["last_run_id"] = outcome.run_id
                     st.success(
-                        f"✓ Run #{outcome.run_id} · {outcome.master_status} / {outcome.student_status} · "
-                        f"{len(outcome.result.students)} students · {len(outcome.result.unscheduled_requests)} unmet"
+                        f"✓ Corrida #{outcome.run_id} · {outcome.master_status} / {outcome.student_status} · "
+                        f"{len(outcome.result.students)} estudiantes · {len(outcome.result.unscheduled_requests)} sin cumplir"
                     )
             else:
-                # Legacy path — no persistence
-                with st.spinner(f"Stage 1: master schedule (budget {master_time}s)..."):
+                # Ruta legacy — sin persistencia
+                with st.spinner(f"Etapa 1: horario master (presupuesto {master_time}s)..."):
                     t0 = time.time()
                     master, _, m_status = solve_master(ds_run, time_limit_s=master_time)
                     m_elapsed = time.time() - t0
                 if not master:
-                    st.error(f"Master solve failed: {m_status}")
+                    st.error(f"Falló el solve master: {m_status}")
                 else:
                     st.session_state["master"] = master
                     st.session_state["master_status"] = m_status
                     st.session_state["master_seconds"] = m_elapsed
-                    st.success(f"✓ Stage 1: {m_status} · {len(master)} sections placed · {m_elapsed:.1f}s")
+                    st.success(f"✓ Etapa 1: {m_status} · {len(master)} secciones ubicadas · {m_elapsed:.1f}s")
 
-                    with st.spinner(f"Stage 2: student assignment (mode={mode}, budget {student_time}s)..."):
+                    with st.spinner(f"Etapa 2: asignación de estudiantes (modo={mode}, presupuesto {student_time}s)..."):
                         t0 = time.time()
                         students, unmet, _, s_status = solve_students(
                             ds_run, master, time_limit_s=student_time, mode=mode
                         )
                         s_elapsed = time.time() - t0
                     if not students:
-                        st.error(f"Student solve failed: {s_status}")
+                        st.error(f"Falló el solve student: {s_status}")
                     else:
                         st.session_state["students"] = students
                         st.session_state["unmet"] = unmet
@@ -641,12 +643,12 @@ with tab_solve:
                         st.session_state["student_seconds"] = s_elapsed
                         st.session_state["kpi"] = compute_kpis(ds_run, master, students, unmet)
                         st.session_state["dataset"] = ds_run
-                        st.success(f"✓ Stage 2: {s_status} · {len(students)} students placed · "
-                                   f"{len(unmet)} unmet rank-1 · {s_elapsed:.1f}s")
+                        st.success(f"✓ Etapa 2: {s_status} · {len(students)} estudiantes asignados · "
+                                   f"{len(unmet)} rank-1 sin cumplir · {s_elapsed:.1f}s")
 
         if _has_solution():
             st.divider()
-            st.subheader("KPI vs v2 §10 targets")
+            st.subheader("KPI vs metas v2 §10")
             _kpi_cards(st.session_state["kpi"])
 
             st.caption(
@@ -722,7 +724,7 @@ with tab_compliance:
 
 with tab_browse:
     if not _has_solution():
-        st.info("Run a solve first (tab 2).")
+        st.info("Corre el solver primero (tab 2).")
     else:
         ds = st.session_state["dataset"]
         master = st.session_state["master"]
@@ -747,7 +749,7 @@ with tab_browse:
         )
 
         if view == "Schedule grid":
-            st.subheader("Master schedule grid (Day × Block)")
+            st.subheader("Grid del horario master (Día × Bloque)")
             # For each (day, block), list which sections meet there
             slots: dict[tuple[str, int], list[str]] = defaultdict(list)
             for m in master:
@@ -795,7 +797,7 @@ with tab_browse:
                     "Util %": round(util, 1),
                 })
             df = pd.DataFrame(rows)
-            course_filter = st.multiselect("Filter by course", sorted(df["Course"].unique()))
+            course_filter = st.multiselect("Filtrar por curso", sorted(df["Course"].unique()))
             if course_filter:
                 df = df[df["Course"].isin(course_filter)]
             st.dataframe(df, width='stretch', hide_index=True, height=520)
@@ -817,7 +819,7 @@ with tab_browse:
                     "Courses": ", ".join(cids),
                 })
             df = pd.DataFrame(rows)
-            search = st.text_input("Search students (name or ID)", "")
+            search = st.text_input("Buscar estudiantes (nombre o ID)", "")
             if search:
                 mask = df["Name"].str.contains(search, case=False, na=False) | df["Student ID"].astype(str).str.contains(search, case=False, na=False)
                 df = df[mask]
@@ -860,7 +862,7 @@ with tab_browse:
                     st.subheader("By course")
                     st.dataframe(by_course.sort_values("# unmet", ascending=False), width='stretch', hide_index=True)
                 with col2:
-                    st.subheader("All unmet")
+                    st.subheader("Todas las solicitudes sin cumplir")
                     st.dataframe(df, width='stretch', hide_index=True, height=420)
 
 
@@ -870,16 +872,16 @@ with tab_browse:
 
 with tab_locks:
     if not _has_dataset():
-        st.info("Load a dataset first.")
+        st.info("Carga un dataset primero.")
     else:
         ds = st.session_state["dataset"]
-        st.caption("Edit section locks and teacher preferences. Changes persist in the loaded dataset; re-run Solve (tab 2) to apply.")
+        st.caption("Edita locks de secciones y preferencias de teachers. Los cambios persisten en el dataset cargado; corre Solve (tab 2) para aplicarlos.")
 
-        sub_locks, sub_prefs = st.tabs(["Section locks", "Teacher preferences"])
+        sub_locks, sub_prefs = st.tabs(["Locks de secciones", "Preferencias de teachers"])
 
         with sub_locks:
-            st.subheader("Section locks (v2 §13)")
-            st.caption("Pin a section to a specific scheme (1..8 or ADVISORY) or room. Empty = unconstrained.")
+            st.subheader("Locks de secciones (v2 §13)")
+            st.caption("Fija una sección a un scheme específico (1..8 o ADVISORY) o sala. Vacío = sin restringir.")
             non_adv = [s for s in ds.sections if not ds.course_by_id(s.course_id).is_advisory]
             rows = [{
                 "Section ID": s.section_id,
@@ -897,7 +899,7 @@ with tab_locks:
                     "Teacher": st.column_config.TextColumn(disabled=True),
                     "Locked Scheme": st.column_config.SelectboxColumn(
                         options=["", "1", "2", "3", "4", "5", "6", "7", "8"], required=False,
-                        help="Pick scheme 1..8, or empty for no lock",
+                        help="Elige scheme 1..8, o vacío para sin lock",
                     ),
                     "Locked Room": st.column_config.SelectboxColumn(
                         options=[""] + [r.room_id for r in ds.rooms], required=False,
@@ -933,12 +935,12 @@ with tab_locks:
                     # Clear stale solve outputs since locks change the model
                     for k in ("master", "students", "unmet", "kpi", "master_status", "student_status"):
                         st.session_state[k] = DEFAULTS[k]
-                    st.success(f"Updated {changes} field(s). Re-run Solve in tab 2 to apply.")
+                    st.success(f"Actualizados {changes} campo(s). Corre Solve en tab 2 para aplicar.")
                 else:
-                    st.info("No changes detected.")
+                    st.info("No se detectaron cambios.")
 
         with sub_prefs:
-            st.subheader("Teacher preferences (v2 §6.2)")
+            st.subheader("Preferencias de teachers (v2 §6.2)")
             st.caption("Preferred/avoided courses and time blocks. Soft objectives — solver will try to honor.")
             rows = [{
                 "Teacher ID": t.teacher_id,
@@ -1001,9 +1003,9 @@ with tab_locks:
                     st.session_state["dataset"] = ds
                     for k in ("master", "students", "unmet", "kpi", "master_status", "student_status"):
                         st.session_state[k] = DEFAULTS[k]
-                    st.success(f"Updated {changes} field(s). Re-run Solve in tab 2 to apply.")
+                    st.success(f"Actualizados {changes} campo(s). Corre Solve en tab 2 para aplicar.")
                 else:
-                    st.info("No changes detected.")
+                    st.info("No se detectaron cambios.")
 
 
 # ----------------------------------------------------------------------------
@@ -1143,16 +1145,16 @@ with tab_runs:
 
 with tab_scenarios:
     if not _has_dataset():
-        st.info("Load a dataset first.")
+        st.info("Carga un dataset primero.")
     else:
         ds = st.session_state["dataset"]
 
         preset = st.selectbox("Preset", list(PRESETS.keys()))
         col_l, col_r = st.columns(2)
         with col_l:
-            sc_master_time = st.number_input("Master time per scenario (s)", value=20, min_value=5, max_value=300, step=5, key="sc_master")
+            sc_master_time = st.number_input("Tiempo master por escenario (s)", value=20, min_value=5, max_value=300, step=5, key="sc_master")
         with col_r:
-            sc_student_time = st.number_input("Student time per scenario (s)", value=60, min_value=10, max_value=600, step=10, key="sc_student")
+            sc_student_time = st.number_input("Tiempo student por escenario (s)", value=60, min_value=10, max_value=600, step=10, key="sc_student")
 
         specs = PRESETS[preset]
         st.caption(f"Will run {len(specs)} scenario(s). Estimated total time: "
@@ -1168,7 +1170,7 @@ with tab_scenarios:
                      "comparable luego en la tab Runs.",
             )
 
-        if st.button("▶️ Run scenarios", type="primary", width='stretch'):
+        if st.button("▶️ Correr escenarios", type="primary", width='stretch'):
             results = []
             persisted_run_ids: list[int] = []
             progress = st.progress(0.0, text="Running scenarios...")
@@ -1397,8 +1399,8 @@ with tab_export:
             )
 
         st.divider()
-        st.subheader("Field mapping reference")
-        st.caption("Adjust column names per the school's PS instance using PS Data Dictionary if needed.")
+        st.subheader("Mapeo de campos (referencia)")
+        st.caption("Ajusta nombres de columnas por instancia PS del Colegio usando el PS Data Dictionary si es necesario.")
         st.markdown("""
 | Engine column | PS field | Notes |
 |---|---|---|
@@ -1412,3 +1414,185 @@ with tab_export:
 | TermID | TermID | School year as a string |
 | MaxEnrollment | Max_Enrollment | Direct |
 """)
+
+
+# ----------------------------------------------------------------------------
+# TAB HELP — explicación de cada regla en español para no-técnicos
+# ----------------------------------------------------------------------------
+
+with tab_help:
+    st.title("❓ Ayuda — guía de la aplicación")
+    st.caption(
+        "Esta sección explica qué hace cada parte del motor y qué significa cada regla. "
+        "Pensada para coordinadores académicos y administradores que NO necesitan leer código."
+    )
+
+    st.divider()
+    st.subheader("Flujo de trabajo recomendado")
+    st.markdown("""
+1. **Inputs** — Carga los datos del Colegio (xlsx) o un sample integrado para pruebas.
+2. **Reglas** — Revisa qué reglas están activas y ajusta pesos según prioridades del Colegio.
+3. **Solve** — Corre el motor. Tarda entre 1 y 10 minutos según el tamaño del dataset.
+4. **Cumplimiento** — Mira el % de cumplimiento por regla. Las reglas duras siempre deben estar al 100%.
+5. **Explorar** — Examina el horario generado: secciones, estudiantes, teachers.
+6. **Corridas** — Compara dos o más corridas guardadas para ver el efecto de cambios en las reglas.
+7. **Exportar** — Descarga los CSVs compatibles con PowerSchool.
+""")
+
+    st.divider()
+    st.subheader("Reglas duras (hard) — el motor SIEMPRE las cumple")
+    st.markdown("""
+Si una regla dura no se puede cumplir, el motor reporta **infeasible** y no genera horario.
+""")
+
+    rule_explanations_hard = {
+        "R_enforce_separations": (
+            "Separaciones obligatorias",
+            "Pares de estudiantes que NUNCA pueden estar en la misma sección. "
+            "Útil para conflictos disciplinarios o de personalidad.",
+        ),
+        "R_enforce_restricted_teachers": (
+            "Teachers restringidos por estudiante",
+            "Cada estudiante tiene una lista de teachers que no pueden dictarle. "
+            "El motor garantiza que ninguno de esos teachers aparezca en su horario.",
+        ),
+        "R_enforce_coplanning_groups": (
+            "Co-planning de departamentos",
+            "Grupos de teachers (definidos en la hoja co-planning) deben tener al menos un "
+            "scheme libre en común para poder reunirse a planear. "
+            "Costo: ~50 estudiantes pueden quedar sin su electiva preferida cuando esto está activo.",
+        ),
+        "R_max_class_size": (
+            "Tamaño máximo de clase",
+            "Ninguna sección puede tener más de N estudiantes inscritos (default 25, "
+            "AP Research 26).",
+        ),
+        "R_ap_research_max_size": (
+            "Tamaño máximo AP Research",
+            "Excepción específica para AP Research que permite 26 en lugar de 25.",
+        ),
+        "R_max_consecutive_classes": (
+            "Clases consecutivas máx por teacher",
+            "Ningún teacher dicta más de N bloques seguidos en un día (default 4). "
+            "Garantiza tiempo de descanso/preparación.",
+        ),
+        "R_max_section_spread_per_course": (
+            "Spread máx entre secciones del mismo curso",
+            "Si Álgebra II tiene 3 secciones, la diferencia entre la más llena y la más "
+            "vacía no puede pasar de N estudiantes (default 4). Política Colegio: ideal 4, aceptable 5.",
+        ),
+        "R_min_sections_for_balance": (
+            "Mínimo de secciones para evaluar balance",
+            "Cursos con menos de N secciones no se someten al constraint de balance "
+            "(no tiene sentido balancear 1 sola sección).",
+        ),
+    }
+
+    for rule_id, (label, desc) in rule_explanations_hard.items():
+        with st.expander(f"**{label}** (`{rule_id}`)"):
+            st.markdown(desc)
+
+    st.divider()
+    st.subheader("Pesos suaves (soft) — el motor INTENTA optimizarlos")
+    st.markdown("""
+Los pesos definen prioridades cuando el motor no puede cumplir todo. Un peso de 0 desactiva
+ese objetivo. Pesos altos hacen que el motor prefiera satisfacer ese criterio sobre otros.
+""")
+
+    rule_explanations_soft = {
+        "R_w_first_choice_electives": (
+            "Electivas rank-1",
+            "Premia cumplir cada solicitud de electiva en primera opción. "
+            "Subir el peso → más estudiantes obtienen su electiva preferida (puede sacrificar balance).",
+        ),
+        "R_w_balance_class_sizes": (
+            "Balance entre secciones (suave)",
+            "Penaliza desviación entre tamaños de secciones del mismo curso. "
+            "Complementa el constraint duro (R_max_section_spread_per_course).",
+        ),
+        "R_w_co_planning": (
+            "Co-planning suave",
+            "Premia agrupar teachers del mismo departamento. Default 0 (off). "
+            "Subirlo concentra secciones del mismo dept en pocos schemes y puede dañar electivas.",
+        ),
+        "R_w_grouping_codes": (
+            "Grouping codes (pares que SÍ deben estar juntos)",
+            "Premia mantener juntos pares de estudiantes en la lista de groupings. "
+            "Es el opuesto de las separaciones — se aplica como suave por default.",
+        ),
+        "R_w_teacher_load_balance": (
+            "Balance de carga teachers",
+            "Penaliza desbalance en bloques por día entre teachers. "
+            "Garantiza distribución pareja del trabajo.",
+        ),
+        "R_w_teacher_preferred_courses": (
+            "Cursos preferidos por teacher",
+            "Premia asignar al teacher cursos en su lista preferred_course_ids.",
+        ),
+        "R_w_teacher_avoid_courses": (
+            "Cursos evitados por teacher",
+            "Penaliza asignar al teacher cursos en su lista avoid_course_ids.",
+        ),
+        "R_w_teacher_preferred_blocks": (
+            "Bloques preferidos por teacher",
+            "Premia dictar en bloques que el teacher prefiere (ej: 'no quiero dictar primer bloque').",
+        ),
+        "R_w_teacher_avoid_blocks": (
+            "Bloques evitados por teacher",
+            "Penaliza dictar en bloques que el teacher evita.",
+        ),
+        "R_w_singleton_separation": (
+            "Separación de cursos singleton",
+            "Empuja cursos con una sola sección hacia schemes diferentes para reducir conflictos. "
+            "Default 0 (off).",
+        ),
+        "R_w_separation_violation": (
+            "Violación de separación (cuando hard=off)",
+            "Penalización aplicada solo si la regla R_enforce_separations está apagada. "
+            "Alto → cumple casi todas las separaciones; bajo → permite romperlas.",
+        ),
+    }
+
+    for rule_id, (label, desc) in rule_explanations_soft.items():
+        with st.expander(f"**{label}** (`{rule_id}`)"):
+            st.markdown(desc)
+
+    st.divider()
+    st.subheader("KPIs principales y qué significan")
+    st.markdown("""
+| KPI | Meta v2 §10 | Significado |
+|---|---|---|
+| **Fully scheduled %** | ≥98% | Estudiantes que recibieron TODOS sus cursos requeridos |
+| **Required fulfillment %** | ≥98% | Solicitudes obligatorias cumplidas (de todas las solicitudes obligatorias) |
+| **First-choice electives %** | ≥80% | Electivas rank-1 cumplidas (de todas las solicitudes rank-1) |
+| **Section balance (max dev)** | ≤3 | Mayor diferencia entre tamaños de secciones del mismo curso |
+| **Unscheduled** | 0 | Estudiantes sin algún curso obligatorio |
+| **Time conflicts** | 0 | Siempre 0 — el motor lo garantiza estructuralmente |
+""")
+
+    st.divider()
+    st.subheader("Glosario rápido")
+    st.markdown("""
+- **Bundle** — un conjunto de inputs (cursos, teachers, salas, secciones, estudiantes, requests). Cada bundle se guarda con un ID único.
+- **Rule config** — configuración de reglas (toggles + pesos). También se guarda con ID propio.
+- **Run** — una corrida del solver = un bundle + un rule config + los resultados que produjo. Cada run tiene su propio ID y queda en el histórico.
+- **Master** — etapa 1 del solver: decide qué scheme y qué sala usa cada sección.
+- **Student** — etapa 2 del solver: asigna cada estudiante a una sección por curso solicitado.
+- **Scheme** — número 1..8 que representa una "huella" de día/bloque. Por ejemplo, scheme 3 = lunes B1, miércoles C2, jueves D3.
+- **Coplanning group** — grupo de teachers que necesitan un horario común libre para reuniones.
+- **Separation** — par de estudiantes que NO pueden estar en la misma sección.
+- **Grouping** — par de estudiantes que SÍ deben estar en la misma sección.
+- **Singleton course** — curso con una sola sección.
+- **PowerSchool export** — los 3 CSVs (sections, enrollments, master_schedule) listos para importar a PowerSchool.
+""")
+
+    st.divider()
+    st.subheader("Soporte")
+    st.markdown(
+        "- **Errores en el solver:** revisa los warnings en la tab Inputs; "
+        "datos sucios suelen ser la causa principal.\n"
+        "- **Master infeasible:** el caso más común es coplanning hard activo + datos muy ajustados. "
+        "Apaga `R_enforce_coplanning_groups` y vuelve a correr.\n"
+        "- **Cobertura baja de electivas:** sube `R_w_first_choice_electives`, baja `R_w_balance_class_sizes`, "
+        "o agrega más secciones al curso de alta demanda."
+    )

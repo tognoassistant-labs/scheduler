@@ -443,6 +443,167 @@ def _check_teacher_load_balance(
     return _make("R_w_teacher_load_balance", sat, vio, samples)
 
 
+def _check_ap_research_max_size(
+    ds: Dataset, master: list[MasterAssignment], students: list[StudentAssignment], unmet: list[tuple[str, str]]
+) -> RuleCompliance:
+    """AP Research has its own max_size cap (default 26). Reports just AP Research sections."""
+    enr = _enrollment_by_section(students)
+    courses_by_id = {c.course_id: c for c in ds.courses}
+    cap = ds.config.hard.ap_research_max_size
+    sat = vio = 0
+    samples: list[dict[str, Any]] = []
+    for s in ds.sections:
+        course = courses_by_id.get(s.course_id)
+        if course is None or not _is_ap_research(course):
+            continue
+        size = enr.get(s.section_id, 0)
+        if size <= cap:
+            sat += 1
+        else:
+            vio += 1
+            if len(samples) < SAMPLE_LIMIT:
+                samples.append({
+                    "section_id": s.section_id,
+                    "enrollment": size,
+                    "cap": cap,
+                })
+    return _make("R_ap_research_max_size", sat, vio, samples)
+
+
+def _check_min_sections_for_balance(
+    ds: Dataset, master: list[MasterAssignment], students: list[StudentAssignment], unmet: list[tuple[str, str]]
+) -> RuleCompliance:
+    """Reports % of courses that have enough sections (≥ min_sections_for_balance)
+    to participate in the balance constraint. This is a structural rule about
+    the dataset; satisfied = courses with enough sections to be balanced."""
+    sections_by_course: dict[str, int] = defaultdict(int)
+    for s in ds.sections:
+        sections_by_course[s.course_id] += 1
+    threshold = ds.config.hard.min_sections_for_balance
+    sat = vio = 0
+    samples: list[dict[str, Any]] = []
+    for cid, n in sections_by_course.items():
+        if n >= threshold:
+            sat += 1
+        else:
+            vio += 1
+            if len(samples) < SAMPLE_LIMIT:
+                samples.append({
+                    "course_id": cid,
+                    "sections": n,
+                    "threshold": threshold,
+                })
+    return _make("R_min_sections_for_balance", sat, vio, samples)
+
+
+def _check_w_balance_class_sizes(
+    ds: Dataset, master: list[MasterAssignment], students: list[StudentAssignment], unmet: list[tuple[str, str]]
+) -> RuleCompliance:
+    """Soft balance metric: per-course mean deviation. A section within ±2 of
+    its course's mean enrollment counts as satisfied. Different framing than
+    R_max_section_spread_per_course (which is hard, per-course max-min)."""
+    enr = _enrollment_by_section(students)
+    sections_by_course: dict[str, list[str]] = defaultdict(list)
+    for s in ds.sections:
+        sections_by_course[s.course_id].append(s.section_id)
+    sat = vio = 0
+    samples: list[dict[str, Any]] = []
+    for cid, sect_ids in sections_by_course.items():
+        if len(sect_ids) < 2:
+            continue
+        sizes = [enr.get(sid, 0) for sid in sect_ids]
+        mean = sum(sizes) / len(sizes)
+        for sid, size in zip(sect_ids, sizes):
+            if abs(size - mean) <= 2:
+                sat += 1
+            else:
+                vio += 1
+                if len(samples) < SAMPLE_LIMIT:
+                    samples.append({
+                        "section_id": sid,
+                        "course_id": cid,
+                        "enrollment": size,
+                        "course_mean": round(mean, 2),
+                    })
+    return _make("R_w_balance_class_sizes", sat, vio, samples)
+
+
+def _check_w_co_planning(
+    ds: Dataset, master: list[MasterAssignment], students: list[StudentAssignment], unmet: list[tuple[str, str]]
+) -> RuleCompliance:
+    """Soft variant: same logic as the hard coplanning check, but reported
+    even when enforce_coplanning_groups is off. % of groups that share at
+    least one free scheme."""
+    if not ds.coplanning_groups:
+        return _make("R_w_co_planning", 0, 0, [])
+    sections_by_id = {s.section_id: s for s in ds.sections}
+    teacher_schemes: dict[str, set[Any]] = defaultdict(set)
+    for m in master:
+        sect = sections_by_id.get(m.section_id)
+        if sect is None:
+            continue
+        teacher_schemes[sect.teacher_id].add(m.scheme)
+    all_schemes = set(range(1, 9))
+    sat = vio = 0
+    samples: list[dict[str, Any]] = []
+    for group in ds.coplanning_groups:
+        free_per_member = [all_schemes - teacher_schemes.get(tid, set()) for tid in group]
+        if not free_per_member:
+            continue
+        if set.intersection(*free_per_member):
+            sat += 1
+        else:
+            vio += 1
+            if len(samples) < SAMPLE_LIMIT:
+                samples.append({"group": group})
+    return _make("R_w_co_planning", sat, vio, samples)
+
+
+def _check_w_singleton_separation(
+    ds: Dataset, master: list[MasterAssignment], students: list[StudentAssignment], unmet: list[tuple[str, str]]
+) -> RuleCompliance:
+    """Singleton courses (1 section) on different schemes from each other.
+    Each pair of singleton sections counts as one check."""
+    sections_by_course: dict[str, list[str]] = defaultdict(list)
+    for s in ds.sections:
+        sections_by_course[s.course_id].append(s.section_id)
+    singleton_section_ids = {
+        sect_list[0] for sect_list in sections_by_course.values() if len(sect_list) == 1
+    }
+    if len(singleton_section_ids) < 2:
+        return _make("R_w_singleton_separation", 0, 0, [])
+    scheme_by_section = {m.section_id: m.scheme for m in master}
+    singletons = [sid for sid in singleton_section_ids if sid in scheme_by_section]
+    sat = vio = 0
+    samples: list[dict[str, Any]] = []
+    for i in range(len(singletons)):
+        for j in range(i + 1, len(singletons)):
+            a, b = singletons[i], singletons[j]
+            if scheme_by_section[a] != scheme_by_section[b]:
+                sat += 1
+            else:
+                vio += 1
+                if len(samples) < SAMPLE_LIMIT:
+                    samples.append({
+                        "section_a": a,
+                        "section_b": b,
+                        "shared_scheme": scheme_by_section[a],
+                    })
+    return _make("R_w_singleton_separation", sat, vio, samples)
+
+
+def _check_w_separation_violation(
+    ds: Dataset, master: list[MasterAssignment], students: list[StudentAssignment], unmet: list[tuple[str, str]]
+) -> RuleCompliance:
+    """Only meaningful when enforce_separations is OFF. With hard ON the solver
+    guarantees zero violations, so this trivially reports 100%. With hard OFF
+    this is identical to R_enforce_separations but framed as soft."""
+    if ds.config.hard.enforce_separations:
+        return _make("R_w_separation_violation", len(ds.behavior.separations), 0, [])
+    inner = _check_separations(ds, master, students, unmet)
+    return _make("R_w_separation_violation", inner.satisfied, inner.violated, inner.sample_violations)
+
+
 # ---------------------------------------------------------------------------
 # Dispatch
 # ---------------------------------------------------------------------------
@@ -455,9 +616,11 @@ CheckFn = Callable[
 
 CHECKERS: dict[str, CheckFn] = {
     "R_max_class_size": _check_max_class_size,
+    "R_ap_research_max_size": _check_ap_research_max_size,
     "R_enforce_separations": _check_separations,
     "R_enforce_restricted_teachers": _check_restricted_teachers,
     "R_max_section_spread_per_course": _check_max_section_spread,
+    "R_min_sections_for_balance": _check_min_sections_for_balance,
     "R_max_consecutive_classes": _check_max_consecutive,
     "R_enforce_coplanning_groups": _check_coplanning,
     "R_w_first_choice_electives": _check_first_choice_electives,
@@ -467,6 +630,10 @@ CHECKERS: dict[str, CheckFn] = {
     "R_w_teacher_preferred_blocks": _check_teacher_preferred_blocks,
     "R_w_teacher_avoid_blocks": _check_teacher_avoid_blocks,
     "R_w_teacher_load_balance": _check_teacher_load_balance,
+    "R_w_balance_class_sizes": _check_w_balance_class_sizes,
+    "R_w_co_planning": _check_w_co_planning,
+    "R_w_singleton_separation": _check_w_singleton_separation,
+    "R_w_separation_violation": _check_w_separation_violation,
 }
 
 

@@ -92,27 +92,17 @@ def test_zero_division_safe_with_no_separations() -> None:
     assert r.violated == 0
 
 
-def test_extended_checkers_present(tiny_solved) -> None:
-    """The 13 implemented checkers must all run on a real solve."""
+def test_full_coverage_19_of_19(tiny_solved) -> None:
+    """Every registered rule must have a working checker (19/19 coverage)."""
+    from src.scheduler.rules import RULE_REGISTRY
     ds, master, students, unmet = tiny_solved
     rows = compute_compliance(ds, master, students, unmet)
     rule_ids = {r.rule_id for r in rows}
-    expected = {
-        "R_max_class_size",
-        "R_enforce_separations",
-        "R_enforce_restricted_teachers",
-        "R_max_section_spread_per_course",
-        "R_max_consecutive_classes",
-        "R_enforce_coplanning_groups",
-        "R_w_first_choice_electives",
-        "R_w_grouping_codes",
-        "R_w_teacher_preferred_courses",
-        "R_w_teacher_avoid_courses",
-        "R_w_teacher_preferred_blocks",
-        "R_w_teacher_avoid_blocks",
-        "R_w_teacher_load_balance",
-    }
-    assert expected <= rule_ids, f"missing: {expected - rule_ids}"
+    missing = set(RULE_REGISTRY.keys()) - rule_ids
+    assert not missing, f"Rules without compliance: {missing}"
+    # And no row references a non-registered rule
+    extra = rule_ids - set(RULE_REGISTRY.keys())
+    assert not extra, f"Compliance rows for unregistered rules: {extra}"
 
 
 def test_apply_custom_rules_forbid_pair() -> None:
