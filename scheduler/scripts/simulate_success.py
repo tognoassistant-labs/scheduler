@@ -95,6 +95,32 @@ SCENARIOS: list[ScenarioSpec] = [
         },
     ),
     ScenarioSpec(
+        label="elective_max",
+        description="Peso electivas = 80 + balance soft bajo",
+        overrides={
+            "hard.enforce_coplanning_groups": False,
+            "soft.first_choice_electives": 80,
+            "soft.balance_class_sizes": 2,
+        },
+    ),
+    ScenarioSpec(
+        label="long_budget",
+        description="Defaults pero con student_time=600s para máxima convergencia",
+        overrides={"hard.enforce_coplanning_groups": False},
+        master_time=120.0,
+        student_time=600.0,
+    ),
+    ScenarioSpec(
+        label="elective_boost_long",
+        description="elective_boost con student_time=600s — combinación recomendada",
+        overrides={
+            "hard.enforce_coplanning_groups": False,
+            "soft.first_choice_electives": 50,
+        },
+        master_time=120.0,
+        student_time=600.0,
+    ),
+    ScenarioSpec(
         label="lexmin",
         description="Modo lexmin — electivas tienen prioridad estricta sobre groupings",
         overrides={"hard.enforce_coplanning_groups": False},
