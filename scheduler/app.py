@@ -95,6 +95,8 @@ DEFAULTS = {
     "rule_config_id": None,  # int — persisted rule config for the next solve
     "rule_overrides": {},    # dict[rule_id, bool|int] — Rules-tab edits
     "last_run_id": None,
+    # v4.27.20 — origen de los datos cargados (REQ-2)
+    "loaded_files": [],      # list of dicts: {role, name, path, size, sha256, ingested_at}
 }
 for k, v in DEFAULTS.items():
     if k not in st.session_state:
@@ -303,14 +305,34 @@ def _has_solution() -> bool:
     return st.session_state["master"] is not None and st.session_state["students"] is not None
 
 
-def _set_dataset(ds: Dataset, source: str) -> None:
+def _set_dataset(ds: Dataset, source: str, loaded_files: list[dict] | None = None) -> None:
     st.session_state["dataset"] = ds
     st.session_state["dataset_source"] = source
+    st.session_state["loaded_files"] = loaded_files or []
     # New dataset → invalidate any persisted bundle pointer & solve outputs
     st.session_state["bundle_id"] = None
     st.session_state["rule_overrides"] = {}
     for k in ("master", "students", "unmet", "kpi", "master_status", "student_status"):
         st.session_state[k] = DEFAULTS[k]
+
+
+def _file_metadata(path: Path, role: str) -> dict:
+    """Compute path/size/sha256 metadata for a file. Used in 'Archivos cargados'."""
+    import hashlib
+    from datetime import datetime, timezone
+    p = Path(path).resolve()
+    if not p.exists():
+        return {"role": role, "name": p.name, "path": str(p), "size": 0,
+                "sha256": "(no encontrado)", "ingested_at": ""}
+    h = hashlib.sha256(p.read_bytes()).hexdigest()
+    return {
+        "role": role,
+        "name": p.name,
+        "path": str(p),
+        "size": p.stat().st_size,
+        "sha256": h,
+        "ingested_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
 
 
 def _get_db() -> DB | None:
@@ -351,7 +373,11 @@ with st.sidebar:
         if st.button("🔄 Generar sample", width='stretch'):
             with st.spinner("Generando..."):
                 ds = make_grade_12_dataset(n_students=int(n_students), seed=int(seed))
-                _set_dataset(ds, f"sample · seed={seed} · n={n_students}")
+                _set_dataset(ds, f"sample · seed={seed} · n={n_students}", loaded_files=[
+                    {"role": "sample sintético", "name": f"make_grade_12_dataset(seed={seed}, n={n_students})",
+                     "path": "(generado en memoria — no es archivo real)", "size": 0,
+                     "sha256": f"seed-{seed}-n-{n_students}", "ingested_at": ""}
+                ])
             st.success(f"Cargado: {len(ds.students)} estudiantes, {len(ds.sections)} secciones")
             st.rerun()
 
@@ -360,7 +386,17 @@ with st.sidebar:
         if st.button("📂 Cargar CSVs", width='stretch'):
             try:
                 ds = read_dataset(Path(path))
-                _set_dataset(ds, f"csv · {path}")
+                # Capturar metadata de los 8 archivos canónicos
+                csv_files = [
+                    "courses.csv", "teachers.csv", "rooms.csv", "sections.csv",
+                    "students.csv", "course_requests.csv", "behavior.csv", "rotation.csv",
+                ]
+                meta = []
+                for fname in csv_files:
+                    p = Path(path) / fname
+                    if p.exists():
+                        meta.append(_file_metadata(p, role=fname.replace(".csv", "")))
+                _set_dataset(ds, f"csv · {path}", loaded_files=meta)
                 st.success(f"Cargado desde {path}: {len(ds.students)} estudiantes, {len(ds.sections)} secciones")
                 st.rerun()
             except Exception as e:
@@ -424,7 +460,10 @@ with st.sidebar:
                 sched_path = (tmp / sched_file.name) if sched_file is not None else None
                 try:
                     ds = build_dataset_from_columbus(demand_path, sched_path, grade=grade_arg, year=year)
-                    _set_dataset(ds, f"columbus · {demand_file.name} · grade={grade_label}")
+                    meta = [_file_metadata(demand_path, role="Workbook de demanda")]
+                    if sched_path is not None:
+                        meta.append(_file_metadata(sched_path, role="Workbook de schedule"))
+                    _set_dataset(ds, f"columbus · {demand_file.name} · grade={grade_label}", loaded_files=meta)
                     st.success(f"Ingestado: {len(ds.students)} estudiantes, {len(ds.sections)} secciones, "
                                f"{len(ds.behavior.separations)} separaciones, {len(ds.behavior.groupings)} groupings")
                     st.rerun()
@@ -496,6 +535,29 @@ with tab_setup:
     else:
         ds = st.session_state["dataset"]
         rep = validate_dataset(ds)
+
+        # Panel permanente de archivos cargados (REQ-2)
+        loaded = st.session_state.get("loaded_files") or []
+        if loaded:
+            with st.expander(f"📂 Origen de los datos ({len(loaded)} archivo(s))", expanded=True):
+                rows = []
+                for f in loaded:
+                    size_kb = f["size"] / 1024 if f["size"] else 0
+                    rows.append({
+                        "Rol": f["role"],
+                        "Archivo": f["name"],
+                        "Ruta completa": f["path"],
+                        "Tamaño": f"{size_kb:.1f} KB" if size_kb > 0 else "—",
+                        "SHA256 (primeros 12)": f["sha256"][:12] if f["sha256"] else "—",
+                    })
+                st.dataframe(pd.DataFrame(rows), width='stretch', hide_index=True)
+                if loaded[0].get("ingested_at"):
+                    st.caption(f"⏰ Ingestado: {loaded[0]['ingested_at']}")
+                st.caption(
+                    "Esta tabla muestra qué archivos físicos están detrás del "
+                    "dataset activo. Útil para auditar (¿qué versión usé en "
+                    "esta corrida?) y para reportar problemas a IT."
+                )
 
         col_left, col_right = st.columns([1, 2])
         with col_left:
