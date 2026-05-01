@@ -1261,6 +1261,45 @@ with tab_solve:
             n = len(st.session_state["rule_overrides"])
             st.info(f"📋 {n} regla(s) modificada(s) en la tab Rules — aplicarán automáticamente al solve")
 
+        # C4 — Estimar tiempo antes de Solve
+        n_students = len(ds.students)
+        n_sections = len(ds.sections)
+        # Heurística empírica:
+        # - Master: típicamente <5s pero puede llegar al budget si datos complejos
+        # - Student: ~0.4s por estudiante con budget alto, hasta budget máximo
+        est_master = min(int(master_time), max(2, n_sections // 50))
+        est_student = min(int(student_time), max(10, int(n_students * 0.4)))
+        est_total_min = (est_master + est_student) / 60
+        # Tendencias para ajustar
+        warnings = []
+        if n_students > 1000 and student_time < 300:
+            warnings.append(f"Dataset grande ({n_students} estudiantes) con student_time={int(student_time)}s "
+                            f"corto. Recomendado: subir a 600s para mejorar electivas.")
+        if mode == "lexmin":
+            warnings.append("⚠️ Modo `lexmin` colapsa required (validado en simulación). Usa `single`.")
+        if elective_w >= 50 and student_time >= 600:
+            note = "✅ Configuración óptima detectada (peso electivas=50 + student_time≥600s)"
+        else:
+            note = ""
+        # Render
+        with st.container():
+            est_cols = st.columns([2, 1])
+            with est_cols[0]:
+                st.markdown(
+                    f"⏱️ **Tiempo estimado de cómputo:** ~{est_total_min:.1f} minutos "
+                    f"({est_master}s master + ~{est_student}s student) "
+                    f"para **{n_students} estudiantes**, **{n_sections} secciones**."
+                )
+                if note:
+                    st.caption(note)
+                for w in warnings:
+                    st.caption(f"⚠️ {w}")
+            with est_cols[1]:
+                if est_total_min > 10:
+                    st.warning(f"~{est_total_min:.0f} min — ten paciencia")
+                elif est_total_min < 1:
+                    st.success("⚡ <1 min — rápido")
+
         if st.button("▶️ Solve", type="primary", width='stretch'):
             # Apply quick-slider config + Rules-tab overrides to a copy of the dataset.
             import copy
