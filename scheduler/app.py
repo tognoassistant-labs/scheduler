@@ -223,22 +223,61 @@ with st.sidebar:
         st.caption("Sube los workbooks operativos de Columbus")
         demand_file = st.file_uploader("Workbook de demanda (1._STUDENTS_PER_COURSE_*.xlsx)", type=["xlsx"], key="demand_xlsx")
         sched_file = st.file_uploader("Workbook de schedule (HS_Schedule_*.xlsx, opcional)", type=["xlsx"], key="sched_xlsx")
-        grade = st.number_input("Grado", value=12, step=1, min_value=9, max_value=12)
+
+        grade_mode = st.radio(
+            "Grados a incluir",
+            ["Un grado", "Todo HS (9-12)", "Selección personalizada"],
+            index=1,
+            horizontal=True,
+            help="Un grado: solo G9, G10, G11 o G12. "
+                 "Todo HS: ingesta los 4 grados juntos. "
+                 "Personalizada: escoge un subconjunto.",
+        )
+        if grade_mode == "Un grado":
+            grade_single = st.number_input("Grado", value=12, step=1, min_value=9, max_value=12)
+            grade_arg: int | list[int] = int(grade_single)
+            grade_label = str(int(grade_single))
+        elif grade_mode == "Todo HS (9-12)":
+            grade_arg = [9, 10, 11, 12]
+            grade_label = "all-hs"
+            st.caption("📚 Ingestará los 4 grados (9, 10, 11, 12). Más estudiantes → solver tarda más.")
+        else:
+            grade_list = st.multiselect(
+                "Grados",
+                options=[9, 10, 11, 12],
+                default=[11, 12],
+            )
+            if not grade_list:
+                st.warning("Selecciona al menos un grado.")
+                grade_arg = 12
+            else:
+                grade_arg = sorted(grade_list)
+            grade_label = ",".join(str(g) for g in (grade_arg if isinstance(grade_arg, list) else [grade_arg]))
         year = st.text_input("Año", value="2026-2027")
+
+        # Persistir a disco inmediatamente al subir, para que el coordinador
+        # vea el path antes de hacer click en Ingestar.
+        tmp_uploads = Path("/tmp/scheduler_uploads")
+        tmp_uploads.mkdir(exist_ok=True)
+        if demand_file is not None:
+            demand_disk = tmp_uploads / demand_file.name
+            if not demand_disk.exists() or demand_disk.stat().st_size != len(demand_file.getbuffer()):
+                demand_disk.write_bytes(demand_file.getbuffer())
+            st.success(f"📁 Demanda en disco: `{demand_disk}` ({demand_disk.stat().st_size:,} bytes)")
+        if sched_file is not None:
+            sched_disk = tmp_uploads / sched_file.name
+            if not sched_disk.exists() or sched_disk.stat().st_size != len(sched_file.getbuffer()):
+                sched_disk.write_bytes(sched_file.getbuffer())
+            st.success(f"📁 Schedule en disco: `{sched_disk}` ({sched_disk.stat().st_size:,} bytes)")
+
         if st.button("📥 Ingestar", width='stretch', disabled=demand_file is None):
             with st.spinner("Leyendo archivos xlsx..."):
-                # Save uploads to /tmp so openpyxl can read them
-                tmp = Path("/tmp/scheduler_uploads")
-                tmp.mkdir(exist_ok=True)
+                tmp = tmp_uploads
                 demand_path = tmp / demand_file.name
-                demand_path.write_bytes(demand_file.getbuffer())
-                sched_path = None
-                if sched_file is not None:
-                    sched_path = tmp / sched_file.name
-                    sched_path.write_bytes(sched_file.getbuffer())
+                sched_path = (tmp / sched_file.name) if sched_file is not None else None
                 try:
-                    ds = build_dataset_from_columbus(demand_path, sched_path, grade=int(grade), year=year)
-                    _set_dataset(ds, f"columbus · {demand_file.name} · grade={grade}")
+                    ds = build_dataset_from_columbus(demand_path, sched_path, grade=grade_arg, year=year)
+                    _set_dataset(ds, f"columbus · {demand_file.name} · grade={grade_label}")
                     st.success(f"Ingestado: {len(ds.students)} estudiantes, {len(ds.sections)} secciones, "
                                f"{len(ds.behavior.separations)} separaciones, {len(ds.behavior.groupings)} groupings")
                     st.rerun()
