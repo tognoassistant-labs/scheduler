@@ -382,6 +382,28 @@ with st.sidebar:
             st.rerun()
 
     elif src == "Carpeta canónica de CSVs":
+        with st.expander("ℹ️ ¿Qué archivos espera la carpeta?"):
+            st.markdown("""
+La carpeta debe contener exactamente **8 archivos CSV**:
+
+| Archivo | Contenido |
+|---|---|
+| `courses.csv` | Catálogo de cursos: id, nombre, departamento, max_size, etc. |
+| `teachers.csv` | Profesores: id, nombre, calificaciones, max_load |
+| `rooms.csv` | Salas: id, nombre, capacidad, tipo (gym/lab/etc.) |
+| `sections.csv` | Secciones: course_id, teacher_id, max_size |
+| `students.csv` | Estudiantes: id, nombre, grado, counselor |
+| `course_requests.csv` | Solicitudes: student_id, course_id, rank |
+| `behavior.csv` | Pares: separations + groupings disciplinarios |
+| `rotation.csv` | Bell schedule (5 días × 5 bloques → schemes) |
+
+**Cómo obtenerlos:**
+- **Opción 1** — generar con CLI: `python -m src.scheduler.cli generate-sample --out data/sample`
+- **Opción 2** — convertir desde xlsx: `python -m src.scheduler.cli import-ps --demand <xlsx> --out data/columbus`
+- **Opción 3** — ya viene `data/sample` con los 8 CSVs sintéticos para probar
+
+Para inspeccionar la estructura: abre cualquier CSV en Excel.
+""")
         path = st.text_input("Ruta a la carpeta de CSVs", value="data/sample")
         if st.button("📂 Cargar CSVs", width='stretch'):
             try:
@@ -404,6 +426,36 @@ with st.sidebar:
 
     elif src == "xlsx real de Columbus":
         st.caption("Sube los workbooks operativos de Columbus")
+
+        # Tooltip con schema esperado (REQ-3 parte A)
+        with st.expander("ℹ️ ¿Qué archivos espera y qué deben contener?"):
+            st.markdown("""
+**Workbook de demanda** (obligatorio):
+- Nombre típico: `1._STUDENTS_PER_COURSE_2026-2027.xlsx`
+- Hojas requeridas:
+  - `UPDATED MARCH 20 - COURSE_GRADE` — solicitudes por estudiante
+  - `LISTADO MAESTRO CURSOS Y SECCIO` — secciones, teachers, salas
+  - `Math Final March 20`, `English Final March 20`, `Science Final March 20`,
+    `Social Studies Final March 20`, `Spanish Final March 20`,
+    `Tech Final March 20`, `PE Final March 20`, `Arts Final March 20`,
+    `TA Final March 20` — finales por departamento
+  - `CO PLANNING INFO` — grupos de profesores que comparten free time
+  - `Teacher courses` — calificaciones por teacher
+
+**Workbook de schedule** (opcional):
+- Nombre típico: `HS_Schedule_25-26.xlsx`
+- Aporta: groupings y separations heredados del año pasado
+- Si NO lo subes, el motor funciona pero sin esa info disciplinaria
+
+⚠️ **Importante:** este uploader espera el formato **legacy**. Si tu
+archivo es el nuevo `schedule_master_data_hs.xlsx` (formato consolidado
+v5 con 11 hojas), te dará error porque las hojas tienen otros nombres.
+En ese caso, conviértelo primero a CSVs vía CLI y usa la opción
+"Carpeta canónica de CSVs".
+
+📥 **¿No tienes archivo y quieres probar?** Cambia a la opción "Sample
+integrado" arriba — genera datos sintéticos para experimentar.
+""")
         demand_file = st.file_uploader("Workbook de demanda (1._STUDENTS_PER_COURSE_*.xlsx)", type=["xlsx"], key="demand_xlsx")
         sched_file = st.file_uploader("Workbook de schedule (HS_Schedule_*.xlsx, opcional)", type=["xlsx"], key="sched_xlsx")
 
