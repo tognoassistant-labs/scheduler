@@ -24,6 +24,7 @@ from src.scheduler.master_solver import solve_master
 from src.scheduler.models import Dataset, HardConstraints, SoftConstraintWeights
 from src.scheduler.persistence import DB, InputBundleRepo, RuleConfigRepo, RunRepo, open_db
 from src.scheduler.ps_ingest import build_dataset_from_columbus
+from src.scheduler.ps_ingest_official import build_dataset_from_official_xlsx
 from src.scheduler.reports import compute_kpis, write_reports
 from src.scheduler.rules import RULE_REGISTRY, apply_overrides, extract_values, list_rules
 from src.scheduler.rules.compliance import compute_compliance
@@ -768,25 +769,31 @@ integrado" arriba — genera datos sintéticos para experimentar.
                 sched_disk.write_bytes(sched_file.getbuffer())
             st.success(f"📁 Schedule en disco: `{sched_disk}` ({sched_disk.stat().st_size:,} bytes)")
 
-        # Validador pre-ingest (REQ-3 parte B) — solo del archivo demanda
+        # Validador pre-ingest (REQ-3B + D3) — soporta legacy y v5
         ingest_disabled = demand_file is None
+        validation = {"format": "unknown"}
         if demand_file is not None:
             validation = _validate_xlsx_sheets(demand_disk)
-            if validation["verdict"] == "ok":
-                st.success("✅ Validación: el archivo tiene todas las hojas requeridas. Listo para ingestar.")
-                with st.expander("Ver detalle de validación"):
-                    st.markdown(validation["summary"])
-            elif validation["verdict"] == "incomplete":
+            fmt = validation.get("format", "unknown")
+            verdict = validation.get("verdict", "unknown")
+            if verdict == "ok" and fmt == "legacy":
+                st.success("✅ Formato **legacy** detectado. Listo para ingestar.")
+            elif verdict == "ok" and fmt == "v5":
+                st.success("✅ Formato **v5 consolidado** detectado. Listo para ingestar (D3).")
+                ingest_disabled = False  # explicit: D3 supports v5 now
+            elif verdict == "incomplete":
                 st.warning("⚠️ El archivo NO tiene todas las hojas requeridas. La ingesta probablemente falle.")
                 st.markdown(validation["summary"])
                 ingest_disabled = True
-            elif validation["verdict"] == "wrong_format":
-                st.error("❌ Formato no reconocido. Este uploader espera el archivo **legacy**.")
+            elif fmt == "unknown" or verdict == "wrong_format":
+                st.error("❌ Formato no reconocido. Esperado: legacy (1._STUDENTS_PER_COURSE_*.xlsx) o v5 (schedule_master_data_*.xlsx).")
                 st.markdown(validation["summary"])
                 ingest_disabled = True
             else:
                 st.error(validation["summary"])
                 ingest_disabled = True
+            with st.expander("Ver detalle de validación"):
+                st.markdown(validation["summary"])
 
         if st.button("📥 Ingestar", width='stretch', disabled=ingest_disabled):
             with st.spinner("Leyendo archivos xlsx..."):
@@ -794,11 +801,26 @@ integrado" arriba — genera datos sintéticos para experimentar.
                 demand_path = tmp / demand_file.name
                 sched_path = (tmp / sched_file.name) if sched_file is not None else None
                 try:
-                    ds = build_dataset_from_columbus(demand_path, sched_path, grade=grade_arg, year=year)
-                    meta = [_file_metadata(demand_path, role="Workbook de demanda")]
+                    # D3 — Auto-rutear: detecta formato y llama al ingester correcto
+                    fmt = validation.get("format") if 'validation' in dir() else "unknown"
+                    if fmt != "v5" and fmt != "legacy":
+                        # Recompute si no está disponible (defensive)
+                        v = _validate_xlsx_sheets(demand_path)
+                        fmt = v.get("format", "unknown")
+
+                    if fmt == "v5":
+                        # Convertir grade_arg a lista para el ingester oficial
+                        grade_list = grade_arg if isinstance(grade_arg, list) else [grade_arg]
+                        st.info(f"📋 Detecté formato **v5 consolidado**. Usando ingester `ps_ingest_official`.")
+                        ds = build_dataset_from_official_xlsx(demand_path, grades=grade_list)
+                    else:
+                        st.info(f"📋 Detecté formato **legacy**. Usando ingester `ps_ingest`.")
+                        ds = build_dataset_from_columbus(demand_path, sched_path, grade=grade_arg, year=year)
+
+                    meta = [_file_metadata(demand_path, role=f"Demanda ({fmt})")]
                     if sched_path is not None:
                         meta.append(_file_metadata(sched_path, role="Workbook de schedule"))
-                    _set_dataset(ds, f"columbus · {demand_file.name} · grade={grade_label}", loaded_files=meta)
+                    _set_dataset(ds, f"columbus · {fmt} · {demand_file.name} · grade={grade_label}", loaded_files=meta)
                     st.success(f"Ingestado: {len(ds.students)} estudiantes, {len(ds.sections)} secciones, "
                                f"{len(ds.behavior.separations)} separaciones, {len(ds.behavior.groupings)} groupings")
                     st.rerun()
