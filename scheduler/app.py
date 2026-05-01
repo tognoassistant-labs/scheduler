@@ -592,35 +592,63 @@ integrado" arriba — genera datos sintéticos para experimentar.
         demand_file = st.file_uploader("Workbook de demanda (1._STUDENTS_PER_COURSE_*.xlsx)", type=["xlsx"], key="demand_xlsx")
         sched_file = st.file_uploader("Workbook de schedule (HS_Schedule_*.xlsx, opcional)", type=["xlsx"], key="sched_xlsx")
 
-        grade_mode = st.radio(
-            "Grados a incluir",
-            ["Un grado", "Todo HS (9-12)", "Selección personalizada"],
-            index=1,
-            horizontal=True,
-            help="Un grado: solo G9, G10, G11 o G12. "
-                 "Todo HS: ingesta los 4 grados juntos. "
-                 "Personalizada: escoge un subconjunto.",
-        )
-        if grade_mode == "Un grado":
-            grade_single = st.number_input("Grado", value=12, step=1, min_value=9, max_value=12)
-            grade_arg: int | list[int] = int(grade_single)
-            grade_label = str(int(grade_single))
-        elif grade_mode == "Todo HS (9-12)":
-            grade_arg = [9, 10, 11, 12]
-            grade_label = "all-hs"
-            st.caption("📚 Ingestará los 4 grados (9, 10, 11, 12). Más estudiantes → solver tarda más.")
+        st.markdown("**Grados a incluir** ❓",
+                    help="Marca los checkboxes de los grados que quieres ingerir. "
+                         "Los presets de abajo son atajos comunes.")
+
+        # Initialize state for individual grade checkboxes
+        for g in (9, 10, 11, 12):
+            key = f"grade_chk_{g}"
+            if key not in st.session_state:
+                # Default: solo G12 marcado (compatibilidad con v4.27.14)
+                st.session_state[key] = (g == 12)
+
+        # Presets de un click — modifican los checkboxes via session_state
+        preset_cols = st.columns(4)
+        if preset_cols[0].button("Todo HS\n(9-12)", help="Marca G9, G10, G11, G12"):
+            for g in (9, 10, 11, 12):
+                st.session_state[f"grade_chk_{g}"] = True
+            st.rerun()
+        if preset_cols[1].button("Último año\n(solo 12)", help="Marca solo G12"):
+            for g in (9, 10, 11, 12):
+                st.session_state[f"grade_chk_{g}"] = (g == 12)
+            st.rerun()
+        if preset_cols[2].button("Últimos 2\n(11, 12)", help="Marca G11 + G12"):
+            for g in (9, 10, 11, 12):
+                st.session_state[f"grade_chk_{g}"] = (g in (11, 12))
+            st.rerun()
+        if preset_cols[3].button("Primer ciclo\n(9, 10)", help="Marca G9 + G10"):
+            for g in (9, 10, 11, 12):
+                st.session_state[f"grade_chk_{g}"] = (g in (9, 10))
+            st.rerun()
+
+        # Checkboxes individuales (siempre visibles — descubribilidad)
+        chk_cols = st.columns(4)
+        chk_cols[0].checkbox("G9", key="grade_chk_9")
+        chk_cols[1].checkbox("G10", key="grade_chk_10")
+        chk_cols[2].checkbox("G11", key="grade_chk_11")
+        chk_cols[3].checkbox("G12", key="grade_chk_12")
+
+        # Resolver lista final de grados
+        selected_grades = [g for g in (9, 10, 11, 12) if st.session_state.get(f"grade_chk_{g}")]
+        if not selected_grades:
+            st.warning("⚠️ Selecciona al menos un grado.")
+            grade_arg: int | list[int] = 12
+            grade_label = "(ninguno)"
+        elif len(selected_grades) == 1:
+            grade_arg = selected_grades[0]
+            grade_label = f"G{selected_grades[0]}"
         else:
-            grade_list = st.multiselect(
-                "Grados",
-                options=[9, 10, 11, 12],
-                default=[11, 12],
+            grade_arg = selected_grades
+            grade_label = "+".join(f"G{g}" for g in selected_grades)
+        # Caption explicativa
+        if len(selected_grades) >= 3:
+            st.caption(
+                f"📚 Ingestará {len(selected_grades)} grados ({', '.join(f'G{g}' for g in selected_grades)}). "
+                "Más estudiantes → solver tarda más. Recomendado: subir 'Presupuesto tiempo student' a 600s en tab Solve."
             )
-            if not grade_list:
-                st.warning("Selecciona al menos un grado.")
-                grade_arg = 12
-            else:
-                grade_arg = sorted(grade_list)
-            grade_label = ",".join(str(g) for g in (grade_arg if isinstance(grade_arg, list) else [grade_arg]))
+        elif selected_grades:
+            st.caption(f"Ingestará: {', '.join(f'G{g}' for g in selected_grades)}")
         year = st.text_input("Año", value="2026-2027")
 
         # Persistir a disco inmediatamente al subir, para que el coordinador
