@@ -478,6 +478,66 @@ def _set_dataset(ds: Dataset, source: str, loaded_files: list[dict] | None = Non
         st.session_state[k] = DEFAULTS[k]
 
 
+# ============================================================================
+# Session recovery (J2) — persiste UI state a disco para sobrevivir crashes.
+#
+# Streamlit pierde session_state cuando el script crashea o el browser
+# pierde la conexión. El usuario reportó "se cae y se limpia todo" —
+# esto persiste lo no-trivial (rule_overrides, custom_rules, last
+# loaded_files, bundle_label, etc.) a un JSON local. Al arrancar la app
+# si no hay dataset cargado, ofrece recuperar la sesión anterior.
+# ============================================================================
+
+_SESSION_BACKUP_PATH = Path("data/.session_backup.json")
+_SESSION_BACKUP_KEYS = [
+    "dataset_source",
+    "loaded_files",
+    "rule_overrides",
+    "custom_rules",
+    "persist_enabled",
+    "bundle_id",
+    "rule_config_id",
+    "last_run_id",
+]
+
+
+def _save_session_backup() -> None:
+    """Persiste un subset de session_state a disco. Llamar al final del rerun."""
+    try:
+        import json
+        from datetime import datetime, timezone
+        snap = {
+            "saved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "state": {k: st.session_state.get(k) for k in _SESSION_BACKUP_KEYS},
+        }
+        # Solo guardar si hay algo significativo (evitar overwrite con vacío)
+        if not snap["state"].get("dataset_source") and not snap["state"].get("loaded_files"):
+            return
+        _SESSION_BACKUP_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _SESSION_BACKUP_PATH.write_text(json.dumps(snap, default=str), encoding="utf-8")
+    except Exception:
+        # Falla silenciosa: el backup es best-effort
+        pass
+
+
+def _load_session_backup() -> dict | None:
+    """Lee el backup si existe y es reciente (< 24h)."""
+    if not _SESSION_BACKUP_PATH.exists():
+        return None
+    try:
+        import json
+        from datetime import datetime, timezone
+        snap = json.loads(_SESSION_BACKUP_PATH.read_text(encoding="utf-8"))
+        saved_at = datetime.fromisoformat(snap["saved_at"])
+        age_hours = (datetime.now(timezone.utc) - saved_at).total_seconds() / 3600
+        if age_hours > 24:
+            return None
+        snap["age_hours"] = age_hours
+        return snap
+    except Exception:
+        return None
+
+
 def _file_metadata(path: Path, role: str) -> dict:
     """Compute path/size/sha256 metadata for a file. Used in 'Archivos cargados'."""
     import hashlib
@@ -805,6 +865,41 @@ st.title("Columbus Scheduling Engine")
 # ----------------------------------------------------------------------------
 
 with tab_setup:
+    # J2 — Banner de recuperación de sesión anterior si aplica
+    if not _has_dataset():
+        backup = _load_session_backup()
+        if backup and backup.get("state", {}).get("loaded_files"):
+            with st.container():
+                st.warning(
+                    f"💾 **Detecté una sesión anterior** — guardada hace "
+                    f"{backup['age_hours']:.1f}h. ¿Recuperar configuración (reglas, "
+                    f"custom rules, archivos previos)?"
+                )
+                last_files = backup["state"].get("loaded_files") or []
+                if last_files:
+                    file_summary = ", ".join(f["name"] for f in last_files[:3])
+                    if len(last_files) > 3:
+                        file_summary += f" + {len(last_files) - 3} más"
+                    st.caption(f"📂 Archivos previos: {file_summary}")
+
+                rec_cols = st.columns(2)
+                if rec_cols[0].button("🔁 Recuperar configuración (sin re-ingestar)",
+                                       help="Restaura rule_overrides, custom_rules, etc. "
+                                            "El dataset igual hay que re-cargar manualmente."):
+                    state = backup["state"]
+                    for k in ("rule_overrides", "custom_rules", "persist_enabled",
+                              "bundle_id", "rule_config_id"):
+                        if k in state and state[k] is not None:
+                            st.session_state[k] = state[k]
+                    st.success("Configuración restaurada. Ahora carga el dataset desde el sidebar.")
+                    st.rerun()
+                if rec_cols[1].button("🗑 Descartar y empezar de cero"):
+                    try:
+                        _SESSION_BACKUP_PATH.unlink(missing_ok=True)
+                    except Exception:
+                        pass
+                    st.rerun()
+
     if not _has_dataset():
         st.info("Elige una fuente de datos en el sidebar para empezar.")
     else:
@@ -2534,3 +2629,9 @@ código. Cada regla tiene un opcode que define qué hace.
         "- **Cobertura baja de electivas:** sube `R_w_first_choice_electives`, baja `R_w_balance_class_sizes`, "
         "o agrega más secciones al curso de alta demanda."
     )
+
+
+# ============================================================================
+# J2 — Auto-save al final del rerun
+# ============================================================================
+_save_session_backup()
