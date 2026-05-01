@@ -840,6 +840,16 @@ Para inspeccionar la estructura: abre cualquier CSV en Excel.
                 _show_friendly_error(e)
 
     elif src == "xlsx real de Columbus":
+        # H1 — Banner PII (Personal Identifiable Information)
+        with st.container():
+            st.warning(
+                "🔒 **Aviso de privacidad (FERPA):** este uploader procesa archivos con "
+                "datos personales reales de estudiantes (nombres, IDs, recomendaciones "
+                "de consejeros). Los archivos quedan en `/tmp/` de **este servidor** y "
+                "se procesan localmente. **NO** se envían a ningún servicio externo. "
+                "Si despliegas la app en un servidor compartido, asegúrate de que "
+                "solo personal autorizado tenga acceso."
+            )
         st.caption("Sube los workbooks operativos de Columbus")
 
         # Plantillas descargables (REQ-4)
