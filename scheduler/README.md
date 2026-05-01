@@ -1,8 +1,35 @@
-# Columbus Scheduling Engine — Grade 12 Prototype
+# Columbus Scheduling Engine — v4.27
+
+Motor + aplicación local de scheduling, con persistencia SQLite,
+registry de reglas configurables, y compliance por regla.
+
+## Por dónde empezar — según tu rol
+
+| Rol | Documento | Tiempo |
+|---|---|---|
+| **Coordinador académico** | `COORDINATOR_QUICKSTART.md` | 10 min |
+| **Coordinador iterando KPIs** | `MATRIZ_DECISION.md` + `CASO_DEMO_Y_AJUSTE.md` | 20 min |
+| **IT — instalar local** | `INSTALACION.md` | 15 min |
+| **IT — desplegar en servidor** | `DEPLOY.md` | 30 min |
+| **Desarrollador continuando** | `HANDOFF_v5.md` + `MAINTENANCE_GUIDE.md` | 1 h |
+
+Arrancar la app:
+```bash
+./start_local.sh
+# abre http://localhost:8501
+```
+
+---
+
+## Origen del prototipo
 
 End-to-end constraint-optimization scheduler for Columbus High School Grade 12, built against `powerschool_requirements_v2.md`.
 
-This is a **Track A "May 1 demo" prototype**: synthetic-but-realistic data, real solver, real PowerSchool-compatible exports. Not yet a production system — see `PRODUCTION_GAPS.md`.
+Originalmente fue un **Track A "May 1 demo" prototype**:
+synthetic-but-realistic data, real solver, real PowerSchool-compatible
+exports. v4.27 lo extiende a app operativa con datos reales,
+manteniendo el motor solver intacto. Ver `PRODUCTION_GAPS.md` para
+limitaciones conocidas.
 
 ## What it does
 

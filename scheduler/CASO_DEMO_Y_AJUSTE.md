@@ -82,7 +82,28 @@ En el multiselect, selecciona **ambas corridas** (la baseline y la
 nueva). Verás un diff lado a lado con todos los KPIs y el cumplimiento
 por regla. Es la forma más limpia de ver el efecto del cambio.
 
+**Alternativa CLI** (útil para documentar decisiones por escrito):
+
+```bash
+.venv/bin/python scripts/compare_runs.py --db data/columbus.sqlite --runs 1 2 --out comparacion.md
+```
+
+Esto genera un archivo markdown con metadata, KPIs lado a lado con
+deltas, y cumplimiento por regla con marcadores ✅/⚠️/❌. Si no se
+especifican IDs, compara las últimas 5 corridas automáticamente.
+
 ---
+
+## Cómo decidir qué configuración aplicar
+
+Para tu caso específico, lee **`MATRIZ_DECISION.md`**. Esa guía:
+- Te hace 4 preguntas sobre las prioridades del Colegio
+- Mapea cada combinación de respuestas a una de 7 configuraciones tipo
+- Documenta qué evitar (anti-patrones)
+- Recomienda iterar en 3 pasos
+
+Para tu caso (62.3% electivas con defaults), la matriz recomienda
+**Configuración B (boost de electivas)** como primera iteración.
 
 ## Otras configuraciones útiles
 
