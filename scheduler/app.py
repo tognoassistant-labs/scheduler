@@ -1422,6 +1422,56 @@ with tab_solve:
                 f"Student: {st.session_state['student_status']} ({st.session_state['student_seconds']:.1f}s)"
             )
 
+            # F2 — auto-comparación con la corrida anterior persistida
+            current_run_id = st.session_state.get("last_run_id")
+            if st.session_state.get("persist_enabled") and current_run_id:
+                db_f2 = _get_db()
+                run_repo_f2 = RunRepo(db_f2)
+                history = run_repo_f2.list_all(limit=10)
+                # Encontrar la corrida COMPLETED inmediatamente anterior a la actual
+                prev_run = None
+                for r in history:
+                    if r.id < current_run_id and r.status == "completed":
+                        prev_run = r
+                        break
+                if prev_run:
+                    st.divider()
+                    st.markdown(f"#### 🔄 Comparación con corrida anterior (#{prev_run.id} — {prev_run.label})")
+                    # KPIs comparables
+                    prev_kpis = {(m, s, k): v for (m, s, k, v) in run_repo_f2.get_kpis(prev_run.id)}
+                    current = st.session_state["kpi"]
+
+                    def _delta(name, current_val, prev_metric, suffix=""):
+                        prev_val = prev_kpis.get((prev_metric, "global", "all"))
+                        if prev_val is None:
+                            return None
+                        d = current_val - prev_val
+                        arrow = "↑" if d > 0.05 else ("↓" if d < -0.05 else "·")
+                        sign = "+" if d > 0 else ""
+                        return f"{arrow} {sign}{d:.1f}{suffix} (anterior: {prev_val:.1f}{suffix})"
+
+                    delta_cols = st.columns(4)
+                    delta_cols[0].markdown(
+                        f"**Required:** {current.required_fulfillment_pct:.1f}%  \n"
+                        f"_{_delta('req', current.required_fulfillment_pct, 'required_fulfillment_pct', '%')}_"
+                    )
+                    delta_cols[1].markdown(
+                        f"**Electivas rank-1:** {current.first_choice_elective_pct:.1f}%  \n"
+                        f"_{_delta('elec', current.first_choice_elective_pct, 'first_choice_elective_pct', '%')}_"
+                    )
+                    delta_cols[2].markdown(
+                        f"**Balance dev:** {current.section_balance_max_dev}  \n"
+                        f"_{_delta('bal', current.section_balance_max_dev, 'section_balance_max_dev', '')}_"
+                    )
+                    delta_cols[3].markdown(
+                        f"**Unmet:** {current.unmet_requests}  \n"
+                        f"_{_delta('unm', current.unmet_requests, 'unmet_requests', '')}_"
+                    )
+                    st.caption(
+                        f"Para comparación más detallada (todas las reglas, multi-corrida): "
+                        f"ve a la tab **Corridas** y selecciona varias en el multiselect."
+                    )
+
 
 # ----------------------------------------------------------------------------
 # TAB 2.5: COMPLIANCE — per-rule satisfaction with drilldown
