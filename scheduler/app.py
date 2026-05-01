@@ -1880,6 +1880,121 @@ with tab_compliance:
         students = st.session_state["students"]
         unmet = st.session_state["unmet"] or []
 
+        # ============================================================
+        # Distribución de cursos faltantes por estudiante × grado
+        # ============================================================
+        st.subheader("📊 Distribución de cursos faltantes por estudiante")
+        st.caption(
+            "Cuántos estudiantes recibieron 100% de sus cursos vs cuántos quedaron "
+            "con 1, 2, 3+ pendientes. Útil para identificar a quiénes escalar primero."
+        )
+
+        # Calcular n_missing por estudiante = n_requested - n_assigned (excluyendo Advisory virtual)
+        from collections import Counter, defaultdict
+        sections_by_id = {s.section_id: s for s in ds.sections}
+        students_by_id = {st.student_id: st for st in ds.students}
+        granted_by_student = {
+            sa.student_id: {sections_by_id[sid].course_id for sid in sa.section_ids
+                            if sid in sections_by_id}
+            for sa in students
+        }
+        # Advisory IDs que el motor agrega siempre (no las contamos como missing)
+        advisory_ids = {c.course_id for c in ds.courses if c.is_advisory}
+
+        # Por estudiante, contar cuántos de sus requested no recibió
+        missing_per_student: dict[str, int] = {}
+        for st_obj in ds.students:
+            requested = {r.course_id for r in st_obj.requested_courses
+                         if r.course_id not in advisory_ids}
+            granted = granted_by_student.get(st_obj.student_id, set()) - advisory_ids
+            missing_per_student[st_obj.student_id] = len(requested - granted)
+
+        # Histograma: # estudiantes por cantidad de cursos faltantes, cruzado por grado
+        # Estructura: dist[n_missing][grade] = count
+        dist: dict[int, dict[int, int]] = defaultdict(lambda: defaultdict(int))
+        # También totales
+        total_by_n: dict[int, int] = defaultdict(int)
+        all_grades = sorted({st.grade for st in ds.students})
+
+        for st_obj in ds.students:
+            n_miss = missing_per_student.get(st_obj.student_id, 0)
+            # Bucket: 0, 1, 2, 3, 4+
+            bucket = n_miss if n_miss < 4 else 4
+            dist[bucket][st_obj.grade] += 1
+            total_by_n[bucket] += 1
+
+        # Construir tabla
+        rows_dist = []
+        bucket_labels = {0: "0 (completo)", 1: "1 curso falta", 2: "2 cursos", 3: "3 cursos", 4: "4+ cursos"}
+        for bucket in sorted(dist.keys()):
+            row = {"Cursos faltantes": bucket_labels.get(bucket, str(bucket))}
+            for g in all_grades:
+                row[f"G{g}"] = dist[bucket].get(g, 0)
+            row["Total"] = total_by_n[bucket]
+            row["% del total"] = f"{100.0 * total_by_n[bucket] / max(1, len(ds.students)):.1f}%"
+            rows_dist.append(row)
+
+        # Fila TOTAL al final
+        total_row = {"Cursos faltantes": "**TOTAL**"}
+        for g in all_grades:
+            total_row[f"G{g}"] = sum(1 for s in ds.students if s.grade == g)
+        total_row["Total"] = len(ds.students)
+        total_row["% del total"] = "100.0%"
+        rows_dist.append(total_row)
+
+        df_dist = pd.DataFrame(rows_dist)
+        st.dataframe(df_dist, width='stretch', hide_index=True)
+
+        # Indicador rápido de quiénes son los más afectados
+        worst_count = sum(1 for n in missing_per_student.values() if n >= 3)
+        if worst_count > 0:
+            st.warning(
+                f"⚠️ **{worst_count} estudiantes** tienen 3+ cursos faltantes. "
+                f"Estos requieren atención prioritaria de coordinación académica."
+            )
+
+        # Drill-down: lista de estudiantes con N+ cursos faltantes
+        with st.expander("🔍 Ver lista de estudiantes con cursos faltantes"):
+            min_missing = st.slider(
+                "Mostrar estudiantes con al menos N cursos faltantes:",
+                min_value=1, max_value=10, value=1
+            )
+            grade_filter = st.multiselect(
+                "Filtrar por grado:",
+                options=all_grades,
+                default=all_grades,
+            )
+            affected = []
+            for st_obj in ds.students:
+                n = missing_per_student.get(st_obj.student_id, 0)
+                if n >= min_missing and st_obj.grade in grade_filter:
+                    granted_courses = granted_by_student.get(st_obj.student_id, set()) - advisory_ids
+                    requested_courses = {r.course_id for r in st_obj.requested_courses
+                                         if r.course_id not in advisory_ids}
+                    missing_courses = sorted(requested_courses - granted_courses)
+                    affected.append({
+                        "ID": st_obj.student_id,
+                        "Nombre": st_obj.name,
+                        "Grado": st_obj.grade,
+                        "Faltantes": n,
+                        "Cursos faltantes": ", ".join(missing_courses[:3]) +
+                            (f" + {len(missing_courses) - 3} más" if len(missing_courses) > 3 else ""),
+                    })
+            affected.sort(key=lambda r: (-r["Faltantes"], r["Grado"], r["Nombre"]))
+            if affected:
+                st.dataframe(pd.DataFrame(affected), width='stretch', hide_index=True)
+                csv = pd.DataFrame(affected).to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    "📥 Descargar lista (CSV)",
+                    data=csv,
+                    file_name=f"estudiantes_con_faltantes_min{min_missing}.csv",
+                    mime="text/csv",
+                )
+            else:
+                st.success(f"✅ Ningún estudiante tiene {min_missing}+ cursos faltantes en los grados seleccionados.")
+
+        st.divider()
+
         compliances = compute_compliance(ds, master, students, unmet)
         st.subheader("Cumplimiento por regla")
         st.caption("Solo se muestran reglas con un checker disponible. Las demás aparecen como N/A.")
