@@ -254,6 +254,126 @@ def _show_friendly_error(exc: Exception) -> None:
     st.markdown(body_md)
 
 
+# ============================================================================
+# Validador pre-ingest (REQ-3 parte B)
+# ============================================================================
+
+# Hojas requeridas y opcionales por formato
+LEGACY_REQUIRED_SHEETS = [
+    "UPDATED MARCH 20 - COURSE_GRADE",
+    "LISTADO MAESTRO CURSOS Y SECCIO",
+]
+LEGACY_OPTIONAL_SHEETS = [
+    "Math Final March 20", "English Final March 20", "Science Final March 20",
+    "Social Studies Final March 20", "Spanish Final March 20",
+    "Tech Final March 20", "PE Final March 20", "Arts Final March 20",
+    "TA Final March 20", "CO PLANNING INFO", "Teacher courses",
+]
+V5_REQUIRED_SHEETS = [
+    "courses", "rooms", "teachers", "teacher_assignments",
+    "student_requests", "required_courses",
+]
+
+
+def _validate_xlsx_sheets(xlsx_path: Path) -> dict:
+    """Inspecciona un xlsx y reporta qué formato es + qué hojas faltan.
+
+    Returns:
+        {
+          "format": "legacy" | "v5" | "unknown",
+          "sheets": [...],
+          "required_present": [...],
+          "required_missing": [...],
+          "optional_present": [...],
+          "optional_missing": [...],
+          "verdict": "ok" | "incomplete" | "wrong_format",
+          "summary": str (markdown)
+        }
+    """
+    from openpyxl import load_workbook
+    try:
+        wb = load_workbook(xlsx_path, read_only=True)
+        sheets = wb.sheetnames
+        wb.close()
+    except Exception as e:
+        return {"format": "unknown", "sheets": [], "verdict": "error",
+                "summary": f"❌ No se pudo abrir el archivo: {e}"}
+
+    # Detectar formato
+    legacy_score = sum(1 for s in LEGACY_REQUIRED_SHEETS if s in sheets)
+    v5_score = sum(1 for s in V5_REQUIRED_SHEETS if s in sheets)
+
+    if legacy_score == len(LEGACY_REQUIRED_SHEETS):
+        fmt = "legacy"
+    elif v5_score == len(V5_REQUIRED_SHEETS):
+        fmt = "v5"
+    elif v5_score >= 5:
+        fmt = "v5"  # mostly v5
+    elif legacy_score >= 1:
+        fmt = "legacy"  # partial legacy
+    else:
+        fmt = "unknown"
+
+    if fmt == "legacy":
+        required = LEGACY_REQUIRED_SHEETS
+        optional = LEGACY_OPTIONAL_SHEETS
+    elif fmt == "v5":
+        required = V5_REQUIRED_SHEETS
+        optional = []
+    else:
+        required = []
+        optional = []
+
+    req_present = [s for s in required if s in sheets]
+    req_missing = [s for s in required if s not in sheets]
+    opt_present = [s for s in optional if s in sheets]
+    opt_missing = [s for s in optional if s not in sheets]
+
+    # Verdict
+    if fmt == "unknown":
+        verdict = "wrong_format"
+    elif req_missing:
+        verdict = "incomplete"
+    else:
+        verdict = "ok"
+
+    # Summary markdown
+    parts = []
+    parts.append(f"**Formato detectado:** `{fmt}`")
+    parts.append(f"**Hojas en el archivo:** {len(sheets)}")
+    if fmt == "v5":
+        parts.append(
+            "⚠️ Este es el formato **consolidado v5** — el uploader actual "
+            "espera el formato **legacy**. Necesitas usar la opción "
+            '"Carpeta canónica de CSVs" después de convertirlo via CLI.'
+        )
+    if req_present:
+        parts.append(f"**✅ Hojas requeridas presentes ({len(req_present)}/{len(required)}):**")
+        for s in req_present:
+            parts.append(f"  - `{s}`")
+    if req_missing:
+        parts.append(f"**❌ Hojas requeridas faltantes ({len(req_missing)}):**")
+        for s in req_missing:
+            parts.append(f"  - `{s}`")
+    if opt_missing and fmt == "legacy":
+        parts.append(f"**⚠️ Hojas opcionales faltantes ({len(opt_missing)}):**")
+        for s in opt_missing[:5]:
+            parts.append(f"  - `{s}`")
+        if len(opt_missing) > 5:
+            parts.append(f"  - ... y {len(opt_missing) - 5} más")
+
+    return {
+        "format": fmt,
+        "sheets": sheets,
+        "required_present": req_present,
+        "required_missing": req_missing,
+        "optional_present": opt_present,
+        "optional_missing": opt_missing,
+        "verdict": verdict,
+        "summary": "\n".join(parts),
+    }
+
+
 def _kpi_cards(kpi) -> None:
     """Render the v2 §10 KPI cards as a 6-up grid."""
     cols = st.columns(6)
@@ -505,7 +625,27 @@ integrado" arriba — genera datos sintéticos para experimentar.
                 sched_disk.write_bytes(sched_file.getbuffer())
             st.success(f"📁 Schedule en disco: `{sched_disk}` ({sched_disk.stat().st_size:,} bytes)")
 
-        if st.button("📥 Ingestar", width='stretch', disabled=demand_file is None):
+        # Validador pre-ingest (REQ-3 parte B) — solo del archivo demanda
+        ingest_disabled = demand_file is None
+        if demand_file is not None:
+            validation = _validate_xlsx_sheets(demand_disk)
+            if validation["verdict"] == "ok":
+                st.success("✅ Validación: el archivo tiene todas las hojas requeridas. Listo para ingestar.")
+                with st.expander("Ver detalle de validación"):
+                    st.markdown(validation["summary"])
+            elif validation["verdict"] == "incomplete":
+                st.warning("⚠️ El archivo NO tiene todas las hojas requeridas. La ingesta probablemente falle.")
+                st.markdown(validation["summary"])
+                ingest_disabled = True
+            elif validation["verdict"] == "wrong_format":
+                st.error("❌ Formato no reconocido. Este uploader espera el archivo **legacy**.")
+                st.markdown(validation["summary"])
+                ingest_disabled = True
+            else:
+                st.error(validation["summary"])
+                ingest_disabled = True
+
+        if st.button("📥 Ingestar", width='stretch', disabled=ingest_disabled):
             with st.spinner("Leyendo archivos xlsx..."):
                 tmp = tmp_uploads
                 demand_path = tmp / demand_file.name
