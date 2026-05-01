@@ -376,6 +376,140 @@ def _validate_xlsx_sheets(xlsx_path: Path) -> dict:
     }
 
 
+def _diagnostic_narrative(kpi, n_students: int, n_sections: int,
+                          master_status: str, student_status: str,
+                          unmet_count: int) -> str:
+    """C3 — Genera narrativa en español interpretando el resultado del solve.
+
+    Devuelve markdown con:
+    - 1 párrafo de veredicto (qué tan bueno es)
+    - Highlights buenos
+    - Highlights por mejorar
+    - Próxima acción sugerida
+    """
+    targets_pass = sum([
+        kpi.fully_scheduled_pct >= 98,
+        kpi.required_fulfillment_pct >= 98,
+        kpi.first_choice_elective_pct >= 80,
+        kpi.section_balance_max_dev <= 3,
+    ])
+
+    parts = []
+    # Veredicto
+    if targets_pass == 4:
+        parts.append(
+            f"### ✅ Excelente resultado\n\n"
+            f"Esta corrida cumple **las 4 metas v2 §10** simultáneamente. "
+            f"De los {n_students} estudiantes, {kpi.fully_scheduled_pct:.0f}% "
+            f"recibió todos sus cursos, {kpi.first_choice_elective_pct:.0f}% "
+            f"tiene su electiva en primera opción, y las secciones están "
+            f"balanceadas (max desv {kpi.section_balance_max_dev}). **Lista para "
+            f"presentar a dirección y validar con coordinadores.**"
+        )
+    elif targets_pass == 3:
+        parts.append(
+            f"### ⚠️ Buena corrida con UN punto a revisar\n\n"
+            f"Esta corrida cumple 3 de las 4 metas v2 §10. Considerada "
+            f"**aceptable** si la meta no cumplida es una decisión consciente. "
+            f"De {n_students} estudiantes: {kpi.fully_scheduled_pct:.0f}% "
+            f"completos, {kpi.first_choice_elective_pct:.0f}% electivas rank-1."
+        )
+    elif targets_pass == 2:
+        parts.append(
+            f"### ⚠️ Corrida intermedia — varias metas por debajo\n\n"
+            f"Cumple 2 de 4 metas. **Recomendable iterar** antes de validar "
+            f"con coordinadores. Los pesos del solver pueden ajustarse para "
+            f"recuperar 1-2 metas adicionales."
+        )
+    else:
+        parts.append(
+            f"### ❌ Corrida problemática — múltiples metas por debajo\n\n"
+            f"Cumple solo {targets_pass} de 4 metas. **No usar como "
+            f"definitiva.** Revisa la configuración: probablemente coplanning "
+            f"hard está afectando, o los pesos están desbalanceados. Consulta "
+            f"`MATRIZ_DECISION.md` o `MANUAL_REGLAS.md`."
+        )
+    parts.append("")
+
+    # Highlights buenos
+    good = []
+    if kpi.required_fulfillment_pct >= 99:
+        good.append(f"✅ {kpi.required_fulfillment_pct:.1f}% de cumplimiento de cursos requeridos")
+    if kpi.fully_scheduled_pct >= 95:
+        good.append(f"✅ {kpi.fully_scheduled_pct:.1f}% de estudiantes completos")
+    if kpi.first_choice_elective_pct >= 85:
+        good.append(f"✅ {kpi.first_choice_elective_pct:.1f}% en primera opción de electivas")
+    if kpi.section_balance_max_dev <= 2:
+        good.append(f"✅ balance casi perfecto (dev={kpi.section_balance_max_dev})")
+    if good:
+        parts.append("**Lo que salió bien:**")
+        for g in good:
+            parts.append(f"- {g}")
+        parts.append("")
+
+    # Highlights a mejorar
+    bad = []
+    if kpi.required_fulfillment_pct < 98:
+        bad.append(
+            f"⚠️ Required fulfillment ({kpi.required_fulfillment_pct:.1f}%) "
+            f"por debajo de 98%. Revisa `unmet_requests.csv` para ver qué "
+            f"cursos requeridos quedaron sin cubrir — típicamente capacidad "
+            f"insuficiente."
+        )
+    if kpi.first_choice_elective_pct < 80:
+        bad.append(
+            f"⚠️ Solo {kpi.first_choice_elective_pct:.1f}% de electivas en "
+            f"primera opción. **Acción más impactante:** sube peso a 50 + "
+            f"student_time a 600s (esperado: ~90%)."
+        )
+    if kpi.section_balance_max_dev > 3:
+        bad.append(
+            f"⚠️ Spread de balance = {kpi.section_balance_max_dev}. Sube "
+            f"`R_w_balance_class_sizes` o baja el cap K (`R_max_section_spread_per_course`)."
+        )
+    if unmet_count > 0:
+        # Estimar sobre el número de electivas
+        bad.append(
+            f"⚠️ {unmet_count} solicitudes rank-1 sin cumplir. Revisa el "
+            f"archivo `unmet_requests.csv` en Exportar para ver detalle por "
+            f"estudiante."
+        )
+    if bad:
+        parts.append("**Lo que falta mejorar:**")
+        for b in bad:
+            parts.append(f"- {b}")
+        parts.append("")
+
+    # Próxima acción
+    if targets_pass == 4:
+        next_step = (
+            "1. Marca esta corrida como **#aprobado** en la tab Corridas\n"
+            "2. **Protégela con 🔒** para que no se borre por accidente\n"
+            "3. Exporta el ZIP completo y entrega a IT para PowerSchool sandbox"
+        )
+    elif kpi.first_choice_elective_pct < 80 and student_status == "FEASIBLE":
+        next_step = (
+            "**Acción recomendada (probada en simulación):**\n"
+            "1. Tab **Reglas** → 'Peso electivas rank-1' → **50**\n"
+            "2. Tab **Solve** → 'Presupuesto tiempo student' → **600s**\n"
+            "3. Re-corre Solve\n"
+            "4. Compara con esta corrida en tab Corridas"
+        )
+    elif master_status != "OPTIMAL":
+        next_step = (
+            f"El master quedó en estado `{master_status}`. Sube el "
+            "presupuesto de master a 60s (default 30s)."
+        )
+    else:
+        next_step = (
+            "Itera 1 ajuste a la vez en la tab Reglas y compara corridas. "
+            "Consulta `MATRIZ_DECISION.md` para escoger qué cambiar."
+        )
+    parts.append(f"**Próxima acción:**\n\n{next_step}")
+
+    return "\n".join(parts)
+
+
 def _kpi_cards(kpi) -> None:
     """Render the v2 §10 KPI cards as a 6-up grid + actionable suggestions
     when a target is missed (REQ-C2)."""
@@ -1539,6 +1673,20 @@ with tab_solve:
                 f"Master: {st.session_state['master_status']} ({st.session_state['master_seconds']:.1f}s) · "
                 f"Student: {st.session_state['student_status']} ({st.session_state['student_seconds']:.1f}s)"
             )
+
+            # C3 — Diagnóstico narrativo automático
+            unmet = st.session_state.get("unmet") or []
+            ds_now = st.session_state["dataset"]
+            with st.expander("🔍 Diagnóstico automático", expanded=True):
+                narrative = _diagnostic_narrative(
+                    st.session_state["kpi"],
+                    n_students=len(ds_now.students),
+                    n_sections=len(ds_now.sections),
+                    master_status=st.session_state["master_status"],
+                    student_status=st.session_state["student_status"],
+                    unmet_count=len(unmet),
+                )
+                st.markdown(narrative)
 
             # F2 — auto-comparación con la corrida anterior persistida
             current_run_id = st.session_state.get("last_run_id")
