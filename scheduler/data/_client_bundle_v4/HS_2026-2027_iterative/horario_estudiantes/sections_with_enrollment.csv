@@ -1,0 +1,249 @@
+section_id,course_id,course_name,teacher_id,teacher_name,scheme,room_id,room_name,enrolled,max_size,utilization_pct,slots
+ADVHS01.1,ADVHS01,Advisory HS,8456,"Angel Angel, Jorge Mario",ADVISORY,4,904,15,25,60.0,E3
+C0904.1,C0904,Band Level I,8456,"Angel Angel, Jorge Mario",8,25,334,22,25,88.0,D1;B3;E5
+C0904.2,C0904,Band Level I,8456,"Angel Angel, Jorge Mario",5,25,334,24,25,96.0,E1;C3;A5
+C0904.3,C0904,Band Level I,8456,"Angel Angel, Jorge Mario",3,25,334,22,25,88.0,C1;A3;D4
+C0904.4,C0904,Band Level I,8456,"Angel Angel, Jorge Mario",6,25,334,25,25,100.0,B1;E2;C4
+C0905.1,C0905,Band Level II,8456,"Angel Angel, Jorge Mario",4,25,334,12,25,48.0,C2;A4;D5
+C0907.1,C0907,Band Level III,8456,"Angel Angel, Jorge Mario",2,25,334,21,25,84.0,A2;D3;B5
+ADVHS01.2,ADVHS01,Advisory HS,4202,"Arboleda Otalvaro, Oscar Andres",ADVISORY,6,906,14,25,56.0,E3
+I1211.1,I1211,AP Precalculus,4202,"Arboleda Otalvaro, Oscar Andres",8,19,925,12,25,48.0,D1;B3;E5
+I1211.2,I1211,AP Precalculus,4202,"Arboleda Otalvaro, Oscar Andres",7,19,925,15,25,60.0,B2;E4;C5
+OI1003.1,OI1003,Algebra II,4202,"Arboleda Otalvaro, Oscar Andres",5,19,925,15,25,60.0,E1;C3;A5
+OI1303.1,OI1303,Financial Math,4202,"Arboleda Otalvaro, Oscar Andres",1,19,925,11,25,44.0,A1;D2;B4
+OI1303.2,OI1303,Financial Math,4202,"Arboleda Otalvaro, Oscar Andres",3,19,925,17,25,68.0,C1;A3;D4
+ADVHS01.3,ADVHS01,Advisory HS,3752,"Arcila Fernandez, Sofia",ADVISORY,79,COLISEO 1,14,25,56.0,E3
+OC1305.1,OC1305,Painting I,3752,"Arcila Fernandez, Sofia",6,11,911,25,25,100.0,B1;E2;C4
+OC1305.2,OC1305,Painting I,3752,"Arcila Fernandez, Sofia",8,11,911,21,25,84.0,D1;B3;E5
+OC1305.3,OC1305,Painting I,3752,"Arcila Fernandez, Sofia",3,11,911,22,25,88.0,C1;A3;D4
+OC1306.1,OC1306,Sculpture I,3752,"Arcila Fernandez, Sofia",4,11,911,16,25,64.0,C2;A4;D5
+I1215.1,I1215,AP 3-D Art and Design,3752,"Arcila Fernandez, Sofia",2,11,911,13,25,52.0,A2;D3;B5
+ADVHS01.4,ADVHS01,Advisory HS,342,"Atehortua, Erika",ADVISORY,351,COLISEO 2,13,25,52.0,E3
+G1201.1,G1201,Español & Literatura 12,342,"Atehortua, Erika",3,16,922,19,25,76.0,C1;A3;D4
+G1201.2,G1201,Español & Literatura 12,342,"Atehortua, Erika",1,16,922,15,25,60.0,A1;D2;B4
+G1201.3,G1201,Español & Literatura 12,342,"Atehortua, Erika",7,16,922,19,25,76.0,B2;E4;C5
+G1201.4,G1201,Español & Literatura 12,342,"Atehortua, Erika",4,16,922,15,25,60.0,C2;A4;D5
+G1202.1,G1202,AP Spanish Literature and Culture,342,"Atehortua, Erika",8,16,922,16,25,64.0,D1;B3;E5
+A1006.1,A1006,Chemistry 10,2023,"Beauchamp, Bill",4,12,912,19,25,76.0,C2;A4;D5
+A1006.2,A1006,Chemistry 10,2023,"Beauchamp, Bill",8,12,912,17,25,68.0,D1;B3;E5
+A1006.3,A1006,Chemistry 10,2023,"Beauchamp, Bill",2,12,912,18,25,72.0,A2;D3;B5
+A1105.1,A1105,Physics 11,2023,"Beauchamp, Bill",6,12,912,17,25,68.0,B1;E2;C4
+ADVHS01.5,ADVHS01,Advisory HS,2023,"Beauchamp, Bill",ADVISORY,304,900C,13,25,52.0,E3
+OA1304.1,OA1304,AP Biology,2023,"Beauchamp, Bill",7,12,912,19,25,76.0,B2;E4;C5
+ADVHS01.6,ADVHS01,Advisory HS,9799,"Berrio Guzman, Sandro",ADVISORY,303,900A,13,25,52.0,E3
+OI1003.2,OI1003,Algebra II,9799,"Berrio Guzman, Sandro",2,6,906,22,25,88.0,A2;D3;B5
+OI1003.3,OI1003,Algebra II,9799,"Berrio Guzman, Sandro",6,6,906,17,25,68.0,B1;E2;C4
+OI1003.4,OI1003,Algebra II,9799,"Berrio Guzman, Sandro",7,6,906,19,25,76.0,B2;E4;C5
+OI1003.5,OI1003,Algebra II,9799,"Berrio Guzman, Sandro",3,6,906,19,25,76.0,C1;A3;D4
+OI1003.6,OI1003,Algebra II,9799,"Berrio Guzman, Sandro",5,6,906,18,25,72.0,E1;C3;A5
+E0901.1,E0901,Physical Education and Health 9,5609,"Betancur, Anibal",8,79,COLISEO 1,21,130,16.2,D1;B3;E5
+E0901.2,E0901,Physical Education and Health 9,5609,"Betancur, Anibal",6,79,COLISEO 1,24,130,18.5,B1;E2;C4
+E0901.3,E0901,Physical Education and Health 9,5609,"Betancur, Anibal",7,79,COLISEO 1,20,130,15.4,B2;E4;C5
+E0901.4,E0901,Physical Education and Health 9,5609,"Betancur, Anibal",4,79,COLISEO 1,24,130,18.5,C2;A4;D5
+E0901.5,E0901,Physical Education and Health 9,5609,"Betancur, Anibal",3,79,COLISEO 1,20,130,15.4,C1;A3;D4
+E0901.6,E0901,Physical Education and Health 9,5609,"Betancur, Anibal",2,79,COLISEO 1,20,130,15.4,A2;D3;B5
+OB1532.1,OB1532,AP Research,3961,"Butterworth, Emily R",1,17,923,4,26,15.4,A1;D2;B4
+E1001.1,E1001,Physical Education and Health 10,6602,"Castañeda Alvarez, Jiovana Andrea",5,351,COLISEO 2,20,130,15.4,E1;C3;A5
+E1001.2,E1001,Physical Education and Health 10,6602,"Castañeda Alvarez, Jiovana Andrea",1,351,COLISEO 2,23,130,17.7,A1;D2;B4
+E1001.3,E1001,Physical Education and Health 10,6602,"Castañeda Alvarez, Jiovana Andrea",8,351,COLISEO 2,19,130,14.6,D1;B3;E5
+E1001.4,E1001,Physical Education and Health 10,6602,"Castañeda Alvarez, Jiovana Andrea",3,351,COLISEO 2,19,130,14.6,C1;A3;D4
+E1001.5,E1001,Physical Education and Health 10,6602,"Castañeda Alvarez, Jiovana Andrea",4,351,COLISEO 2,23,130,17.7,C2;A4;D5
+E1001.6,E1001,Physical Education and Health 10,6602,"Castañeda Alvarez, Jiovana Andrea",7,351,COLISEO 2,23,130,17.7,B2;E4;C5
+A1204.1,A1204,Environmental Science,8303,"Dawkins, Blaire",7,10,910,21,25,84.0,B2;E4;C5
+A1204.2,A1204,Environmental Science,8303,"Dawkins, Blaire",1,10,910,17,25,68.0,A1;D2;B4
+A1204.3,A1204,Environmental Science,8303,"Dawkins, Blaire",3,10,910,20,25,80.0,C1;A3;D4
+ADVHS01.7,ADVHS01,Advisory HS,8303,"Dawkins, Blaire",ADVISORY,302,MAKER,13,25,52.0,E3
+OA1318.1,OA1318,AP Environmental Science,8303,"Dawkins, Blaire",6,10,910,9,25,36.0,B1;E2;C4
+OZ1207.1,OZ1207,Anatomy and Physiology,8303,"Dawkins, Blaire",2,10,910,16,25,64.0,A2;D3;B5
+ADVHS01.8,ADVHS01,Advisory HS,9067,"Gwinn, Samantha Nicole",ADVISORY,301,900B,14,25,56.0,E3
+H1206.1,H1206,AP English Language & Composition,9067,"Gwinn, Samantha Nicole",6,1,901,13,25,52.0,B1;E2;C4
+H1206.2,H1206,AP English Language & Composition,9067,"Gwinn, Samantha Nicole",1,1,901,15,25,60.0,A1;D2;B4
+I1214.1,I1214,AP Seminar,9067,"Gwinn, Samantha Nicole",2,1,901,18,25,72.0,A2;D3;B5
+I1214.2,I1214,AP Seminar,9067,"Gwinn, Samantha Nicole",3,1,901,17,25,68.0,C1;A3;D4
+I1214.3,I1214,AP Seminar,9067,"Gwinn, Samantha Nicole",4,1,901,21,25,84.0,C2;A4;D5
+ADVHS01.9,ADVHS01,Advisory HS,10760,"Henao Manco, Alejandro",ADVISORY,352,COLISEO 3,17,25,68.0,E3
+J0903.1,J0903,FRC 9,10760,"Henao Manco, Alejandro",3,301,900B,19,25,76.0,C1;A3;D4
+J0903.2,J0903,FRC 9,10760,"Henao Manco, Alejandro",7,301,900B,19,25,76.0,B2;E4;C5
+J0903.3,J0903,FRC 9,10760,"Henao Manco, Alejandro",6,301,900B,22,25,88.0,B1;E2;C4
+J1203.1,J1203,Tech. and Innovation for Social Change,10760,"Henao Manco, Alejandro",8,301,900B,20,25,80.0,D1;B3;E5
+J1203.2,J1203,Tech. and Innovation for Social Change,10760,"Henao Manco, Alejandro",1,301,900B,16,25,64.0,A1;D2;B4
+ADVHS01.10,ADVHS01,Advisory HS,8754,"Higuita, John",ADVISORY,353,COLISEO 4,13,25,52.0,E3
+J0901.1,J0901,Technology 9,8754,"Higuita, John",5,304,900C,17,25,68.0,E1;C3;A5
+J0901.2,J0901,Technology 9,8754,"Higuita, John",2,304,900C,17,25,68.0,A2;D3;B5
+J0901.3,J0901,Technology 9,8754,"Higuita, John",1,304,900C,21,25,84.0,A1;D2;B4
+OJ1204.1,OJ1204,Creative Design,8754,"Higuita, John",8,304,900C,12,25,48.0,D1;B3;E5
+ADVHS01.11,ADVHS01,Advisory HS,6354,"Hoyos, Camilo",ADVISORY,152,931A,13,25,52.0,E3
+J1203.3,J1203,Tech. and Innovation for Social Change,6354,"Hoyos, Camilo",4,303,900A,16,25,64.0,C2;A4;D5
+J1203.4,J1203,Tech. and Innovation for Social Change,6354,"Hoyos, Camilo",6,303,900A,20,25,80.0,B1;E2;C4
+J1203.5,J1203,Tech. and Innovation for Social Change,6354,"Hoyos, Camilo",5,303,900A,20,25,80.0,E1;C3;A5
+OJ1203.1,OJ1203,Entrepreneurship Business Technology,6354,"Hoyos, Camilo",7,303,900A,16,25,64.0,B2;E4;C5
+OJ1203.2,OJ1203,Entrepreneurship Business Technology,6354,"Hoyos, Camilo",1,303,900A,15,25,60.0,A1;D2;B4
+ADVHS01.12,ADVHS01,Advisory HS,5850,"Jodoin, Alyssa",ADVISORY,151,930B,15,25,60.0,E3
+H1201B.1,H1201B,AP English Literature and Composition,5850,"Jodoin, Alyssa",1,2,902,12,25,48.0,A1;D2;B4
+OH1305.1,OH1305,Art of Fiction Intermediate Level,5850,"Jodoin, Alyssa",6,2,902,21,25,84.0,B1;E2;C4
+OH1306.1,OH1306,Art of Fiction Higher Level,5850,"Jodoin, Alyssa",4,2,902,17,25,68.0,C2;A4;D5
+OH1306.2,OH1306,Art of Fiction Higher Level,5850,"Jodoin, Alyssa",2,2,902,18,25,72.0,A2;D3;B5
+OH1306.3,OH1306,Art of Fiction Higher Level,5850,"Jodoin, Alyssa",5,2,902,19,25,76.0,E1;C3;A5
+ADVHS01.13,ADVHS01,Advisory HS,502,"Ledezma Pito, Juan Carlos",ADVISORY,30,327,13,25,52.0,E3
+L1302.1,L1302,Introduction to Law,502,"Ledezma Pito, Juan Carlos",7,21,927,14,25,56.0,B2;E4;C5
+L1302.2,L1302,Introduction to Law,502,"Ledezma Pito, Juan Carlos",4,21,927,14,25,56.0,C2;A4;D5
+L1303.1,L1303,Pensar nuestro tiempo,502,"Ledezma Pito, Juan Carlos",8,21,927,17,25,68.0,D1;B3;E5
+L1304.1,L1304,Life Purpose,502,"Ledezma Pito, Juan Carlos",6,21,927,24,25,96.0,B1;E2;C4
+L1304.2,L1304,Life Purpose,502,"Ledezma Pito, Juan Carlos",1,21,927,19,25,76.0,A1;D2;B4
+ADVHS01.14,ADVHS01,Advisory HS,9811,"Leiva Bernal, Camila",ADVISORY,29,933,15,25,60.0,E3
+B1001.1,B1001,Social Sciences 10,9811,"Leiva Bernal, Camila",3,3,903,16,25,64.0,C1;A3;D4
+B1001.2,B1001,Social Sciences 10,9811,"Leiva Bernal, Camila",6,3,903,17,25,68.0,B1;E2;C4
+G1201.5,G1201,Español & Literatura 12,9811,"Leiva Bernal, Camila",7,3,903,19,25,76.0,B2;E4;C5
+VHS0052.1,VHS0052,"Spanish Film, Art, and Literature",9811,"Leiva Bernal, Camila",4,3,903,21,25,84.0,C2;A4;D5
+VHS0052.2,VHS0052,"Spanish Film, Art, and Literature",9811,"Leiva Bernal, Camila",8,3,903,19,25,76.0,D1;B3;E5
+ADVHS01.15,ADVHS01,Advisory HS,5306,"Marin Franco, Karol Viviana",ADVISORY,28,932,14,25,56.0,E3
+B1001.3,B1001,Social Sciences 10,5306,"Marin Franco, Karol Viviana",3,22,928,19,25,76.0,C1;A3;D4
+B1001.4,B1001,Social Sciences 10,5306,"Marin Franco, Karol Viviana",8,22,928,17,25,68.0,D1;B3;E5
+B1001.5,B1001,Social Sciences 10,5306,"Marin Franco, Karol Viviana",6,22,928,20,25,80.0,B1;E2;C4
+B1001.6,B1001,Social Sciences 10,5306,"Marin Franco, Karol Viviana",5,22,928,20,25,80.0,E1;C3;A5
+B1001.7,B1001,Social Sciences 10,5306,"Marin Franco, Karol Viviana",7,22,928,20,25,80.0,B2;E4;C5
+E1101.1,E1101,Physical Education and Health 11,9822,"Marin Mesa, Juan Esteban",7,352,COLISEO 3,21,130,16.2,B2;E4;C5
+E1101.2,E1101,Physical Education and Health 11,9822,"Marin Mesa, Juan Esteban",1,352,COLISEO 3,21,130,16.2,A1;D2;B4
+E1101.3,E1101,Physical Education and Health 11,9822,"Marin Mesa, Juan Esteban",5,352,COLISEO 3,23,130,17.7,E1;C3;A5
+E1101.4,E1101,Physical Education and Health 11,9822,"Marin Mesa, Juan Esteban",2,352,COLISEO 3,24,130,18.5,A2;D3;B5
+E1101.5,E1101,Physical Education and Health 11,9822,"Marin Mesa, Juan Esteban",6,352,COLISEO 3,22,130,16.9,B1;E2;C4
+E1101.6,E1101,Physical Education and Health 11,9822,"Marin Mesa, Juan Esteban",4,352,COLISEO 3,21,130,16.2,C2;A4;D5
+ADVHS01.16,ADVHS01,Advisory HS,8470,"Martinez Cubillos, Clara Andrea",ADVISORY,27,931B,13,25,52.0,E3
+G0901.1,G0901,Español & Literatura 9,8470,"Martinez Cubillos, Clara Andrea",7,17,923,17,25,68.0,B2;E4;C5
+G0901.2,G0901,Español & Literatura 9,8470,"Martinez Cubillos, Clara Andrea",3,17,923,20,25,80.0,C1;A3;D4
+G0901.3,G0901,Español & Literatura 9,8470,"Martinez Cubillos, Clara Andrea",2,17,923,17,25,68.0,A2;D3;B5
+G0901.4,G0901,Español & Literatura 9,8470,"Martinez Cubillos, Clara Andrea",8,17,923,20,25,80.0,D1;B3;E5
+G0902.1,G0902,Spanish 9 (Foreign Language),8470,"Martinez Cubillos, Clara Andrea",5,17,923,0,25,0.0,E1;C3;A5
+ADVHS01.17,ADVHS01,Advisory HS,9793,"Mcpherson, Mitchell David",ADVISORY,25,334,14,25,56.0,E3
+H0904.1,H0904,English 9,9793,"Mcpherson, Mitchell David",7,151,930B,17,25,68.0,B2;E4;C5
+H0904.2,H0904,English 9,9793,"Mcpherson, Mitchell David",1,151,930B,21,25,84.0,A1;D2;B4
+H0904.3,H0904,English 9,9793,"Mcpherson, Mitchell David",2,151,930B,17,25,68.0,A2;D3;B5
+H0904.4,H0904,English 9,9793,"Mcpherson, Mitchell David",5,151,930B,21,25,84.0,E1;C3;A5
+H1001.1,H1001,English 10,9793,"Mcpherson, Mitchell David",8,151,930B,13,25,52.0,D1;B3;E5
+E1201.1,E1201,Physical Education and Health 12,602,"Mesa, Urbano",6,353,COLISEO 4,21,130,16.2,B1;E2;C4
+E1201.2,E1201,Physical Education and Health 12,602,"Mesa, Urbano",2,353,COLISEO 4,18,130,13.8,A2;D3;B5
+E1201.3,E1201,Physical Education and Health 12,602,"Mesa, Urbano",4,353,COLISEO 4,18,130,13.8,C2;A4;D5
+E1201.4,E1201,Physical Education and Health 12,602,"Mesa, Urbano",5,353,COLISEO 4,22,130,16.9,E1;C3;A5
+E1201.5,E1201,Physical Education and Health 12,602,"Mesa, Urbano",8,353,COLISEO 4,21,130,16.2,D1;B3;E5
+E1201.6,E1201,Physical Education and Health 12,602,"Mesa, Urbano",3,353,COLISEO 4,21,130,16.2,C1;A3;D4
+A1105.2,A1105,Physics 11,9803,"Mickens, Tamir Akil",5,28,932,19,25,76.0,E1;C3;A5
+ADVHS01.18,ADVHS01,Advisory HS,9803,"Mickens, Tamir Akil",ADVISORY,24,930A,13,25,52.0,E3
+OA1319.1,OA1319,AP Physics 1,9803,"Mickens, Tamir Akil",3,28,932,19,25,76.0,C1;A3;D4
+OA1319.2,OA1319,AP Physics 1,9803,"Mickens, Tamir Akil",6,28,932,18,25,72.0,B1;E2;C4
+OA1322.1,OA1322,AP Physics 2,9803,"Mickens, Tamir Akil",2,28,932,13,25,52.0,A2;D3;B5
+OA1322.2,OA1322,AP Physics 2,9803,"Mickens, Tamir Akil",4,28,932,13,25,52.0,C2;A4;D5
+ADVHS01.19,ADVHS01,Advisory HS,6766,"Murphy, David",ADVISORY,23,929,14,25,56.0,E3
+B0901.1,B0901,Social Studies 9,6766,"Murphy, David",3,24,930A,17,25,68.0,C1;A3;D4
+B0901.2,B0901,Social Studies 9,6766,"Murphy, David",1,24,930A,21,25,84.0,A1;D2;B4
+B0901.3,B0901,Social Studies 9,6766,"Murphy, David",5,24,930A,17,25,68.0,E1;C3;A5
+B1006.1,B1006,Cultural Studies,6766,"Murphy, David",8,24,930A,8,25,32.0,D1;B3;E5
+B1006.2,B1006,Cultural Studies,6766,"Murphy, David",6,24,930A,10,25,40.0,B1;E2;C4
+ADVHS01.20,ADVHS01,Advisory HS,364,"Naranjo, Felipe",ADVISORY,22,928,14,25,56.0,E3
+L1301.1,L1301,AP Psychology,364,"Naranjo, Felipe",8,20,926,23,25,92.0,D1;B3;E5
+L1301.2,L1301,AP Psychology,364,"Naranjo, Felipe",5,20,926,18,25,72.0,E1;C3;A5
+L1301.3,L1301,AP Psychology,364,"Naranjo, Felipe",4,20,926,18,25,72.0,C2;A4;D5
+L1304.3,L1304,Life Purpose,364,"Naranjo, Felipe",2,20,926,25,25,100.0,A2;D3;B5
+L1304.4,L1304,Life Purpose,364,"Naranjo, Felipe",1,20,926,21,25,84.0,A1;D2;B4
+ADVHS01.21,ADVHS01,Advisory HS,10153,"Ortegon Valle, Andres Dario",ADVISORY,21,927,13,25,52.0,E3
+B0901.4,B0901,Social Studies 9,10153,"Ortegon Valle, Andres Dario",7,5,905,17,25,68.0,B2;E4;C5
+I1212.1,I1212,AP Macroeconomics,10153,"Ortegon Valle, Andres Dario",4,5,905,20,25,80.0,C2;A4;D5
+I1212.2,I1212,AP Macroeconomics,10153,"Ortegon Valle, Andres Dario",5,5,905,20,25,80.0,E1;C3;A5
+I1212.3,I1212,AP Macroeconomics,10153,"Ortegon Valle, Andres Dario",8,5,905,21,25,84.0,D1;B3;E5
+I1212.4,I1212,AP Macroeconomics,10153,"Ortegon Valle, Andres Dario",1,5,905,18,25,72.0,A1;D2;B4
+I1213.1,I1213,AP Microeconomics,10153,"Ortegon Valle, Andres Dario",4,5,905,20,25,80.0,C2;A4;D5
+I1213.2,I1213,AP Microeconomics,10153,"Ortegon Valle, Andres Dario",5,5,905,21,25,84.0,E1;C3;A5
+I1213.3,I1213,AP Microeconomics,10153,"Ortegon Valle, Andres Dario",8,5,905,20,25,80.0,D1;B3;E5
+I1213.4,I1213,AP Microeconomics,10153,"Ortegon Valle, Andres Dario",1,5,905,18,25,72.0,A1;D2;B4
+ADVHS01.22,ADVHS01,Advisory HS,10853,"Quiroga Posada, Mauricio",ADVISORY,20,926,14,25,56.0,E3
+I1003.1,I1003,Geometry,10853,"Quiroga Posada, Mauricio",7,152,931A,14,25,56.0,B2;E4;C5
+I1003.2,I1003,Geometry,10853,"Quiroga Posada, Mauricio",8,152,931A,14,25,56.0,D1;B3;E5
+OI1305.1,OI1305,Calculus,10853,"Quiroga Posada, Mauricio",4,152,931A,16,25,64.0,C2;A4;D5
+OI1305.2,OI1305,Calculus,10853,"Quiroga Posada, Mauricio",2,152,931A,22,25,88.0,A2;D3;B5
+OI1305.3,OI1305,Calculus,10853,"Quiroga Posada, Mauricio",5,152,931A,23,25,92.0,E1;C3;A5
+ADVHS01.23,ADVHS01,Advisory HS,5108,"Restrepo Pineda, Johana",ADVISORY,19,925,13,25,52.0,E3
+G1201.6,G1201,Español & Literatura 12,5108,"Restrepo Pineda, Johana",3,15,921,19,25,76.0,C1;A3;D4
+G1203.1,G1203,Español & Literatura 11,5108,"Restrepo Pineda, Johana",1,15,921,21,25,84.0,A1;D2;B4
+G1203.2,G1203,Español & Literatura 11,5108,"Restrepo Pineda, Johana",7,15,921,21,25,84.0,B2;E4;C5
+G1203.3,G1203,Español & Literatura 11,5108,"Restrepo Pineda, Johana",5,15,921,21,25,84.0,E1;C3;A5
+G1203.4,G1203,Español & Literatura 11,5108,"Restrepo Pineda, Johana",4,15,921,21,25,84.0,C2;A4;D5
+ADVHS01.24,ADVHS01,Advisory HS,11153,"Rodriguez Restrepo, Juan Carlos",ADVISORY,18,924,16,25,64.0,E3
+I0903.1,I0903,Algebra I 9,11153,"Rodriguez Restrepo, Juan Carlos",8,27,931B,2,25,8.0,D1;B3;E5
+I0903.2,I0903,Algebra I 9,11153,"Rodriguez Restrepo, Juan Carlos",5,27,931B,1,25,4.0,E1;C3;A5
+I0903.3,I0903,Algebra I 9,11153,"Rodriguez Restrepo, Juan Carlos",2,27,931B,0,25,0.0,A2;D3;B5
+OB1520.1,OB1520,AP Statistics,11153,"Rodriguez Restrepo, Juan Carlos",7,27,931B,12,25,48.0,B2;E4;C5
+OB1520.2,OB1520,AP Statistics,11153,"Rodriguez Restrepo, Juan Carlos",4,27,931B,10,25,40.0,C2;A4;D5
+A1006.4,A1006,Chemistry 10,9795,"Sabido, Jose Lucas V",6,23,929,17,25,68.0,B1;E2;C4
+A1006.5,A1006,Chemistry 10,9795,"Sabido, Jose Lucas V",2,23,929,18,25,72.0,A2;D3;B5
+A1006.6,A1006,Chemistry 10,9795,"Sabido, Jose Lucas V",5,23,929,18,25,72.0,E1;C3;A5
+A1006.7,A1006,Chemistry 10,9795,"Sabido, Jose Lucas V",4,23,929,20,25,80.0,C2;A4;D5
+ADVHS01.25,ADVHS01,Advisory HS,9795,"Sabido, Jose Lucas V",ADVISORY,17,923,13,25,52.0,E3
+OA1317.1,OA1317,AP Chemistry,9795,"Sabido, Jose Lucas V",8,23,929,19,25,76.0,D1;B3;E5
+ADVHS01.26,ADVHS01,Advisory HS,9797,"Schmalz, Nicholas Anthony",ADVISORY,16,922,13,25,52.0,E3
+B0901.5,B0901,Social Studies 9,9797,"Schmalz, Nicholas Anthony",8,8,908,19,25,76.0,D1;B3;E5
+B0901.6,B0901,Social Studies 9,9797,"Schmalz, Nicholas Anthony",4,8,908,21,25,84.0,C2;A4;D5
+B0901.7,B0901,Social Studies 9,9797,"Schmalz, Nicholas Anthony",5,8,908,17,25,68.0,E1;C3;A5
+OH1305.2,OH1305,Art of Fiction Intermediate Level,9797,"Schmalz, Nicholas Anthony",3,8,908,23,25,92.0,C1;A3;D4
+OH1305.3,OH1305,Art of Fiction Intermediate Level,9797,"Schmalz, Nicholas Anthony",1,8,908,20,25,80.0,A1;D2;B4
+A0901.1,A0901,Biology 9,11253,"Science Teacher 1, New",8,1,901,22,25,88.0,D1;B3;E5
+A0901.2,A0901,Biology 9,11253,"Science Teacher 1, New",6,18,924,23,25,92.0,B1;E2;C4
+A1105.3,A1105,Physics 11,11253,"Science Teacher 1, New",7,29,933,17,25,68.0,B2;E4;C5
+A1105.4,A1105,Physics 11,11253,"Science Teacher 1, New",3,152,931A,20,25,80.0,C1;A3;D4
+A1105.5,A1105,Physics 11,11253,"Science Teacher 1, New",2,7,907,20,25,80.0,A2;D3;B5
+ADVHS01.27,ADVHS01,Advisory HS,11253,"Science Teacher 1, New",ADVISORY,15,921,16,25,64.0,E3
+ADVHS01.28,ADVHS01,Advisory HS,339,"Sepulveda, Mauricio",ADVISORY,13,913,14,25,56.0,E3
+I1003.3,I1003,Geometry,339,"Sepulveda, Mauricio",2,18,924,14,25,56.0,A2;D3;B5
+I1003.4,I1003,Geometry,339,"Sepulveda, Mauricio",3,18,924,13,25,52.0,C1;A3;D4
+I1003.5,I1003,Geometry,339,"Sepulveda, Mauricio",1,18,924,18,25,72.0,A1;D2;B4
+I1003.6,I1003,Geometry,339,"Sepulveda, Mauricio",5,18,924,14,25,56.0,E1;C3;A5
+I1003.7,I1003,Geometry,339,"Sepulveda, Mauricio",8,18,924,14,25,56.0,D1;B3;E5
+ADVHS01.29,ADVHS01,Advisory HS,8307,"Shainker, Andrew",ADVISORY,12,912,13,25,52.0,E3
+H1001.2,H1001,English 10,8307,"Shainker, Andrew",6,13,913,17,25,68.0,B1;E2;C4
+ADVHS01.30,ADVHS01,Advisory HS,11252,"English Teacher 1, New",ADVISORY,11,911,16,25,64.0,E3
+H0904.5,H0904,English 9,11252,"English Teacher 1, New",7,20,926,17,25,68.0,B2;E4;C5
+H0904.6,H0904,English 9,11252,"English Teacher 1, New",2,5,905,17,25,68.0,A2;D3;B5
+H0904.7,H0904,English 9,11252,"English Teacher 1, New",5,21,927,19,25,76.0,E1;C3;A5
+H1001.3,H1001,English 10,11252,"English Teacher 1, New",1,152,931A,17,25,68.0,A1;D2;B4
+H1001.4,H1001,English 10,11252,"English Teacher 1, New",8,13,913,13,25,52.0,D1;B3;E5
+OH1401.1,OH1401,Journalism Intermediate Level,8307,"Shainker, Andrew",7,13,913,8,25,32.0,B2;E4;C5
+OH1401.2,OH1401,Journalism Intermediate Level,8307,"Shainker, Andrew",4,13,913,9,25,36.0,C2;A4;D5
+OH1501.1,OH1501,Journalism Higher Level,8307,"Shainker, Andrew",2,13,913,19,25,76.0,A2;D3;B5
+OH1501.2,OH1501,Journalism Higher Level,8307,"Shainker, Andrew",1,13,913,15,25,60.0,A1;D2;B4
+ADVHS01.31,ADVHS01,Advisory HS,9064,"Stretton, Bradford",ADVISORY,10,910,14,25,56.0,E3
+I1204.1,I1204,AP Calculus AB,9064,"Stretton, Bradford",7,7,907,19,25,76.0,B2;E4;C5
+I1204.2,I1204,AP Calculus AB,9064,"Stretton, Bradford",6,7,907,19,25,76.0,B1;E2;C4
+I1208.1,I1208,AP Calculus BC,9064,"Stretton, Bradford",5,7,907,15,25,60.0,E1;C3;A5
+OI1305.4,OI1305,Calculus,9064,"Stretton, Bradford",1,7,907,16,25,64.0,A1;D2;B4
+OI1305.5,OI1305,Calculus,9064,"Stretton, Bradford",4,7,907,16,25,64.0,C2;A4;D5
+ADVHS01.32,ADVHS01,Advisory HS,4003,"Summers, Brian",ADVISORY,9,909,13,25,52.0,E3
+OZ1323.1,OZ1323,AP Human Geography,4003,"Summers, Brian",1,4,904,20,25,80.0,A1;D2;B4
+OZ1323.2,OZ1323,AP Human Geography,4003,"Summers, Brian",6,4,904,18,25,72.0,B1;E2;C4
+OZ1323.3,OZ1323,AP Human Geography,4003,"Summers, Brian",4,4,904,20,25,80.0,C2;A4;D5
+OZ1323.4,OZ1323,AP Human Geography,4003,"Summers, Brian",3,4,904,16,25,64.0,C1;A3;D4
+OZ1323.5,OZ1323,AP Human Geography,4003,"Summers, Brian",2,4,904,16,25,64.0,A2;D3;B5
+ADVHS01.33,ADVHS01,Advisory HS,1251,"Velez Cardona, Gloria Isabel",ADVISORY,8,908,13,25,52.0,E3
+OC1305.4,OC1305,Painting I,1251,"Velez Cardona, Gloria Isabel",1,30,327,24,25,96.0,A1;D2;B4
+OC1307.1,OC1307,Drawing I,1251,"Velez Cardona, Gloria Isabel",6,30,327,19,25,76.0,B1;E2;C4
+OC1310.1,OC1310,Painting II,1251,"Velez Cardona, Gloria Isabel",8,30,327,17,25,68.0,D1;B3;E5
+OC1310.2,OC1310,Painting II,1251,"Velez Cardona, Gloria Isabel",3,30,327,19,25,76.0,C1;A3;D4
+OC1310.3,OC1310,Painting II,1251,"Velez Cardona, Gloria Isabel",2,30,327,20,25,80.0,A2;D3;B5
+OC1314.1,OC1314,AP Drawing,1251,"Velez Cardona, Gloria Isabel",5,30,327,17,25,68.0,E1;C3;A5
+ADVHS01.34,ADVHS01,Advisory HS,953,"Villa, Norberto",ADVISORY,3,903,17,25,68.0,E3
+G1004.1,G1004,AP Spanish Language and Culture,953,"Villa, Norberto",8,29,933,15,25,60.0,D1;B3;E5
+G1004.2,G1004,AP Spanish Language and Culture,953,"Villa, Norberto",5,29,933,15,25,60.0,E1;C3;A5
+G1004.3,G1004,AP Spanish Language and Culture,953,"Villa, Norberto",3,29,933,15,25,60.0,C1;A3;D4
+G1004.4,G1004,AP Spanish Language and Culture,953,"Villa, Norberto",2,29,933,19,25,76.0,A2;D3;B5
+G1004.5,G1004,AP Spanish Language and Culture,953,"Villa, Norberto",1,29,933,19,25,76.0,A1;D2;B4
+G1004.6,G1004,AP Spanish Language and Culture,8106,"Villamizar Muñoz, Sindy Margarita",1,27,931B,19,25,76.0,A1;D2;B4
+G1004.7,G1004,AP Spanish Language and Culture,8106,"Villamizar Muñoz, Sindy Margarita",5,1,901,18,25,72.0,E1;C3;A5
+ADVHS01.35,ADVHS01,Advisory HS,8106,"Villamizar Muñoz, Sindy Margarita",ADVISORY,2,902,17,25,68.0,E3
+G0901.5,G0901,Español & Literatura 9,8106,"Villamizar Muñoz, Sindy Margarita",7,18,924,17,25,68.0,B2;E4;C5
+G0901.6,G0901,Español & Literatura 9,8106,"Villamizar Muñoz, Sindy Margarita",2,3,903,17,25,68.0,A2;D3;B5
+G0901.7,G0901,Español & Literatura 9,8106,"Villamizar Muñoz, Sindy Margarita",3,27,931B,21,25,84.0,C1;A3;D4
+A0901.3,A0901,Biology 9,9816,"Zuluaga Patiño, Valentina",4,9,909,23,25,92.0,C2;A4;D5
+A0901.4,A0901,Biology 9,9816,"Zuluaga Patiño, Valentina",5,9,909,19,25,76.0,E1;C3;A5
+A0901.5,A0901,Biology 9,9816,"Zuluaga Patiño, Valentina",2,9,909,19,25,76.0,A2;D3;B5
+A0901.6,A0901,Biology 9,9816,"Zuluaga Patiño, Valentina",6,9,909,23,25,92.0,B1;E2;C4
+ADVHS01.36,ADVHS01,Advisory HS,9816,"Zuluaga Patiño, Valentina",ADVISORY,1,901,17,25,68.0,E3
+OZ1207.2,OZ1207,Anatomy and Physiology,9816,"Zuluaga Patiño, Valentina",3,9,909,16,25,64.0,C1;A3;D4
+OJ1306.1,OJ1306,AP Computer Science Principles,377,"Zuniga, Julian",7,302,MAKER,10,25,40.0,B2;E4;C5
+OZ1313.1,OZ1313,AP Computer Science A,377,"Zuniga, Julian",6,302,MAKER,2,25,8.0,B1;E2;C4

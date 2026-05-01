@@ -1,0 +1,39 @@
+room_id,name,capacity,room_type,department
+79,COLISEO 1,25,gym,PE
+1,901,25,standard,English
+2,902,25,standard,English
+3,903,25,standard,Spanish
+4,904,25,standard,Social Stu
+5,905,25,standard,Social Stu
+6,906,25,standard,Math
+7,907,25,standard,Math
+8,908,25,standard,Social Stu
+9,909,25,science_lab,Science
+10,910,25,science_lab,Science
+11,911,25,art,Arts
+12,912,25,science_lab,Science
+13,913,25,standard,English
+15,921,25,standard,Spanish
+16,922,25,standard,Spanish
+17,923,25,standard,Spanish
+18,924,25,standard,Math
+19,925,25,standard,Math
+20,926,25,standard,Social Stu
+21,927,25,standard,Social Stu
+22,928,25,standard,Social Stu
+23,929,25,science_lab,Science
+24,930A,25,standard,Social Stu
+25,334,25,art,Arts
+27,931B,25,standard,Math
+28,932,25,science_lab,Science
+29,933,25,standard,Spanish
+30,327,25,art,Arts
+151,930B,25,standard,English
+152,931A,25,standard,Math
+353,COLISEO 4,25,gym,PE
+352,COLISEO 3,25,gym,PE
+301,900B,25,computer_lab,Technology
+302,MAKER,25,computer_lab,Technology
+303,900A,25,computer_lab,Technology
+304,900C,25,computer_lab,Technology
+351,COLISEO 2,25,gym,PE
