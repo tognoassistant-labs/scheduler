@@ -69,11 +69,20 @@ Resultado esperado según simulación con los mismos datos:
 4. Sube el slider a **50**
 5. Click en **"✓ Aplicar al próximo solve"**
 6. Click en la tab **"2️⃣ Solve"**
-7. (Opcional) Sube **"Presupuesto tiempo student (s)"** de 180 a 300
-   para dar más espacio al solver
+7. **Sube "Presupuesto tiempo student (s)" de 180 a 600** ⭐ (crítico)
 8. Click **"▶️ Solve"**
-9. Espera 1-3 minutos
+9. Espera ~10 minutos (el budget ahora es 600s)
 10. Revisa los nuevos KPIs
+
+**Configuración ganadora confirmada en simulación de 9 escenarios:**
+peso electivas=50 + student_time=600s = **100% requeridos, 89.7%
+electivas, balance dev 3** sobre los 509 estudiantes del Colegio.
+
+**Insight clave del solver:** la calidad de las electivas es muy
+sensible al tiempo dedicado al student solver. En la simulación, sólo
+subir el tiempo de 120s a 600s (sin cambiar pesos) ya sube electivas
+de 83.9% a 89.5%. **Dar más tiempo importa más que ajustar pesos en
+ese rango.** Por eso el paso 7 es crítico, no opcional.
 
 ### Verificación
 
@@ -222,18 +231,30 @@ Los pesos no son lineales: subir de 20 a 50 no multiplica el efecto por
 
 ---
 
-## Resultados esperados de las 6 configuraciones probadas
+## Resultados esperados de las 9 configuraciones probadas
 
-Basado en simulación con `master_data_hs_CLEANED.xlsx`:
+Basado en simulación extendida con `master_data_hs_CLEANED.xlsx` y
+los 509 estudiantes del Colegio:
 
-| Config | Required | Electivas | Balance | Recomendación |
-|---|---|---|---|---|
-| baseline (defaults) | 100% | 84% | 3 | ✅ punto de partida |
-| **elective_boost (peso 50)** | **100%** | **85%** | **3** | ✅ **mejor para Colegio** |
-| coplanning_hard | 100% | 83% | 3 | ✅ usa cuando teachers necesitan coordinarse |
-| balance_strict (K=3) | 100% | 78% | 2 | ⚠️ sacrifica electivas |
-| balance_loose (K=6) | 100% | 86% | 4 | ⚠️ sacrifica balance |
-| lexmin | 25% | 98% | 4 | ❌ NO usar |
+| Config | Required | Electivas | Balance | Pass v2§10 | Recomendación |
+|---|---|---|---|---|---|
+| baseline (defaults, 120s) | 100% | 84% | 3 | ✅ | punto de partida |
+| coplanning_hard (120s) | 100% | 85% | 3 | ✅ | si teachers necesitan coordinarse |
+| balance_strict K=3 (120s) | 100% | 81% | 2 | ✅ apenas | sacrifica electivas |
+| balance_loose K=6 (120s) | 100% | 85% | 4 | ❌ balance | NO usar |
+| elective_boost peso=50 (120s) | 100% | 84% | 3 | ✅ | mejora pequeña |
+| elective_max peso=80 (120s) | 100% | 85% | 3 | ✅ | similar a boost |
+| **long_budget defaults+600s** | **100%** | **90%** | **3** | ✅ | **excelente** |
+| **🏆 elective_boost_long (peso=50 + 600s)** | **100%** | **90%** | **3** | ✅ | **GANADOR** |
+| lexmin (180s) | 23% | 99% | 3 | ❌ required | NO usar nunca |
+
+**Probabilidad global de éxito v2 §10:** **77.8%** (7 de 9 escenarios
+cumplen los 4 targets simultáneamente).
+
+**Hallazgo principal:** subir el tiempo del student solver de 120s a
+600s sube electivas ~5pp en cualquier configuración. Es el ajuste de
+mayor impacto. Combinarlo con peso electivas=50 da el mejor resultado
+encontrado.
 
 La columna "estado" muestra qué metas v2 §10 cumple cada configuración:
 ✅ = cumple los 4 targets · ⚠️ = cumple 3 de 4 · ❌ = falla múltiples.

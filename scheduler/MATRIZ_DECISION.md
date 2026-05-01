@@ -69,10 +69,15 @@ Pesos suaves:
 ```
 Cambios sobre Default:
   first_choice_electives: 50  (subir desde 20)
+  Presupuesto tiempo student: 600s (subir desde 180s) ← CRÍTICO
 ```
 
-**Esperado:** required 100%, electivas ~85%, balance 3.
+**Esperado:** required 100%, electivas ~90%, balance 3.
 **Cuándo usarlo:** producción normal del Colegio. Primera elección.
+
+**⭐ Configuración ganadora absoluta** confirmada en simulación de 9
+escenarios. Aceptar el costo de 10 min de cómputo a cambio de +6pp
+de electivas vs el budget corto.
 
 ---
 
