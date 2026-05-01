@@ -376,6 +376,64 @@ def _validate_xlsx_sheets(xlsx_path: Path) -> dict:
     }
 
 
+def _solve_complete_notification(label: str, success: bool = True) -> None:
+    """I3 — Notifica al usuario que el solve terminó.
+
+    Streamlit no tiene API para push notifications nativas del browser,
+    pero podemos:
+    - Mostrar un toast (notification que se desvanece)
+    - Reproducir un beep con HTML/JS (Web Audio API)
+    - Cambiar el title del documento brevemente para que el tab lo
+      muestre como '🔔 Solve terminado'
+    """
+    if success:
+        st.toast(f"✅ Solve completado: {label}", icon="🎉")
+        # Sonido + cambio de title via JS
+        st.markdown("""
+        <script>
+        (function() {
+            try {
+                // 1. Beep corto
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.frequency.value = 880; gain.gain.value = 0.05;
+                osc.start(); setTimeout(() => osc.stop(), 200);
+            } catch (e) {}
+            try {
+                // 2. Title flash si el tab no está activo
+                const original = document.title;
+                let count = 0;
+                const interval = setInterval(() => {
+                    document.title = (count % 2 === 0) ? '🔔 Solve listo!' : original;
+                    count++;
+                    if (count > 8 || document.hasFocus()) {
+                        document.title = original;
+                        clearInterval(interval);
+                    }
+                }, 700);
+            } catch (e) {}
+            try {
+                // 3. Browser notification API (requiere permiso del usuario)
+                if ('Notification' in window) {
+                    if (Notification.permission === 'granted') {
+                        new Notification('Columbus Scheduler', {
+                            body: 'Solve completado correctamente.',
+                            silent: false,
+                        });
+                    } else if (Notification.permission !== 'denied') {
+                        Notification.requestPermission();
+                    }
+                }
+            } catch (e) {}
+        })();
+        </script>
+        """, unsafe_allow_html=True)
+    else:
+        st.toast(f"❌ Solve falló: {label}", icon="⚠️")
+
+
 def _diagnostic_narrative(kpi, n_students: int, n_sections: int,
                           master_status: str, student_status: str,
                           unmet_count: int) -> str:
@@ -1632,6 +1690,7 @@ with tab_solve:
                         f"✓ Corrida #{outcome.run_id} · {outcome.master_status} / {outcome.student_status} · "
                         f"{len(outcome.result.students)} estudiantes · {len(outcome.result.unscheduled_requests)} sin cumplir"
                     )
+                    _solve_complete_notification(f"corrida #{outcome.run_id}", success=True)
             else:
                 # Ruta legacy — sin persistencia
                 with st.spinner(f"Etapa 1: horario master (presupuesto {master_time}s)..."):
@@ -1663,6 +1722,7 @@ with tab_solve:
                         st.session_state["dataset"] = ds_run
                         st.success(f"✓ Etapa 2: {s_status} · {len(students)} estudiantes asignados · "
                                    f"{len(unmet)} rank-1 sin cumplir · {s_elapsed:.1f}s")
+                        _solve_complete_notification("solve sin persistencia", success=True)
 
         if _has_solution():
             st.divider()
