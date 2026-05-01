@@ -731,6 +731,28 @@ def _load_session_backup() -> dict | None:
         return None
 
 
+def _infer_year_from_filename(filename: str) -> str | None:
+    """D2 — Detecta patrones tipo '2026-2027' o '25-26' en el nombre del archivo.
+
+    Returns:
+        '2026-2027' si encuentra el patrón, None si no.
+    """
+    import re
+    if not filename:
+        return None
+    # Patrón 1: YYYY-YYYY (ej: 2026-2027)
+    m = re.search(r"(\d{4})-(\d{4})", filename)
+    if m:
+        return f"{m.group(1)}-{m.group(2)}"
+    # Patrón 2: YY-YY (ej: 25-26 → 2025-2026)
+    m = re.search(r"(?<!\d)(\d{2})-(\d{2})(?!\d)", filename)
+    if m:
+        a, b = int(m.group(1)), int(m.group(2))
+        if b == a + 1:
+            return f"20{a:02d}-20{b:02d}"
+    return None
+
+
 def _file_metadata(path: Path, role: str) -> dict:
     """Compute path/size/sha256 metadata for a file. Used in 'Archivos cargados'."""
     import hashlib
@@ -954,7 +976,22 @@ integrado" arriba — genera datos sintéticos para experimentar.
             )
         elif selected_grades:
             st.caption(f"Ingestará: {', '.join(f'G{g}' for g in selected_grades)}")
-        year = st.text_input("Año", value="2026-2027")
+        # D2 — Inferir año del nombre del archivo subido si está disponible
+        default_year = "2026-2027"
+        inferred_year = None
+        if demand_file is not None:
+            inferred_year = _infer_year_from_filename(demand_file.name)
+        elif sched_file is not None:
+            inferred_year = _infer_year_from_filename(sched_file.name)
+        if inferred_year:
+            default_year = inferred_year
+        year = st.text_input(
+            "Año",
+            value=default_year,
+            help=f"Detectado automáticamente del nombre del archivo. Edita si es incorrecto." if inferred_year else None,
+        )
+        if inferred_year and year == inferred_year:
+            st.caption(f"📅 Año inferido del nombre del archivo: `{inferred_year}`")
 
         # Persistir a disco inmediatamente al subir, para que el coordinador
         # vea el path antes de hacer click en Ingestar.
