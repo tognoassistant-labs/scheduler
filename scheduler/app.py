@@ -1089,6 +1089,27 @@ integrado" arriba — genera datos sintéticos para experimentar.
         db = _get_db()
         if db is not None:
             st.caption(f"BD: `{db.path}`")
+            # I4 — botón de backup manual
+            if st.button("💾 Backup ahora", help="Crea un backup comprimido de la BD"):
+                try:
+                    sys.path.insert(0, str(Path(__file__).resolve().parent / "scripts"))
+                    from backup_db import backup_db as _do_backup
+                    backup_dir = Path(db.path).parent / "backups"
+                    backup_path = _do_backup(Path(db.path), backup_dir, keep=10)
+                    st.success(f"✅ Backup creado: `{backup_path.name}` ({backup_path.stat().st_size / 1024:.1f} KB)")
+                except Exception as exc:
+                    st.error(f"Falló: {exc}")
+            # Mostrar backups existentes
+            backup_dir = Path(db.path).parent / "backups"
+            if backup_dir.exists():
+                existing = sorted(backup_dir.glob("columbus_backup_*.sqlite.gz"), reverse=True)
+                if existing:
+                    with st.expander(f"📦 Backups guardados ({len(existing)})"):
+                        for b in existing[:10]:
+                            size = b.stat().st_size / 1024
+                            st.caption(f"`{b.name}` — {size:.1f} KB")
+                        if len(existing) > 10:
+                            st.caption(f"... y {len(existing) - 10} más")
 
 
 # ============================================================================
