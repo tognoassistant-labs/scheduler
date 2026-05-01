@@ -105,6 +105,153 @@ for k, v in DEFAULTS.items():
 # Helpers
 # ============================================================================
 
+
+def _friendly_ingest_error(exc: Exception) -> tuple[str, str]:
+    """Translate a raw exception from the ingester into (title, body_markdown)
+    with a suggested solution.
+
+    Falls back to a generic message if the exception doesn't match a known
+    pattern. Patterns are ordered most-specific first.
+    """
+    msg = str(exc)
+    cls = type(exc).__name__
+
+    # Pattern 1: v5 archivo subido al ingester legacy.
+    # openpyxl raises ValueError("Worksheet <name> does not exist.")
+    if "Worksheet" in msg and "does not exist" in msg:
+        # Extract the missing sheet name if possible
+        import re
+        m = re.search(r"Worksheet\s+'?([^']+?)'?\s+does not exist", msg)
+        missing_sheet = m.group(1) if m else "(desconocido)"
+        return (
+            "❌ Formato de archivo incorrecto",
+            f"""**Qué pasó:** el archivo subido NO contiene la hoja `{missing_sheet}`
+que el ingester legacy necesita.
+
+**Causa probable:** subiste el archivo nuevo (formato consolidado v5,
+ej: `schedule_master_data_hs.xlsx`) en el slot que espera el archivo
+legacy (ej: `1._STUDENTS_PER_COURSE_2026-2027.xlsx`).
+
+**Cómo arreglarlo:**
+
+1. Verifica que tu archivo SÍ tenga la hoja `UPDATED MARCH 20 -
+   COURSE_GRADE`. Ábrelo en Excel y mira las pestañas abajo.
+2. Si NO la tiene → estás usando el archivo nuevo (v5). Tienes 2 opciones:
+   - **Opción A:** consigue el archivo legacy del Colegio
+     (`1._STUDENTS_PER_COURSE_*.xlsx`)
+   - **Opción B:** convierte tu xlsx v5 a CSVs vía CLI y usa la opción
+     "Carpeta canónica de CSVs" en su lugar (ver INSTALACION.md)
+3. Si la hoja **sí** existe pero el error sigue, el archivo puede estar
+   dañado. Re-exporta desde PowerSchool y vuelve a intentar.""",
+        )
+
+    # Pattern 2: master infeasible — frecuente con coplanning hard
+    if "infeasible" in msg.lower() or "INFEASIBLE" in msg:
+        return (
+            "❌ El motor no encontró un horario factible",
+            """**Qué pasó:** el solver no pudo construir un horario que cumpla todas
+las reglas duras simultáneamente.
+
+**Causas probables (orden de frecuencia):**
+
+1. **Coplanning hard activado** con datos muy ajustados (~70% de los
+   casos). El default es ON; en datos del Colegio a veces lo hace
+   imposible.
+2. **Cap de balance K demasiado estricto** (`max_section_spread_per_course`).
+3. **Demasiadas separations** acumuladas hacen imposible distribuir
+   estudiantes.
+4. **Falta capacidad** en algún curso saturado.
+
+**Cómo arreglarlo (en orden):**
+
+1. Tab **Reglas** → Reglas duras → desactiva
+   **"Co-planning de departamentos"** → Aplicar → Solve.
+2. Si sigue infeasible: sube **"Spread máx entre secciones"** de 4 a 6.
+3. Si sigue: revisa la tab **Cumplimiento** del último intento
+   parcial para ver qué reglas dieron problema.""",
+        )
+
+    # Pattern 3: ortools / solver crashes — usually OOM or thread issue
+    if "MemoryError" in cls or "out of memory" in msg.lower():
+        return (
+            "❌ Memoria insuficiente",
+            """**Qué pasó:** el solver se quedó sin memoria.
+
+**Causa probable:** dataset grande (multi-grado) con poca RAM disponible.
+
+**Cómo arreglarlo:**
+
+1. Cierra otras apps que consuman memoria (Chrome con muchas pestañas, etc.)
+2. En la tab Solve, **baja los presupuestos de tiempo:**
+   - Master: 15s
+   - Student: 60s
+3. Prueba con **un solo grado** primero. Si funciona, el dataset
+   multi-grado excede tu RAM.""",
+        )
+
+    # Pattern 4: archivo no encontrado / path inválido (CSV folder)
+    if "FileNotFoundError" in cls or "No such file" in msg or "not found" in msg.lower():
+        return (
+            "❌ Archivo o carpeta no encontrada",
+            f"""**Qué pasó:** la ruta especificada no existe.
+
+**Detalle del error:** `{msg}`
+
+**Cómo arreglarlo:**
+
+1. Verifica que la ruta sea correcta y absoluta.
+2. Si usaste "Carpeta canónica de CSVs", la carpeta debe contener
+   los 8 archivos: `courses.csv`, `teachers.csv`, `rooms.csv`,
+   `sections.csv`, `students.csv`, `course_requests.csv`,
+   `behavior.csv`, `rotation.csv`.""",
+        )
+
+    # Pattern 5: openpyxl errors specific to xlsx parsing
+    if "openpyxl" in msg or "InvalidFileException" in cls or "BadZipFile" in cls:
+        return (
+            "❌ Archivo xlsx dañado o no válido",
+            f"""**Qué pasó:** openpyxl no pudo abrir el archivo.
+
+**Detalle:** `{msg}`
+
+**Cómo arreglarlo:**
+
+1. Abre el archivo en Excel. Si Excel lo abre bien, ciérralo y
+   re-súbelo a la app.
+2. Si Excel también falla → el archivo está dañado. Pídele al
+   Colegio una nueva exportación.
+3. Verifica que el archivo no esté abierto en Excel mientras lo
+   subes (Excel a veces lo bloquea).""",
+        )
+
+    # Fallback: error inesperado
+    return (
+        "❌ Error inesperado durante la ingesta",
+        f"""**Tipo de error:** `{cls}`
+
+**Mensaje:** `{msg}`
+
+**Qué hacer:**
+
+1. Toma screenshot de este mensaje.
+2. Anota qué archivo subiste y qué grados tenías seleccionados.
+3. Reporta al equipo técnico (IT) con los datos de arriba.
+
+Mientras tanto, puedes intentar:
+- Probar con la opción **"Sample integrado"** para confirmar que la
+  app funciona sin tu archivo
+- Probar con un solo grado en lugar de Todo HS
+- Re-iniciar la app (`Ctrl+C` en Terminal y `./start_local.sh`)""",
+    )
+
+
+def _show_friendly_error(exc: Exception) -> None:
+    """Render a friendly error message in Streamlit. Replaces st.error()."""
+    title, body_md = _friendly_ingest_error(exc)
+    st.error(title)
+    st.markdown(body_md)
+
+
 def _kpi_cards(kpi) -> None:
     """Render the v2 §10 KPI cards as a 6-up grid."""
     cols = st.columns(6)
@@ -217,7 +364,7 @@ with st.sidebar:
                 st.success(f"Cargado desde {path}: {len(ds.students)} estudiantes, {len(ds.sections)} secciones")
                 st.rerun()
             except Exception as e:
-                st.error(f"Falló la carga: {e}")
+                _show_friendly_error(e)
 
     elif src == "xlsx real de Columbus":
         st.caption("Sube los workbooks operativos de Columbus")
@@ -282,7 +429,7 @@ with st.sidebar:
                                f"{len(ds.behavior.separations)} separaciones, {len(ds.behavior.groupings)} groupings")
                     st.rerun()
                 except Exception as e:
-                    st.error(f"Falló la ingesta: {e}")
+                    _show_friendly_error(e)
 
     st.divider()
     if _has_dataset():
