@@ -1,0 +1,266 @@
+student_id,course_id,course_name,is_required
+26041,OI1305,Calculus,False
+27023,OC1314,AP Drawing,False
+27067,OH1306,Art of Fiction Higher Level,False
+27066,J1203,Tech. and Innovation for Social Change,False
+27104,I1204,AP Calculus AB,False
+27074,I1204,AP Calculus AB,False
+27140,C0907,Band Level III,False
+27103,L1303,Pensar nuestro tiempo,False
+27027,A1204,Environmental Science,False
+27019,OH1501,Journalism Higher Level,False
+27071,OH1501,Journalism Higher Level,False
+27005,OI1303,Financial Math,False
+27010,OH1501,Journalism Higher Level,False
+27106,OI1305,Calculus,False
+27160,I1204,AP Calculus AB,False
+27006,OH1501,Journalism Higher Level,False
+27098,J1203,Tech. and Innovation for Social Change,False
+27097,G1201,Español & Literatura 12,False
+27025,C0907,Band Level III,False
+27131,OI1303,Financial Math,False
+27040,OH1501,Journalism Higher Level,False
+27054,I1215,AP 3-D Art and Design,False
+27114,OH1306,Art of Fiction Higher Level,False
+27174,G1202,AP Spanish Literature and Culture,False
+27086,A1204,Environmental Science,False
+27127,I1204,AP Calculus AB,False
+26040,OH1501,Journalism Higher Level,False
+27091,C0907,Band Level III,False
+26009,A1204,Environmental Science,False
+27079,OI1303,Financial Math,False
+27111,OI1303,Financial Math,False
+27073,OB1532,AP Research,False
+27139,OI1303,Financial Math,False
+27046,OI1303,Financial Math,False
+27129,I1204,AP Calculus AB,False
+27151,L1303,Pensar nuestro tiempo,False
+27151,OZ1313,AP Computer Science A,False
+27148,H1201B,AP English Literature and Composition,False
+28120,OI1303,Financial Math,False
+27101,L1303,Pensar nuestro tiempo,False
+27061,L1303,Pensar nuestro tiempo,False
+27113,I1208,AP Calculus BC,False
+27078,J1203,Tech. and Innovation for Social Change,False
+27179,L1302,Introduction to Law,False
+27163,OJ1204,Creative Design,False
+27063,OA1318,AP Environmental Science,False
+27032,OH1306,Art of Fiction Higher Level,False
+27124,C0907,Band Level III,False
+27112,J1203,Tech. and Innovation for Social Change,False
+27089,J1203,Tech. and Innovation for Social Change,False
+27036,OH1501,Journalism Higher Level,False
+27172,L1303,Pensar nuestro tiempo,False
+27171,OH1306,Art of Fiction Higher Level,False
+27109,H1201B,AP English Literature and Composition,False
+26012,OZ1207,Anatomy and Physiology,False
+26012,OC1314,AP Drawing,False
+27029,OH1501,Journalism Higher Level,False
+27132,OH1501,Journalism Higher Level,False
+27048,OA1317,AP Chemistry,False
+27162,OH1501,Journalism Higher Level,False
+27147,I1204,AP Calculus AB,False
+27076,OI1305,Calculus,False
+27095,J1203,Tech. and Innovation for Social Change,False
+27107,OH1501,Journalism Higher Level,False
+27146,OA1318,AP Environmental Science,False
+27110,OI1303,Financial Math,False
+27119,C0907,Band Level III,False
+28110,OH1305,Art of Fiction Intermediate Level,False
+28108,L1304,Life Purpose,False
+28115,OH1401,Journalism Intermediate Level,False
+28177,OC1306,Sculpture I,False
+28020,I1204,AP Calculus AB,False
+28113,C0905,Band Level II,False
+28095,L1304,Life Purpose,False
+28004,A1105,Physics 11,False
+28169,OC1307,Drawing I,False
+27058,OA1304,AP Biology,False
+28097,A1105,Physics 11,False
+28084,I1204,AP Calculus AB,False
+27152,OH1401,Journalism Intermediate Level,False
+28163,A1105,Physics 11,False
+28013,OH1401,Journalism Intermediate Level,False
+28022,I1204,AP Calculus AB,False
+28137,OA1304,AP Biology,False
+28166,OC1307,Drawing I,False
+28135,OH1401,Journalism Intermediate Level,False
+28102,A1105,Physics 11,False
+28171,OA1319,AP Physics 1,False
+28034,C0905,Band Level II,False
+28014,OC1307,Drawing I,False
+28065,C0905,Band Level II,False
+28058,OA1319,AP Physics 1,False
+28118,A1105,Physics 11,False
+28074,OI1305,Calculus,False
+27008,OZ1207,Anatomy and Physiology,False
+27008,A1105,Physics 11,False
+28041,VHS0052,"Spanish Film, Art, and Literature",False
+28103,OC1307,Drawing I,False
+28098,OA1319,AP Physics 1,False
+28003,OC1307,Drawing I,False
+28170,A1105,Physics 11,False
+28039,OA1304,AP Biology,False
+28039,C0905,Band Level II,False
+28116,L1304,Life Purpose,False
+28157,C0905,Band Level II,False
+28117,OA1319,AP Physics 1,False
+28030,OA1304,AP Biology,False
+28001,OH1401,Journalism Intermediate Level,False
+28048,I1204,AP Calculus AB,False
+28146,G1202,AP Spanish Literature and Culture,False
+28147,OH1401,Journalism Intermediate Level,False
+28057,A1105,Physics 11,False
+28136,G1202,AP Spanish Literature and Culture,False
+28045,OH1401,Journalism Intermediate Level,False
+28053,OA1304,AP Biology,False
+28072,OI1003,Algebra II,False
+28035,G1202,AP Spanish Literature and Culture,False
+28010,A1105,Physics 11,False
+28088,A1105,Physics 11,False
+28002,OZ1207,Anatomy and Physiology,False
+28062,C0904,Band Level I,False
+28076,H1201B,AP English Literature and Composition,False
+28165,A1105,Physics 11,False
+29057,I1211,AP Precalculus,False
+29037,OZ1207,Anatomy and Physiology,False
+29111,I1211,AP Precalculus,False
+29111,OZ1207,Anatomy and Physiology,False
+29073,I1211,AP Precalculus,False
+28006,G1004,AP Spanish Language and Culture,False
+29156,OZ1207,Anatomy and Physiology,False
+29020,I1003,Geometry,False
+29103,OZ1207,Anatomy and Physiology,False
+29041,OZ1207,Anatomy and Physiology,False
+29145,G1004,AP Spanish Language and Culture,False
+29040,B1006,Cultural Studies,False
+29039,H1001,English 10,False
+29039,OC1314,AP Drawing,False
+29083,OZ1207,Anatomy and Physiology,False
+29011,OZ1207,Anatomy and Physiology,False
+29080,OZ1207,Anatomy and Physiology,False
+29027,I1211,AP Precalculus,False
+29071,OZ1207,Anatomy and Physiology,False
+29034,OZ1207,Anatomy and Physiology,False
+29113,G1004,AP Spanish Language and Culture,False
+29018,OZ1207,Anatomy and Physiology,False
+29122,OZ1207,Anatomy and Physiology,False
+29066,OZ1207,Anatomy and Physiology,False
+29128,I1214,AP Seminar,False
+29112,I1214,AP Seminar,False
+29023,OZ1207,Anatomy and Physiology,False
+29087,OC1314,AP Drawing,False
+29016,OZ1207,Anatomy and Physiology,False
+29159,OZ1207,Anatomy and Physiology,False
+29138,B1006,Cultural Studies,False
+29069,OC1310,Painting II,False
+29069,I1214,AP Seminar,False
+29115,OZ1207,Anatomy and Physiology,False
+29131,OZ1207,Anatomy and Physiology,False
+29157,G1004,AP Spanish Language and Culture,False
+29081,OZ1207,Anatomy and Physiology,False
+28144,OJ1306,AP Computer Science Principles,False
+29074,I1214,AP Seminar,False
+29074,OZ1207,Anatomy and Physiology,False
+29070,I1211,AP Precalculus,False
+29070,OZ1207,Anatomy and Physiology,False
+29015,OC1305,Painting I,False
+29148,I1214,AP Seminar,False
+29030,I1211,AP Precalculus,False
+29088,OZ1207,Anatomy and Physiology,False
+29098,OZ1207,Anatomy and Physiology,False
+29076,OC1314,AP Drawing,False
+29021,OZ1207,Anatomy and Physiology,False
+29079,OZ1207,Anatomy and Physiology,False
+29158,OC1314,AP Drawing,False
+28023,I1214,AP Seminar,False
+29114,OZ1207,Anatomy and Physiology,False
+29161,OZ1207,Anatomy and Physiology,False
+29072,OZ1207,Anatomy and Physiology,False
+30056,I1003,Geometry,False
+30051,I0903,Algebra I 9,False
+30080,J0903,FRC 9,False
+30105,C0904,Band Level I,False
+30090,C0904,Band Level I,False
+30026,J0903,FRC 9,False
+30026,C0904,Band Level I,False
+30104,C0904,Band Level I,False
+30075,C0904,Band Level I,False
+30012,J0903,FRC 9,False
+30050,OC1305,Painting I,False
+30169,OC1305,Painting I,False
+30032,I0903,Algebra I 9,False
+30120,OC1305,Painting I,False
+30047,J0903,FRC 9,False
+30047,OC1305,Painting I,False
+30014,I0903,Algebra I 9,False
+30014,OC1305,Painting I,False
+30112,I0903,Algebra I 9,False
+30002,J0903,FRC 9,False
+30019,C0904,Band Level I,False
+30172,OC1305,Painting I,False
+30124,I0903,Algebra I 9,False
+30124,OC1305,Painting I,False
+30136,OC1305,Painting I,False
+30092,OC1305,Painting I,False
+30003,C0904,Band Level I,False
+30072,OC1305,Painting I,False
+29014,I0903,Algebra I 9,False
+30161,C0904,Band Level I,False
+30079,OC1305,Painting I,False
+30111,OC1305,Painting I,False
+30125,I0903,Algebra I 9,False
+30069,C0904,Band Level I,False
+30023,C0904,Band Level I,False
+30055,C0904,Band Level I,False
+30036,C0904,Band Level I,False
+30077,C0904,Band Level I,False
+30043,I0903,Algebra I 9,False
+30043,C0904,Band Level I,False
+30155,C0904,Band Level I,False
+30025,J0903,FRC 9,False
+30153,C0904,Band Level I,False
+30123,C0904,Band Level I,False
+30064,I0903,Algebra I 9,False
+30093,C0904,Band Level I,False
+30038,OC1305,Painting I,False
+30081,OC1305,Painting I,False
+29017,C0904,Band Level I,False
+30006,C0904,Band Level I,False
+30022,C0904,Band Level I,False
+29102,C0904,Band Level I,False
+30177,C0904,Band Level I,False
+30148,OC1305,Painting I,False
+30049,C0904,Band Level I,False
+30070,C0904,Band Level I,False
+30059,OC1305,Painting I,False
+30121,C0904,Band Level I,False
+30127,I0903,Algebra I 9,False
+30018,C0904,Band Level I,False
+30175,OC1305,Painting I,False
+30106,C0904,Band Level I,False
+30033,J0903,FRC 9,False
+30154,C0904,Band Level I,False
+30034,C0904,Band Level I,False
+30034,J0903,FRC 9,False
+30119,OC1305,Painting I,False
+30062,J0903,FRC 9,False
+30001,C0904,Band Level I,False
+29100,C0904,Band Level I,False
+30176,C0904,Band Level I,False
+30074,OC1305,Painting I,False
+30158,OC1305,Painting I,False
+30098,C0904,Band Level I,False
+30134,J0903,FRC 9,False
+30042,C0904,Band Level I,False
+30030,J0903,FRC 9,False
+30103,OC1305,Painting I,False
+30179,OC1305,Painting I,False
+30007,OC1305,Painting I,False
+30141,OC1305,Painting I,False
+30147,OC1305,Painting I,False
+30061,OC1305,Painting I,False
+30011,C0904,Band Level I,False
+30163,C0904,Band Level I,False
+30126,OC1305,Painting I,False
+30084,OC1305,Painting I,False

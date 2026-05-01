@@ -45,19 +45,38 @@ Section balance:                               ≤3      ✅
 
 ---
 
-## Comparativa de las 3 alternativas evaluadas hoy
+## Comparativa de las 4 alternativas evaluadas hoy
 
-| Métrica | Baseline (v4.27 phased) | Solución A (admin applied) | Solución B (iterative master) |
+| Métrica | Baseline (v4.27 phased) | **Sol A (admin)** ⭐ | Sol C (multi-seed) | Sol B (iterative) |
+|---|---|---|---|---|
+| **Estudiantes con TODOS** | 232 (45.6%) | **299 (58.7%)** | 259 (50.9%) | 208 (40.9%) |
+| Promedio satisfacción | 92.4% | **94.1%** | 93.5% | 91.8% |
+| Mediana satisfacción | 88.9% | **100%** | 100% | 87.5% |
+| First-choice electives | 88.9% | **91.3%** | ~89% | 88.1% |
+| Section balance | ≤5 | **≤3** ✅ | ≤4 | ≤4 |
+| Required fulfillment | 100% | 100% | 100% | 100% |
+| Decisiones del Colegio | ninguna | **aprobar 6 acciones admin** | **NINGUNA** | descartado |
+
+**Recomendación principal: Solución A.** Plan B ready: Solución C si admin no aprueba.
+
+### Nota sobre Solución C (multi-seed)
+
+Es una "harvesting" de varianza del solver: corrimos el phased con 5 seeds distintos y nos quedamos con el mejor (seed=42 dio 259 full). Mejora el baseline en +27 estudiantes sin cambiar nada estructural. Útil si el Colegio dice "no podemos aprobar las 6 acciones admin".
+
+### Distribución por grado — Sol A vs Sol C
+
+| Grado | Sol A admin | Sol C multi-seed | Quién gana |
 |---|---|---|---|
-| **Estudiantes con TODOS** | 232 (45.6%) | **299 (58.7%)** ⭐ | 208 (40.9%) |
-| Promedio satisfacción | 92.4% | **94.1%** | 91.8% |
-| Mediana satisfacción | 88.9% | **100%** | 87.5% |
-| First-choice electives | 88.9% | **91.3%** | 88.1% |
-| Section balance | ≤5 (mediocre) | **≤3** ✅ | ≤4 |
-| Required fulfillment | 100% | 100% | 100% |
-| Decisiones del Colegio | ninguna | aprobar 6 acciones | ninguna |
+| G12 | **71.1%** | 46.3% | Sol A (concentra ahí los fixes) |
+| G11 | 51.1% | **58.8%** | Sol C (mejor por solver-luck) |
+| G10 | **77.3%** | 60.9% | Sol A (bonus de los fixes) |
+| G9 | 36.4% | **37.2%** | empatado |
 
-**Solución B (iterative master)** — descartada. La idea era buena (re-correr master con slot hints) pero los locks acumulados generaron más conflictos que ganancia. Aprendizaje: el master_solver actual es bueno; el problema NO está en los slots sino en la capacidad/distribución de secciones.
+**Sol A es desigual** (G12 y G10 saltan, G11 sufre algo de varianza). **Sol C es más uniforme** entre grados. Si el Colegio prioriza equidad inter-grados, Sol C es interesante.
+
+### Solución B descartada
+
+La idea era buena (re-correr master con slot hints en secciones desperdiciadas) pero los locks acumulados generaron más conflictos que ganancia. Aprendizaje técnico: el master_solver actual ya es bueno; el problema NO está en los slots sino en la capacidad/distribución de secciones (que Sol A ataca directamente).
 
 ---
 
@@ -152,11 +171,12 @@ Todos en GitHub (`tognoassistant-labs/scheduler`):
 
 | Versión | Carpeta | Status | Cuándo usar |
 |---|---|---|---|
-| **`HS_2026-2027_admin_applied`** ⭐ | `scheduler/data/_client_bundle_v4/HS_2026-2027_admin_applied/` | **RECOMENDADO** | Si admin aprueba las 6 acciones |
-| `HS_2026-2027_phased` | `_client_bundle_v4/HS_2026-2027_phased/` | Backup | Sin acciones admin (status quo) |
-| `HS_2026-2027_real` | `_client_bundle_v4/HS_2026-2027_real/` | Versión old (mixed solver) | Comparación histórica |
-| `HS_2026-2027_iterative` | `_client_bundle_v4/HS_2026-2027_iterative/` | Experimento | NO usar — peor que baseline |
-| `HS_2026-2027_G12_only` | `_client_bundle_v4/HS_2026-2027_G12_only/` | Análisis G12 puro | Con propuesta admin del G12 |
+| **`HS_2026-2027_admin_applied`** ⭐ | `_client_bundle_v4/HS_2026-2027_admin_applied/` | **RECOMENDADO** (Sol A — 58.7% full) | Si admin aprueba las 6 acciones |
+| **`HS_2026-2027_phased_best`** | `_client_bundle_v4/HS_2026-2027_phased_best/` | **PLAN B** (Sol C multi-seed — 50.9% full) | Si NO hay aprobación admin |
+| `HS_2026-2027_phased` | `_client_bundle_v4/HS_2026-2027_phased/` | Baseline single-seed (45.6%) | Comparación |
+| `HS_2026-2027_real` | `_client_bundle_v4/HS_2026-2027_real/` | Versión old (mixed solver) | Histórico |
+| `HS_2026-2027_iterative` | `_client_bundle_v4/HS_2026-2027_iterative/` | Experimento (40.9%) | NO usar |
+| `HS_2026-2027_G12_only` | `_client_bundle_v4/HS_2026-2027_G12_only/` | Análisis G12 puro | Para validar propuesta admin |
 
 ---
 
