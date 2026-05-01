@@ -134,6 +134,67 @@ def compute_kpis(
     )
 
 
+def write_student_schedules_friendly(
+    ds: Dataset,
+    master: list[MasterAssignment],
+    students: list[StudentAssignment],
+    out_path: Path,
+) -> Path:
+    """Per-row CSV (one row per student-section). Format compatible with
+    the visor at https://publicaciones.columbus.edu.co/web_resources/visor_schedules/.
+
+    Columns:
+        StudentID, StudentName, Grade, CourseID, CourseName, SectionID,
+        Period, Slots, TeacherID, TeacherName, RoomID, RoomName
+
+    `Slots` is semicolon-separated `<DAY><BLOCK>` entries (e.g. "A1;D2;B4").
+    `Period` is the master scheme number (1-8) or "ADVISORY".
+    """
+    sections_by_id = {s.section_id: s for s in ds.sections}
+    courses_by_id = {c.course_id: c for c in ds.courses}
+    teachers_by_id = {t.teacher_id: t for t in ds.teachers}
+    rooms_by_id = {r.room_id: r for r in ds.rooms}
+    master_by_sect = {m.section_id: m for m in master}
+    students_by_id = {st.student_id: st for st in ds.students}
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with out_path.open("w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow([
+            "StudentID", "StudentName", "Grade", "CourseID", "CourseName",
+            "SectionID", "Period", "Slots", "TeacherID", "TeacherName",
+            "RoomID", "RoomName",
+        ])
+        for sa in students:
+            st = students_by_id.get(sa.student_id)
+            if st is None:
+                continue
+            for sid in sa.section_ids:
+                s = sections_by_id.get(sid)
+                if s is None:
+                    continue
+                m = master_by_sect.get(sid)
+                c = courses_by_id.get(s.course_id)
+                t = teachers_by_id.get(s.teacher_id)
+                r = rooms_by_id.get(m.room_id) if m else None
+                slots_str = ";".join(f"{d}{b}" for d, b in m.slots) if m else ""
+                # Period: scheme number or ADVISORY label, formatted as P##
+                if m is None:
+                    period_str = ""
+                elif m.scheme == "ADVISORY":
+                    period_str = "ADV"
+                else:
+                    period_str = f"P{int(m.scheme):02d}"
+                w.writerow([
+                    st.student_id, st.name, st.grade,
+                    s.course_id, c.name if c else "",
+                    s.section_id, period_str, slots_str,
+                    s.teacher_id, t.name if t else "",
+                    m.room_id if m else "", r.name if r else "",
+                ])
+    return out_path
+
+
 def write_reports(
     ds: Dataset,
     master: list[MasterAssignment],
@@ -142,6 +203,11 @@ def write_reports(
     out_dir: Path,
 ) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
+    # Visor-compatible per-row schedule (one row per student-section).
+    write_student_schedules_friendly(
+        ds, master, students, out_dir / "student_schedules_friendly.csv"
+    )
+
     sections_by_id = {s.section_id: s for s in ds.sections}
     courses_by_id = {c.course_id: c for c in ds.courses}
     teachers_by_id = {t.teacher_id: t for t in ds.teachers}

@@ -1611,6 +1611,9 @@ with tab_export:
                 "schedule_report.md": tmp / "reports" / "schedule_report.md",
                 "sections_with_enrollment.csv": tmp / "reports" / "sections_with_enrollment.csv",
                 "student_schedules.csv": tmp / "reports" / "student_schedules.csv",
+                # CSV compatible con el visor estático en
+                # https://publicaciones.columbus.edu.co/web_resources/visor_schedules/
+                "student_schedules_friendly.csv": tmp / "reports" / "student_schedules_friendly.csv",
                 "teacher_loads.csv": tmp / "reports" / "teacher_loads.csv",
                 "unmet_requests.csv": tmp / "reports" / "unmet_requests.csv",
             }
