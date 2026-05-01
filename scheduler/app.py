@@ -547,6 +547,19 @@ Para inspeccionar la estructura: abre cualquier CSV en Excel.
     elif src == "xlsx real de Columbus":
         st.caption("Sube los workbooks operativos de Columbus")
 
+        # Plantillas descargables (REQ-4)
+        tpl_legacy = Path("data/templates/plantilla_legacy.xlsx")
+        if tpl_legacy.exists():
+            with open(tpl_legacy, "rb") as f:
+                st.download_button(
+                    "📥 Descargar plantilla (formato legacy)",
+                    data=f.read(),
+                    file_name="plantilla_legacy.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    help="xlsx vacío con las hojas y columnas que el motor espera. Útil como referencia.",
+                    width='stretch',
+                )
+
         # Tooltip con schema esperado (REQ-3 parte A)
         with st.expander("ℹ️ ¿Qué archivos espera y qué deben contener?"):
             st.markdown("""

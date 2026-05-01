@@ -60,6 +60,8 @@ scheduler/data/cleanup/
 scheduler/data/*.xlsx
 # Whitelist sample/template xlsx files explicitly if any get added.
 !scheduler/data/sample_template.xlsx
+!scheduler/data/templates/
+!scheduler/data/templates/*.xlsx
 
 # Docker / deploy secrets
 scheduler/.env
