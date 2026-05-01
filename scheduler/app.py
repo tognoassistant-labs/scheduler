@@ -12,6 +12,7 @@ import io
 import time
 import zipfile
 from collections import Counter, defaultdict
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -2243,6 +2244,23 @@ with tab_export:
             export_powerschool(ds, master, students, tmp)
             write_reports(ds, master, students, unmet, tmp / "reports")
 
+            # G1 — generar reporte ejecutivo si hay run persistido
+            executive_report_path = tmp / "REPORTE_EJECUTIVO.md"
+            run_id_for_report = st.session_state.get("last_run_id") if export_source == "session" else history_run_id
+            if run_id_for_report and st.session_state.get("persist_enabled"):
+                try:
+                    db_g1 = _get_db()
+                    if db_g1 is not None:
+                        # Importar dinámicamente — el script vive en scripts/
+                        sys.path.insert(0, str(Path(__file__).resolve().parent / "scripts"))
+                        from generate_executive_report import generate_report
+                        generate_report(db_g1, run_id_for_report, executive_report_path)
+                except Exception as exc:
+                    st.caption(f"_(reporte ejecutivo no se pudo generar: {exc})_")
+                    executive_report_path = None
+            else:
+                executive_report_path = None
+
             files = {
                 "ps_sections.csv": tmp / "ps_sections.csv",
                 "ps_enrollments.csv": tmp / "ps_enrollments.csv",
@@ -2257,6 +2275,8 @@ with tab_export:
                 "teacher_loads.csv": tmp / "reports" / "teacher_loads.csv",
                 "unmet_requests.csv": tmp / "reports" / "unmet_requests.csv",
             }
+            if executive_report_path and executive_report_path.exists():
+                files["REPORTE_EJECUTIVO.md"] = executive_report_path
             for name, path in files.items():
                 if not path.exists():
                     continue
