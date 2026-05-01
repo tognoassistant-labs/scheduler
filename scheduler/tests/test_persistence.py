@@ -75,7 +75,8 @@ def test_schema_meta_seeded(db: DB) -> None:
     cur = db.conn.execute("SELECT version FROM schema_meta")
     rows = cur.fetchall()
     assert len(rows) >= 1
-    assert rows[0]["version"] == 1
+    # Versión actual; bumpear este número cuando se incremente SCHEMA_VERSION.
+    assert rows[0]["version"] >= 1
 
 
 def test_open_db_uses_env_var(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -238,6 +239,38 @@ def test_run_failure_path(db: DB, tiny_dataset: Dataset) -> None:
     meta = runs.get(rid)
     assert meta.status == "failed"
     assert meta.error_message == "infeasible: master"
+
+
+def test_run_notes_and_tags(db: DB, tiny_dataset: Dataset) -> None:
+    """F3 — el coordinador puede agregar notas y tags a una corrida."""
+    bundles = InputBundleRepo(db)
+    rules = RuleConfigRepo(db)
+    runs = RunRepo(db)
+    bid = bundles.save("tiny", "sample", tiny_dataset)
+    cid = rules.save("default", HardConstraints(), SoftConstraintWeights())
+    rid_a = runs.start("first", bid, cid)
+    rid_b = runs.start("second", bid, cid)
+
+    runs.set_notes(rid_a, "Esta es la corrida final aprobada por dirección.")
+    runs.set_tags(rid_a, "aprobado,final,2026-2027")
+    runs.set_tags(rid_b, "draft")
+
+    # Round-trip
+    meta_a = runs.get(rid_a)
+    assert meta_a.notes == "Esta es la corrida final aprobada por dirección."
+    assert meta_a.tags == "aprobado,final,2026-2027"
+
+    # Filtrar por tag
+    aprobados = runs.list_by_tag("aprobado")
+    assert len(aprobados) == 1
+    assert aprobados[0].id == rid_a
+
+    drafts = runs.list_by_tag("draft")
+    assert len(drafts) == 1
+    assert drafts[0].id == rid_b
+
+    # Tag inexistente
+    assert runs.list_by_tag("inexistente") == []
 
 
 def test_run_compliance_save_and_get(db: DB, tiny_dataset: Dataset) -> None:

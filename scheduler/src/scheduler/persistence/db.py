@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Iterator
 
 DEFAULT_DB_PATH = Path("data/columbus.sqlite")
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2  # v2: agrega run.notes + run.tags para F3
 
 _SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS schema_meta (
@@ -148,6 +148,16 @@ class DB:
             cur = boot.execute("SELECT MAX(version) FROM schema_meta")
             row = cur.fetchone()
             current = row[0] if row else None
+            # Migración v1 → v2: agregar columnas notes y tags al run
+            if current is None or current < 2:
+                # ALTER TABLE ADD COLUMN es idempotente solo si ya existe;
+                # capturamos el error si la columna ya está
+                for col_def in ("notes TEXT", "tags TEXT"):
+                    col_name = col_def.split()[0]
+                    cur2 = boot.execute("PRAGMA table_info(run)")
+                    existing_cols = {r[1] for r in cur2.fetchall()}
+                    if col_name not in existing_cols:
+                        boot.execute(f"ALTER TABLE run ADD COLUMN {col_def}")
             if current is None or current < SCHEMA_VERSION:
                 from datetime import datetime, timezone
                 boot.execute(

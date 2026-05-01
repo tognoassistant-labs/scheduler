@@ -239,6 +239,8 @@ class RunMeta:
     git_sha: str | None
     app_version: str | None
     error_message: str | None
+    notes: str | None = None
+    tags: str | None = None
 
 
 class RunRepo:
@@ -330,7 +332,8 @@ class RunRepo:
     def get(self, run_id: int) -> RunMeta:
         cur = self.db.conn.execute(
             "SELECT id, label, created_at, bundle_id, rule_config_id, status, "
-            "master_seconds, student_seconds, objective, git_sha, app_version, error_message "
+            "master_seconds, student_seconds, objective, git_sha, app_version, error_message, "
+            "notes, tags "
             "FROM run WHERE id = ?",
             (run_id,),
         )
@@ -342,9 +345,31 @@ class RunRepo:
     def list_all(self, limit: int = 100) -> list[RunMeta]:
         cur = self.db.conn.execute(
             "SELECT id, label, created_at, bundle_id, rule_config_id, status, "
-            "master_seconds, student_seconds, objective, git_sha, app_version, error_message "
+            "master_seconds, student_seconds, objective, git_sha, app_version, error_message, "
+            "notes, tags "
             "FROM run ORDER BY created_at DESC LIMIT ?",
             (limit,),
+        )
+        return [RunMeta(**dict(r)) for r in cur.fetchall()]
+
+    def set_notes(self, run_id: int, notes: str | None) -> None:
+        with self.db.transaction() as conn:
+            conn.execute("UPDATE run SET notes = ? WHERE id = ?", (notes, run_id))
+
+    def set_tags(self, run_id: int, tags: str | None) -> None:
+        """tags is a comma-separated string of tag names (sin espacios)."""
+        with self.db.transaction() as conn:
+            conn.execute("UPDATE run SET tags = ? WHERE id = ?", (tags, run_id))
+
+    def list_by_tag(self, tag: str, limit: int = 100) -> list[RunMeta]:
+        """Lista runs cuyo string tags contiene el tag dado (case-insensitive)."""
+        cur = self.db.conn.execute(
+            "SELECT id, label, created_at, bundle_id, rule_config_id, status, "
+            "master_seconds, student_seconds, objective, git_sha, app_version, error_message, "
+            "notes, tags "
+            "FROM run WHERE LOWER(',' || COALESCE(tags, '') || ',') LIKE ? "
+            "ORDER BY created_at DESC LIMIT ?",
+            (f"%,{tag.lower()},%", limit),
         )
         return [RunMeta(**dict(r)) for r in cur.fetchall()]
 

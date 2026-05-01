@@ -1748,11 +1748,28 @@ with tab_runs:
         bundle_repo = InputBundleRepo(db)
         rules_repo = RuleConfigRepo(db)
 
-        runs = run_repo.list_all(limit=50)
-        st.subheader(f"Histórico ({len(runs)} corrida(s))")
+        all_runs = run_repo.list_all(limit=200)
+        # Filtro por tag (F3)
+        all_tags: set[str] = set()
+        for r in all_runs:
+            if r.tags:
+                all_tags.update(t.strip() for t in r.tags.split(",") if t.strip())
+        filter_tag = None
+        if all_tags:
+            filter_tag = st.selectbox(
+                "Filtrar por etiqueta",
+                options=["(todas)"] + sorted(all_tags),
+                index=0,
+            )
+            if filter_tag == "(todas)":
+                filter_tag = None
+        runs = [r for r in all_runs if filter_tag is None or
+                (r.tags and filter_tag in [t.strip() for t in r.tags.split(",")])]
+
+        st.subheader(f"Histórico ({len(runs)} corrida(s){f' con etiqueta `{filter_tag}`' if filter_tag else ''})")
 
         if not runs:
-            st.info("No hay corridas guardadas todavía. Corre el solver con persistencia activa para ver corridas aquí.")
+            st.info("No hay corridas con esos filtros. Corre el solver con persistencia activa para ver corridas aquí.")
         else:
             run_rows = []
             for r in runs:
@@ -1761,6 +1778,8 @@ with tab_runs:
                     "Label": r.label,
                     "Created": r.created_at[:19].replace("T", " "),
                     "Status": r.status,
+                    "Tags": r.tags or "",
+                    "Notas": (r.notes[:40] + "…") if r.notes and len(r.notes) > 40 else (r.notes or ""),
                     "Bundle": r.bundle_id,
                     "RuleCfg": r.rule_config_id,
                     "Master (s)": f"{r.master_seconds:.1f}" if r.master_seconds else "-",
@@ -1828,6 +1847,55 @@ with tab_runs:
                 cols[1].metric("Master (s)", f"{meta.master_seconds:.1f}" if meta.master_seconds else "-")
                 cols[2].metric("Student (s)", f"{meta.student_seconds:.1f}" if meta.student_seconds else "-")
                 cols[3].metric("Objective", f"{meta.objective:.0f}" if meta.objective else "-")
+
+                # F3 — Notas y tags por corrida
+                with st.expander("📝 Notas y etiquetas", expanded=bool(meta.notes or meta.tags)):
+                    nt_cols = st.columns([3, 2])
+                    with nt_cols[0]:
+                        new_notes = st.text_area(
+                            "Notas",
+                            value=meta.notes or "",
+                            key=f"notes_run_{selected}",
+                            placeholder="Ej: 'Esta es la corrida final aprobada por dirección académica.'",
+                            height=100,
+                        )
+                    with nt_cols[1]:
+                        new_tags = st.text_input(
+                            "Etiquetas (separadas por coma)",
+                            value=meta.tags or "",
+                            key=f"tags_run_{selected}",
+                            placeholder="ej: aprobado, final, 2026-2027",
+                        )
+                        # Botones rápidos para tags comunes
+                        tag_cols = st.columns(3)
+                        if tag_cols[0].button("➕ #draft", key=f"tag_draft_{selected}"):
+                            existing = [t.strip() for t in (new_tags or "").split(",") if t.strip()]
+                            if "draft" not in existing:
+                                existing.append("draft")
+                            run_repo.set_tags(selected, ",".join(existing))
+                            st.rerun()
+                        if tag_cols[1].button("✅ #aprobado", key=f"tag_apv_{selected}"):
+                            existing = [t.strip() for t in (new_tags or "").split(",") if t.strip()]
+                            if "aprobado" not in existing:
+                                existing.append("aprobado")
+                            run_repo.set_tags(selected, ",".join(existing))
+                            st.rerun()
+                        if tag_cols[2].button("🗑 #descartado", key=f"tag_disc_{selected}"):
+                            existing = [t.strip() for t in (new_tags or "").split(",") if t.strip()]
+                            if "descartado" not in existing:
+                                existing.append("descartado")
+                            run_repo.set_tags(selected, ",".join(existing))
+                            st.rerun()
+                    if st.button("💾 Guardar notas y etiquetas", key=f"save_meta_run_{selected}"):
+                        run_repo.set_notes(selected, new_notes.strip() or None)
+                        # Normalizar tags: quitar espacios, lowercase
+                        clean_tags = ",".join(
+                            t.strip().lower().replace(" ", "_")
+                            for t in (new_tags or "").split(",") if t.strip()
+                        )
+                        run_repo.set_tags(selected, clean_tags or None)
+                        st.success("Guardado.")
+                        st.rerun()
 
                 kpis = run_repo.get_kpis(selected)
                 if kpis:
