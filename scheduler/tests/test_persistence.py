@@ -241,6 +241,27 @@ def test_run_failure_path(db: DB, tiny_dataset: Dataset) -> None:
     assert meta.error_message == "infeasible: master"
 
 
+def test_run_locked_flag(db: DB, tiny_dataset: Dataset) -> None:
+    """F4 — toggle lock para proteger la corrida final."""
+    bundles = InputBundleRepo(db)
+    rules = RuleConfigRepo(db)
+    runs = RunRepo(db)
+    bid = bundles.save("tiny", "sample", tiny_dataset)
+    cid = rules.save("default", HardConstraints(), SoftConstraintWeights())
+    rid = runs.start("test-lock", bid, cid)
+
+    # Default: not locked
+    assert runs.get(rid).locked == 0
+
+    # Lock
+    runs.set_locked(rid, True)
+    assert runs.get(rid).locked == 1
+
+    # Unlock
+    runs.set_locked(rid, False)
+    assert runs.get(rid).locked == 0
+
+
 def test_run_notes_and_tags(db: DB, tiny_dataset: Dataset) -> None:
     """F3 — el coordinador puede agregar notas y tags a una corrida."""
     bundles = InputBundleRepo(db)

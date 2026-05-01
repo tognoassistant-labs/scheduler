@@ -241,6 +241,7 @@ class RunMeta:
     error_message: str | None
     notes: str | None = None
     tags: str | None = None
+    locked: int = 0  # 0 = no lock, 1 = locked (no se puede borrar/sobrescribir)
 
 
 class RunRepo:
@@ -333,7 +334,7 @@ class RunRepo:
         cur = self.db.conn.execute(
             "SELECT id, label, created_at, bundle_id, rule_config_id, status, "
             "master_seconds, student_seconds, objective, git_sha, app_version, error_message, "
-            "notes, tags "
+            "notes, tags, COALESCE(locked, 0) AS locked "
             "FROM run WHERE id = ?",
             (run_id,),
         )
@@ -346,7 +347,7 @@ class RunRepo:
         cur = self.db.conn.execute(
             "SELECT id, label, created_at, bundle_id, rule_config_id, status, "
             "master_seconds, student_seconds, objective, git_sha, app_version, error_message, "
-            "notes, tags "
+            "notes, tags, COALESCE(locked, 0) AS locked "
             "FROM run ORDER BY created_at DESC LIMIT ?",
             (limit,),
         )
@@ -361,12 +362,17 @@ class RunRepo:
         with self.db.transaction() as conn:
             conn.execute("UPDATE run SET tags = ? WHERE id = ?", (tags, run_id))
 
+    def set_locked(self, run_id: int, locked: bool) -> None:
+        """Marca o desmarca lock. Locked = la corrida es 'definitiva'."""
+        with self.db.transaction() as conn:
+            conn.execute("UPDATE run SET locked = ? WHERE id = ?", (1 if locked else 0, run_id))
+
     def list_by_tag(self, tag: str, limit: int = 100) -> list[RunMeta]:
         """Lista runs cuyo string tags contiene el tag dado (case-insensitive)."""
         cur = self.db.conn.execute(
             "SELECT id, label, created_at, bundle_id, rule_config_id, status, "
             "master_seconds, student_seconds, objective, git_sha, app_version, error_message, "
-            "notes, tags "
+            "notes, tags, COALESCE(locked, 0) AS locked "
             "FROM run WHERE LOWER(',' || COALESCE(tags, '') || ',') LIKE ? "
             "ORDER BY created_at DESC LIMIT ?",
             (f"%,{tag.lower()},%", limit),

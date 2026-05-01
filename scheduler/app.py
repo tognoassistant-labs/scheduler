@@ -1981,6 +1981,7 @@ with tab_runs:
             run_rows = []
             for r in runs:
                 run_rows.append({
+                    "🔒": "🔒" if r.locked else "",
                     "ID": r.id,
                     "Label": r.label,
                     "Created": r.created_at[:19].replace("T", " "),
@@ -2049,11 +2050,40 @@ with tab_runs:
             )
             if selected:
                 meta = run_repo.get(selected)
+
+                # F4 — banner si la corrida está locked
+                if meta.locked:
+                    st.success(
+                        f"🔒 **Corrida #{selected} protegida** (locked) — esta es una "
+                        f"corrida marcada como definitiva. No se puede borrar ni "
+                        f"sobrescribir hasta que la desbloquees."
+                    )
+
                 cols = st.columns(4)
                 cols[0].metric("Status", meta.status)
                 cols[1].metric("Master (s)", f"{meta.master_seconds:.1f}" if meta.master_seconds else "-")
                 cols[2].metric("Student (s)", f"{meta.student_seconds:.1f}" if meta.student_seconds else "-")
                 cols[3].metric("Objective", f"{meta.objective:.0f}" if meta.objective else "-")
+
+                # F4 — botón de lock/unlock
+                lock_cols = st.columns([1, 4])
+                with lock_cols[0]:
+                    if meta.locked:
+                        if st.button("🔓 Desbloquear", key=f"unlock_run_{selected}",
+                                     help="Permite re-uso/borrado normal"):
+                            run_repo.set_locked(selected, False)
+                            st.rerun()
+                    else:
+                        if st.button("🔒 Proteger", key=f"lock_run_{selected}",
+                                     help="Marca esta corrida como definitiva — no se puede borrar"):
+                            run_repo.set_locked(selected, True)
+                            st.rerun()
+                with lock_cols[1]:
+                    st.caption(
+                        "💡 Tip: protege la corrida que va a ser **definitiva** para "
+                        "el año académico. Eso evita que alguien la borre por error "
+                        "cuando la BD se llene de iteraciones."
+                    )
 
                 # F3 — Notas y tags por corrida
                 with st.expander("📝 Notas y etiquetas", expanded=bool(meta.notes or meta.tags)):
