@@ -375,24 +375,54 @@ def _validate_xlsx_sheets(xlsx_path: Path) -> dict:
 
 
 def _kpi_cards(kpi) -> None:
-    """Render the v2 §10 KPI cards as a 6-up grid."""
+    """Render the v2 §10 KPI cards as a 6-up grid + actionable suggestions
+    when a target is missed (REQ-C2)."""
     cols = st.columns(6)
+    # value, target_text, target_met (bool), suffix, suggestion_md if not met
     targets = {
-        "Fully scheduled": (kpi.fully_scheduled_pct, "≥98%", kpi.fully_scheduled_pct >= 98.0, "%"),
-        "Required fulfillment": (kpi.required_fulfillment_pct, "≥98%", kpi.required_fulfillment_pct >= 98.0, "%"),
-        "First-choice electives": (kpi.first_choice_elective_pct, "≥80%", kpi.first_choice_elective_pct >= 80.0, "%"),
-        "Section balance": (kpi.section_balance_max_dev, "≤3", kpi.section_balance_max_dev <= 3, " students"),
-        "Unscheduled": (kpi.unscheduled_students, "0", kpi.unscheduled_students == 0, ""),
-        "Time conflicts": (0, "0", True, ""),
+        "Fully scheduled": (
+            kpi.fully_scheduled_pct, "≥98%", kpi.fully_scheduled_pct >= 98.0, "%",
+            "Hay estudiantes a los que les falta algún curso requerido. "
+            "Revisa la tab Cumplimiento → R_max_class_size: probablemente "
+            "una sección saturada. Considera agregar más secciones a los "
+            "cursos saturados."
+        ),
+        "Required fulfillment": (
+            kpi.required_fulfillment_pct, "≥98%", kpi.required_fulfillment_pct >= 98.0, "%",
+            "Algunos cursos requeridos no se pudieron asignar. "
+            "Causa típica: capacidad insuficiente. Revisa `unmet_requests.csv` "
+            "en Exportar para ver qué cursos faltan y a quiénes."
+        ),
+        "First-choice electives": (
+            kpi.first_choice_elective_pct, "≥80%", kpi.first_choice_elective_pct >= 80.0, "%",
+            "**Acción recomendada (probada):**\n\n"
+            "1. Tab **Reglas** → 'Peso electivas rank-1' → sube a **50**\n"
+            "2. Tab **Solve** → 'Presupuesto tiempo student' → sube a **600s**\n"
+            "3. Re-corre Solve\n\n"
+            "Mejora esperada: +5-7 pp en electivas rank-1."
+        ),
+        "Section balance": (
+            kpi.section_balance_max_dev, "≤3", kpi.section_balance_max_dev <= 3, " students",
+            "Hay demasiada diferencia entre tamaños de secciones del mismo curso. "
+            "Tab **Reglas** → 'Peso balance entre secciones' → sube a 15. "
+            "O baja 'Peso electivas rank-1' a 10 (sacrifica electivas para mejorar balance)."
+        ),
+        "Unscheduled": (
+            kpi.unscheduled_students, "0", kpi.unscheduled_students == 0, "",
+            "Estudiantes sin algún curso obligatorio. Revisa la lista en tab "
+            "Cumplimiento → R_max_class_size. Probablemente hay un curso que "
+            "necesita más secciones o capacidad."
+        ),
+        "Time conflicts": (0, "0", True, "", ""),
     }
-    for col, (label, (value, target, met, suffix)) in zip(cols, targets.items()):
+    for col, (label, (value, target, met, suffix, suggestion)) in zip(cols, targets.items()):
         with col:
             color = "#28a745" if met else "#dc3545"
             indicator = "✅" if met else "❌"
             display_value = f"{value:.1f}{suffix}" if isinstance(value, float) else f"{value}{suffix}"
             st.markdown(
                 f"""
-                <div style="border:2px solid {color};border-radius:8px;padding:12px;text-align:center;">
+                <div style="border:2px solid {color};border-radius:8px;padding:12px;text-align:center;min-height:120px;">
                     <div style="color:#888;font-size:0.85em;">{label}</div>
                     <div style="font-size:1.6em;font-weight:bold;color:{color};">{display_value}</div>
                     <div style="font-size:0.85em;">target {target} {indicator}</div>
@@ -400,6 +430,17 @@ def _kpi_cards(kpi) -> None:
                 """,
                 unsafe_allow_html=True,
             )
+
+    # Sugerencias accionables si hay KPIs por debajo de meta (REQ-C2)
+    failed = [(label, suggestion) for label, (_, _, met, _, suggestion) in targets.items()
+              if not met and suggestion]
+    if failed:
+        st.markdown("")  # spacing
+        with st.expander(f"💡 {len(failed)} KPI(s) por debajo de meta — ver sugerencias", expanded=True):
+            for label, suggestion in failed:
+                st.markdown(f"### ❌ {label}")
+                st.markdown(suggestion)
+                st.markdown("---")
 
 
 def _readiness_card(score: int, n_errors: int, n_warnings: int) -> None:
