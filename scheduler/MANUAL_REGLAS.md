@@ -168,6 +168,25 @@ preparación entre clases.
 su carga (raro), se puede subir a 5 solo para ese teacher (campo
 `max_consecutive_classes` por teacher en el csv).
 
+##### 2.8.bis HC3b — Cap secundario para teachers con override
+
+**Qué hace:** si un teacher tiene `max_consecutive_classes=5` (override),
+no puede tener jornada completa (5 bloques) en **más de 2 días por
+semana**. Los demás días sigue limitado a 4 consecutivos.
+
+**Por qué:** sin este cap, los 3 teachers del Colegio con 7+ secciones
+podrían terminar con 5 bloques los lunes, miércoles y viernes — carga
+inhumana. Política del Colegio (2026-05-01): *"5 bloques seguidos solo
+en 1 o 2 días por semana"*.
+
+**Implementación:** automática. El ingester detecta teachers con 7+
+secciones y les asigna override; HC3b limita a 2 días por semana de
+jornada completa. Sin acción del coordinador.
+
+**Para verificar:** en la tab **Cumplimiento** → drill-down de
+`R_max_consecutive_classes` muestra cumplimiento. En `teacher_loads.csv`
+puedes ver la distribución por teacher por día.
+
 ---
 
 ### Pesos suaves (soft) — el motor optimiza, no garantiza

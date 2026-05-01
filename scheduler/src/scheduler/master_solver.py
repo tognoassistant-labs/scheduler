@@ -230,6 +230,9 @@ def solve_master(ds: Dataset, time_limit_s: float = 60.0, verbose: bool = False)
     # pigeonhole-infeasible; everyone else stays at 4 per the Reglas Horarios HS
     # doc 2026-04-22.
     default_max_cons = ds.config.hard.max_consecutive_classes
+    N_BLOCKS = len(BLOCKS)
+    # Cache de block_busy[(tid, day, block)] para reusar en HC3b
+    block_busy_cache: dict[tuple[str, str, int], cp_model.BoolVar] = {}
     for tid, sect_ids in sections_by_teacher.items():
         if not sect_ids:
             continue
@@ -237,25 +240,46 @@ def solve_master(ds: Dataset, time_limit_s: float = 60.0, verbose: bool = False)
         max_cons = (teacher.max_consecutive_classes
                     if teacher is not None and teacher.max_consecutive_classes is not None
                     else default_max_cons)
-        if max_cons >= len(BLOCKS):
-            continue  # cap ≥ blocks/day → no constraint to enforce for this teacher
+        # Construir block_busy[day][block] una sola vez por teacher
+        block_busy_by_day: dict[str, dict[int, cp_model.BoolVar]] = {}
         for day in DAYS:
-            # For each block in this day, indicator = teacher teaches in that (day, block)
             block_busy: dict[int, cp_model.BoolVar] = {}
             for block in BLOCKS:
                 scheme = slot_to_scheme.get((day, block))
                 if scheme is None:
-                    block_busy[block] = model.NewConstant(0)  # advisory cell
-                    continue
-                indicators = [section_in_scheme[(sid, scheme)] for sid in sect_ids]
-                busy = model.NewBoolVar(f"busy_{tid}_{day}_{block}")
-                model.AddMaxEquality(busy, indicators)
+                    busy = model.NewConstant(0)
+                else:
+                    indicators = [section_in_scheme[(sid, scheme)] for sid in sect_ids]
+                    busy = model.NewBoolVar(f"busy_{tid}_{day}_{block}")
+                    model.AddMaxEquality(busy, indicators)
                 block_busy[block] = busy
-            # Sliding window of size max_cons + 1
+                block_busy_cache[(tid, day, block)] = busy
+            block_busy_by_day[day] = block_busy
+
+        # HC3 — sliding window de tamaño max_cons + 1 (skip si max_cons cubre todo el día)
+        if max_cons < N_BLOCKS:
             window = max_cons + 1
-            for start in range(1, len(BLOCKS) - window + 2):
-                window_blocks = list(range(start, start + window))
-                model.Add(sum(block_busy[b] for b in window_blocks) <= max_cons)
+            for day in DAYS:
+                for start in range(1, N_BLOCKS - window + 2):
+                    window_blocks = list(range(start, start + window))
+                    model.Add(sum(block_busy_by_day[day][b] for b in window_blocks) <= max_cons)
+
+        # HC3b (NEW 2026-05-01): para teachers con override de 5+ consecutivos,
+        # limitar a ≤ 2 días por semana con jornada COMPLETA (los 5 bloques).
+        # Política Colegio: "5 bloques seguidos solo en 1 o 2 días por semana".
+        # Sin este cap, un teacher con override podría tener 5 consec todos los
+        # días — relajación demasiado permisiva.
+        # Solo aplica a teachers con override >= N_BLOCKS (override real de "día completo").
+        if max_cons >= N_BLOCKS and max_cons > default_max_cons:
+            full_day_indicators = []
+            for day in DAYS:
+                fd = model.NewBoolVar(f"full_day_{tid}_{day}")
+                day_total = sum(block_busy_by_day[day][b] for b in BLOCKS)
+                # fd ⇒ day_total == N_BLOCKS; ¬fd ⇒ day_total ≤ N_BLOCKS - 1
+                model.Add(day_total == N_BLOCKS).OnlyEnforceIf(fd)
+                model.Add(day_total <= N_BLOCKS - 1).OnlyEnforceIf(fd.Not())
+                full_day_indicators.append(fd)
+            model.Add(sum(full_day_indicators) <= 2)
 
     # Hard: balance sections across schemes tightly so the student solver has room
     # to fit per-course balance constraints. Tight bounds: avg-1 to avg+1.
