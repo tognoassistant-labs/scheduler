@@ -188,16 +188,24 @@ class ProgramGuide:
                             f"(opciones: {', '.join(area_courses[:3])}…)",
                 ))
 
-        # Electives: máximo 1
-        electives_picked = [c for c in requested if c in program.electives]
+        # Electives: máximo 1.
+        # Heurística: un curso cuenta como ELECTIVE si está en program.electives
+        # PERO NO está en ningún optative_area (para evitar falsos positivos
+        # cuando un curso aparece en ambas listas del PDF).
+        all_optative_codes: set[str] = set()
+        for area_courses in program.optative_areas.values():
+            all_optative_codes.update(area_courses)
+        electives_picked = [
+            c for c in requested
+            if c in program.electives and c not in all_optative_codes
+        ]
         if len(electives_picked) > 1:
-            # Solo warning — algunas configuraciones pueden tener > 1 deliberado
             issues.append(CoverageIssue(
                 student_id=student_id,
                 grade=grade,
                 severity="warning",
                 code="multiple_electives",
-                message=f"Pidió {len(electives_picked)} electives ({', '.join(electives_picked)}); "
+                message=f"Pidió {len(electives_picked)} electives ({', '.join(electives_picked[:3])}); "
                         f"el PDF dice 'máximo UNO'",
             ))
 
