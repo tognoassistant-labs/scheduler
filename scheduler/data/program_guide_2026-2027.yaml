@@ -1,0 +1,233 @@
+# The Columbus School — High School Program Guide 2026-2027
+#
+# Codifica el PDF oficial:
+#   /Users/hector/Downloads/High School Program Guide 2026-2027 for Students and Parents.pdf
+#
+# Estructura por grado:
+#   required:        Cursos que TODOS los estudiantes del grado toman
+#   optative_areas:  Áreas obligatorias — el estudiante toma UN curso por área
+#   electives:       Cursos opcionales — el estudiante puede tomar máx 1
+#
+# El motor lo usa para:
+#   - Marcar requests como is_required=True si el curso es Required o Optative
+#     (porque para ESE estudiante específico, ese curso ES obligatorio)
+#   - Validar que cada estudiante tenga cobertura (1 curso por área optative)
+#   - Reportar warnings si data del xlsx tiene huecos
+#
+# Course codes son los COURSE_NUMBER reales del archivo xlsx del Colegio.
+# Para mapear PDF (display name) → code, se cruza con la hoja `courses`
+# del archivo schedule_master_data_hs.xlsx.
+
+9:
+  required:
+    - A0901   # Biology 9
+    - H0904   # English 9
+    - B0901   # Social Studies 9
+    - E0901   # PE 9
+  optative_areas:
+    Spanish:
+      - G0901   # Español & Literatura 9
+      - G0902   # Spanish 9 (Foreign Language)
+    Math:
+      # 'Either Algebra I or Geometry — determined by what student took in 8th grade'
+      # If had Math 8 → Algebra I; if had Algebra I → Geometry
+      - I0903   # Algebra I 9
+      - I1003   # Geometry
+    Technology:
+      - J0901   # Technology 9
+      - J0903   # FRC 9 (Robotics)
+    Art:
+      - OC1305  # Painting I
+      - OC1307  # Drawing I
+      - OC1306  # Sculpture I
+      - C0904   # Band Level I
+  electives: []   # PDF: G9 no tiene electives (solo required + optative)
+
+10:
+  required:
+    - A1006   # Chemistry 10
+    - B1001   # Social Sciences 10
+    - E1001   # PE 10
+  optative_areas:
+    Spanish:
+      - VHS0052  # Spanish Film, Art, and Literature
+      - G1004    # AP Spanish Language and Culture
+      - G1204    # Spanish 10 (Foreign Language)
+    English:
+      - H1001    # English 10
+      - H1206    # AP English Language and Composition
+      - I1214    # AP Seminar
+    Math:
+      # 'If you are taking Algebra I → Geometry'
+      # 'If you are taking Geometry → AP Precalculus or Algebra II'
+      - I1003    # Geometry
+      - I1211    # AP Precalculus
+      - OI1003   # Algebra II
+    Social_Studies:
+      - B1006    # Cultural Studies
+      - OZ1323   # AP Human Geography
+  electives:
+    - OZ1207   # Anatomy and Physiology       (Science)
+    - OJ1306   # AP Computer Science Principles  (Tech)
+    - OJ1204   # Creative Design              (Tech)
+    - OH1305   # Art of Fiction Intermediate Level
+    - OH1401   # Journalism Intermediate Level
+    - OI1003   # Algebra II (also as elective for those with Algebra 1 + 3.5+ grade)
+    # Art electives:
+    - OC1305   # Painting I
+    - OC1307   # Drawing I
+    - OC1306   # Sculpture I
+    - OC1310   # Painting II
+    - OC1311   # Drawing II
+    - OC1312   # Sculpture II
+    - C0904    # Band Level I
+    - C0905    # Band Level II
+    - C0907    # Band Level III
+    - OC1313   # AP 2-D Art and Design
+    - I1215    # AP 3-D Art and Design
+    - OC1314   # AP Drawing
+
+11:
+  required:
+    - E1101   # PE 11
+  optative_areas:
+    Math:
+      # If Geometry → Algebra II / AP Precalculus
+      # If Algebra II or AP Precalculus → Calculus / AP Calculus AB / AP Statistics
+      # 'Taking either Calculus or AP Calculus in 11th or 12th grade is mandatory'
+      - OI1003   # Algebra II
+      - I1211    # AP Precalculus
+      - OI1305   # Calculus
+      - I1204    # AP Calculus AB
+      - OB1520   # AP Statistics
+    Social_Studies_Sociales:
+      # 'Taking either Pensar nuestro tiempo OR Life Purpose in 11th or 12th is mandatory'
+      - L1303    # Pensar nuestro tiempo
+      - L1304    # Life Purpose
+      - L1302    # Introduction to Law
+      - OZ1323   # AP Human Geography
+      - I1212    # AP Macroeconomics (PDF says "AP World History" — code unclear)
+      - I1213    # AP Microeconomics
+      - L1301    # AP Psychology
+    English:
+      - OH1401   # Journalism Intermediate Level
+      - OH1305   # Art of Fiction Intermediate Level
+      - H1206    # AP English Language and Composition
+      - H1201B   # AP English Literature and Composition
+      - I1214    # AP Seminar
+    Science:
+      - A1105    # Physics 11
+      - OA1319   # AP Physics 1
+    Spanish:
+      - G1203    # Español & Literatura 11
+      - VHS0052  # Spanish Film, Art, and Literature
+      - G1202    # AP Spanish Literature and Culture
+      - G1205    # Spanish 11 (Foreign Language)
+    Art:
+      # PDF lists many; engine treats them all as optatives (1 obligatorio del área)
+      - OC1305   # Painting I
+      - OC1307   # Drawing I
+      - OC1306   # Sculpture I
+      - OC1310   # Painting II
+      - OC1311   # Drawing II
+      - OC1312   # Sculpture II
+      - C0904    # Band Level I
+      - C0905    # Band Level II
+      - C0907    # Band Level III
+      - OC1313   # AP 2-D Art and Design
+      - I1215    # AP 3-D Art and Design
+      - OC1314   # AP Drawing
+  electives:
+    - OI1303   # Financial Math
+    - OB1520   # AP Statistics (also offered as elective)
+    - L1302    # Intro to Law (also as elective)
+    - OZ1323   # AP Human Geography (also as elective)
+    - L1301    # AP Psychology (also as elective)
+    - I1212    # AP Macroeconomics (also as elective)
+    - I1213    # AP Microeconomics (also as elective)
+    - OZ1207   # Anatomy and Physiology
+    - OA1304   # AP Biology
+    - OA1317   # AP Chemistry
+    - OA1318   # AP Environmental Science
+    - OH1501   # Journalism Higher Level
+    - OC1313   # AP 2-D Art and Design (also as elective)
+    - I1215    # AP 3-D Art and Design
+    - OC1314   # AP Drawing
+    - OJ1204   # Creative Design
+    - OJ1203   # Entrepreneurship Business Technology
+    - OJ1306   # AP Computer Science Principles
+    - OZ1313   # AP Computer Science A
+
+12:
+  required:
+    - E1201   # PE 12
+  optative_areas:
+    English:
+      - OH1305   # Art of Fiction Intermediate Level
+      - OH1401   # Journalism Intermediate Level
+      - OH1306   # Art of Fiction Higher Level
+      - OH1501   # Journalism Higher Level
+      - H1206    # AP English Language and Composition
+      - H1201B   # AP English Literature and Composition
+      - I1214    # AP Seminar
+    Social_Studies_Sociales:
+      # 'Either Pensar nuestro tiempo or Life Purpose in 11th or 12th is mandatory'
+      - L1303    # Pensar nuestro tiempo
+      - L1304    # Life Purpose
+      - L1302    # Introduction to Law
+      - OZ1323   # AP Human Geography
+      - I1212    # AP Macroeconomics
+      - I1213    # AP Microeconomics
+      - L1301    # AP Psychology
+    Science:
+      - A1204    # Environmental Science
+      - OZ1207   # Anatomy and Physiology
+      - OA1304   # AP Biology
+      - OA1317   # AP Chemistry
+      - OA1318   # AP Environmental Science
+      - OA1322   # AP Physics 2
+    Spanish:
+      - G1201    # Español & Literatura 12
+      - G1202    # AP Spanish Literature and Culture
+      - G1206    # Spanish 12 (Foreign Language)
+    Math:
+      # 'Either Calculus or AP Calculus in 11th or 12th is mandatory'
+      - OI1305   # Calculus
+      - I1204    # AP Calculus AB
+      - I1208    # AP Calculus BC
+      - OB1520   # AP Statistics
+      - OI1303   # Financial Math
+    Technology:
+      - J1203    # Tech. and Innovation for Social Change (Independent Senior Project)
+      - OB1532   # AP Research (only if took AP Seminar)
+  electives:
+    - OH1306   # Art of Fiction Higher Level
+    - OH1501   # Journalism Higher Level
+    - L1302    # Intro to Law
+    - OZ1323   # AP Human Geography
+    - I1212    # AP Macroeconomics
+    - I1213    # AP Microeconomics
+    - L1301    # AP Psychology
+    - OI1303   # Financial Math
+    - OB1520   # AP Statistics
+    - OZ1207   # Anatomy and Physiology
+    - OA1304   # AP Biology
+    - OA1317   # AP Chemistry
+    - OA1318   # AP Environmental Science
+    - OA1322   # AP Physics 2
+    - OJ1204   # Creative Design
+    - OJ1203   # Entrepreneurship Business Technology
+    - OJ1306   # AP Computer Science Principles
+    - OZ1313   # AP Computer Science A
+    - OC1305   # Painting I
+    - OC1307   # Drawing I
+    - OC1306   # Sculpture I
+    - OC1310   # Painting II
+    - OC1311   # Drawing II
+    - OC1312   # Sculpture II
+    - C0905    # Band Level II
+    - C0907    # Band Level III
+    - OC1313   # AP 2-D Art and Design
+    - I1215    # AP 3-D Art and Design
+    - OC1314   # AP Drawing
+    - OZ1333   # Teacher Aide (TA)

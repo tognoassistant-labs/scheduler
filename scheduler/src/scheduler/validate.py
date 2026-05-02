@@ -197,6 +197,47 @@ def validate_dataset(ds: Dataset) -> ReadinessReport:
     n_err = sum(1 for i in issues if i.severity == "error")
     n_warn = sum(1 for i in issues if i.severity == "warning")
     score = max(0, 100 - n_err * 15 - n_warn * 3)
+    # Program Guide coverage check (v4.28.18+) — valida que cada estudiante
+    # tenga cobertura del PDF: required completos, 1 curso por área optative.
+    # Sólo se ejecuta si:
+    #   - el YAML existe Y
+    #   - el dataset usa códigos del Colegio real (no synthetic sample).
+    # La heurística: > 50% de los course_ids del dataset están en el guide.
+    try:
+        from .program_guide import ProgramGuide
+        guide = ProgramGuide.from_yaml()
+        # Detectar si el dataset realmente usa códigos del PDF
+        all_known_codes = set()
+        for grade in guide.grades():
+            prog = guide.get(grade)
+            if prog:
+                all_known_codes.update(prog.required)
+                for area_courses in prog.optative_areas.values():
+                    all_known_codes.update(area_courses)
+                all_known_codes.update(prog.electives)
+        n_match = sum(1 for c in ds.courses if c.course_id in all_known_codes)
+        n_total = max(1, len(ds.courses))
+        if n_match / n_total < 0.3:
+            # < 30% match → dataset sintético/diferente, skip validation
+            pass
+        else:
+            for st in ds.students:
+                requested_ids = [r.course_id for r in st.requested_courses]
+                cov_issues = guide.validate_student_coverage(
+                    st.student_id, st.grade, requested_ids
+                )
+                for ci in cov_issues:
+                    issues.append(Issue(
+                        severity="warning",  # downgrade a warning
+                        code=f"GUIDE_{ci.code.upper()}",
+                        message=f"G{ci.grade} {ci.message}",
+                        entity_id=st.student_id,
+                    ))
+    except FileNotFoundError:
+        pass
+    except Exception:
+        pass
+
     return ReadinessReport(score=score, issues=issues)
 
 

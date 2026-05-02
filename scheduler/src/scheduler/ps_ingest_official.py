@@ -987,8 +987,24 @@ def build_dataset_from_official_xlsx(
         n_total = sum(len(s) for s in required_by_grade.values())
         print(f"[INFO] required_courses: {n_total} truly-required (grade,course) pairs loaded")
 
+    # v4.28.18 (school 2026-05-02): also mark Optatives as required.
+    # The PDF Program Guide defines Optatives as 'one course per area is
+    # mandatory' — for the specific student that picked X, X is required.
+    # We load the program_guide YAML and treat both required+optative codes
+    # as is_required=True.
+    program_guide = None
+    try:
+        from .program_guide import ProgramGuide
+        program_guide = ProgramGuide.from_yaml()
+        print(f"[INFO] program_guide YAML cargado: {program_guide.grades()}")
+    except FileNotFoundError:
+        print(f"[INFO] program_guide YAML no encontrado — usando solo required_courses sheet")
+    except Exception as exc:
+        print(f"[WARN] program_guide failed to load: {type(exc).__name__}: {exc}")
+
     students_map: dict[str, Student] = {}
     n_marked_required = 0
+    n_marked_optative = 0
     n_marked_elective = 0
     for r in request_rows:
         sid = _safe_str(r["STUDENT_NUMBER"])
@@ -1009,10 +1025,19 @@ def build_dataset_from_official_xlsx(
                 grade=stu_grade,  # use real grade from request row
                 requested_courses=[],
             )
-        # Mark is_required only if (grade, course) is in the official required map
-        is_req = course_number in required_by_grade.get(stu_grade, set())
+        # Clasificación combinada:
+        # 1. Si (grade, course) está en required_courses sheet → required
+        # 2. Si está en program_guide como required o optative → required
+        # 3. Sino → elective
+        is_in_sheet = course_number in required_by_grade.get(stu_grade, set())
+        guide_category = (program_guide.classify_course(stu_grade, course_number)
+                          if program_guide is not None else "unknown")
+        is_optative = guide_category == "optative"
+        is_req = is_in_sheet or guide_category in ("required", "optative")
         if is_req:
             n_marked_required += 1
+            if is_optative:
+                n_marked_optative += 1
         else:
             n_marked_elective += 1
         students_map[sid].requested_courses.append(CourseRequest(
@@ -1022,7 +1047,8 @@ def build_dataset_from_official_xlsx(
             rank=1,
         ))
     if required_by_grade:
-        print(f"[INFO] CourseRequest classification: {n_marked_required} HARD required, "
+        print(f"[INFO] CourseRequest classification: {n_marked_required} HARD required "
+              f"(of which {n_marked_optative} are Optatives from PDF), "
               f"{n_marked_elective} student-elected (electives)")
 
     # Add Advisory request to every student (Advisory is always-on for HS)
