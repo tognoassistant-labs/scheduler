@@ -1,0 +1,11 @@
+rule_id,name,description,rule_type,weight,enabled,config_json
+HC2,Sin doble-booking de profesor,Profesor no puede estar en 2 secciones del mismo esquema (excepto term-pair).,HARD,0,1,
+HC3,Sin doble-booking de salón,Salón no puede tener 2 secciones del mismo esquema.,HARD,0,1,
+HC4,Asesoría reservada,Day E Block 3 reservado para Asesoría.,HARD,0,1,
+HC5,Capacidad de salón,Inscripción no puede exceder room.capacity.,HARD,0,1,
+HC6,Term pair AP Micro/Macro,I1212.k y I1213.k comparten esquema y salón.,HARD,0,1,
+HC7,Anti-cluster singletons (NUEVO v5),Máximo 3 cursos AP de sección única por esquema.,HARD,0,1,
+Soft-1,Balance de secciones,Diferencia max-min entre secciones del mismo curso ≤ 4.,SOFT,80,1,
+Soft-2,Distribución de esquemas,Secciones distribuidas equitativamente entre 8 esquemas.,SOFT,80,1,
+Soft-5,Anti co-request cluster,Penalizar si pares de cursos co-solicitados quedan mismo esquema.,SOFT,200,1,
+Soft-6,Horario completo (NUEVO v5),Penalizar esquemas vacíos (estudiante con grilla incompleta).,SOFT,500,1,
