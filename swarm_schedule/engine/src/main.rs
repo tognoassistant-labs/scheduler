@@ -5,14 +5,18 @@
 //! - Live domains + propagation (AC-3 style)
 //! - Incremental backtrackable state (push/pop)
 //! - Greedy construction → min-conflicts repair → SA polish
+//! - MAP-Elites quality-diversity archive
 //!
 //! Usage:
 //!   cargo run --release -- --data-dir ../data
+//!   cargo run --release -- --data-dir ../data --multi-seed 20
 
+mod archive;
 mod engine;
 mod export;
 mod loader;
 mod model;
+mod runner;
 mod solver;
 
 use std::env;
@@ -20,6 +24,7 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use engine::ConstraintEngine;
+use runner::{run_multi_seed, RunnerConfig};
 use solver::{Solver, SolverConfig};
 
 fn main() {
@@ -38,10 +43,11 @@ fn main() {
         .and_then(|s| s.parse().ok())
         .unwrap_or(42);
 
-    println!("=== Scheduler Core ===");
-    println!("Data dir: {:?}", data_dir);
-    println!("Seed: {}", seed);
-    println!();
+    let multi_seed: Option<u32> = args
+        .iter()
+        .position(|a| a == "--multi-seed")
+        .and_then(|idx| args.get(idx + 1))
+        .and_then(|s| s.parse().ok());
 
     // Load data
     let start = Instant::now();
@@ -53,6 +59,43 @@ fn main() {
         }
     };
     println!("Data loaded in {:?}", start.elapsed());
+    println!();
+
+    // Multi-seed mode with MAP-Elites
+    if let Some(num_seeds) = multi_seed {
+        let config = RunnerConfig {
+            num_seeds,
+            base_seed: seed,
+            max_repair_iterations: 500,
+            max_polish_iterations: 1000,
+        };
+
+        let result = run_multi_seed(school_data, config);
+
+        // Export best solution
+        if let Some(ref best) = result.archive.best {
+            // Re-create engine to export
+            let output_path = data_dir.join("../student_schedules_rust.csv");
+            println!("\nBest solution has {} assignments", best.assignments.len());
+
+            // Write assignments directly
+            if let Ok(mut file) = std::fs::File::create(&output_path) {
+                use std::io::Write;
+                writeln!(file, "StudentID,StudentName,Grade,CourseID,CourseName,SectionID,Period,Slots,TeacherID,TeacherName,RoomID,RoomName").ok();
+                for a in &best.assignments {
+                    writeln!(file, "{},,,,,{},,,,,,", a.student_id, a.section_id).ok();
+                }
+                println!("Exported to {:?}", output_path);
+            }
+        }
+
+        return;
+    }
+
+    // Single-seed mode
+    println!("=== Scheduler Core ===");
+    println!("Data dir: {:?}", data_dir);
+    println!("Seed: {}", seed);
     println!();
 
     // Create engine
@@ -87,8 +130,14 @@ fn main() {
     println!();
     println!("Timing:");
     println!("  Construction: {}ms", result.construction_time_ms);
-    println!("  Repair: {}ms ({} iterations)", result.repair_time_ms, result.repair_iterations);
-    println!("  Polish: {}ms ({} iterations)", result.polish_time_ms, result.polish_iterations);
+    println!(
+        "  Repair: {}ms ({} iterations)",
+        result.repair_time_ms, result.repair_iterations
+    );
+    println!(
+        "  Polish: {}ms ({} iterations)",
+        result.polish_time_ms, result.polish_iterations
+    );
 
     // Engine stats
     let final_stats = solver.engine.stats();

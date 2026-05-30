@@ -119,14 +119,19 @@ impl Solver {
     /// Phase 1: Greedy construction using MRV (most-constrained variable first).
     fn greedy_construct(&mut self) {
         // Sort students by: grade desc, required courses desc, requests desc
+        // Add randomization for diversity
         let mut student_ids: Vec<StudentId> = self.engine.data.students.keys().copied().collect();
+
+        // Shuffle first to add randomness, then stable sort by priority
+        use rand::seq::SliceRandom;
+        student_ids.shuffle(&mut self.rng);
+
         student_ids.sort_by(|&a, &b| {
             let sa = &self.engine.data.students[&a];
             let sb = &self.engine.data.students[&b];
             sb.grade
                 .cmp(&sa.grade)
                 .then_with(|| sb.required.len().cmp(&sa.required.len()))
-                .then_with(|| sb.requests.len().cmp(&sa.requests.len()))
         });
 
         for student_id in student_ids {
@@ -153,7 +158,11 @@ impl Solver {
                 }
 
                 // LCV: prefer sections that leave most options for others
-                // Simplified: prefer less full sections
+                // Add some randomization for diversity
+                use rand::seq::SliceRandom;
+                sections.shuffle(&mut self.rng);
+
+                // Then sort by enrollment (prefer less full)
                 sections.sort_by_key(|&sid| {
                     self.engine
                         .section_enrollment
