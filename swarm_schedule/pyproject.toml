@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "swarm-schedule"
+version = "0.1.0"
+description = "Swarm intelligence-based scheduling engine"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24,<2.0",
+    "pydantic>=2.0",
+]
+
+[project.scripts]
+swarm-schedule = "swarm_schedule.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
