@@ -23,30 +23,14 @@ EXPECTED_COLS = [
     "RoomID", "RoomName",
 ]
 
-# Known-impossible cases — see context/known_impossible_cases.md.
-# Original 12 pre-computed cases plus 13 additional emergent cases discovered
-# after solver runs (due to separate/together constraint interactions).
+# 12 known-impossible cases — see context/known_impossible_cases.md.
 # Omitting these (StudentID, CourseID) pairs from output is LEGITIMATE.
 # Not counted as H4 violation.
 KNOWN_IMPOSSIBLE = {
-    # Original 12 (pre-computed slot conflicts):
     ("27028", "L1303"), ("27042", "OA1304"), ("27071", "OA1304"),
     ("27124", "C0907"), ("27138", "OA1304"), ("27142", "G1202"),
     ("28044", "H1206"), ("28052", "L1303"), ("28071", "OC1306"),
     ("28157", "OA1317"), ("28168", "OC1314"), ("28169", "OJ1306"),
-    # Emergent impossibilities (together/separate constraint interactions):
-    ("27048", "G1201"),   # Together partners spread across incompatible sections
-    ("27048", "OA1317"),  # Slot conflict after other assignments
-    ("27101", "L1303"),   # Slot conflict - L1303 singleton section
-    ("27124", "H1201B"),  # Slot conflict - all H1201B sections blocked
-    ("27129", "J1203"),   # Together with 27048 who can't take J1203 compatible section
-    ("27147", "OH1306"),  # Together partners in different sections
-    ("27148", "OI1305"),  # Teacher avoid + together constraints
-    ("28030", "E1101"),   # Together partners spread across sections
-    ("28058", "ADVHS01"), # Separate from 28030, together with others in different sections
-    ("29040", "B1006"),   # Slot conflict after assignments
-    ("30127", "J0903"),   # Separate constraints block all feasible sections
-    ("30160", "I0903"),   # Together + separate constraint combination
 }
 
 
