@@ -257,8 +257,8 @@ use std::sync::Mutex;
 use std::collections::HashMap;
 
 lazy_static::lazy_static! {
-    static ref SECTION_ID_MAP: Mutex<HashMap<String, SectionId>> = Mutex::new(HashMap::new());
-    static ref COURSE_ID_MAP: Mutex<HashMap<String, CourseId>> = Mutex::new(HashMap::new());
+    pub static ref SECTION_ID_MAP: Mutex<HashMap<String, SectionId>> = Mutex::new(HashMap::new());
+    pub static ref COURSE_ID_MAP: Mutex<HashMap<String, CourseId>> = Mutex::new(HashMap::new());
     static ref SECTION_COUNTER: Mutex<SectionId> = Mutex::new(1);
     static ref COURSE_COUNTER: Mutex<CourseId> = Mutex::new(1);
 }

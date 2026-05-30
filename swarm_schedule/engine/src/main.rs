@@ -10,6 +10,7 @@
 //!   cargo run --release -- --data-dir ../data
 
 mod engine;
+mod export;
 mod loader;
 mod model;
 mod solver;
@@ -89,10 +90,17 @@ fn main() {
     println!("  Repair: {}ms ({} iterations)", result.repair_time_ms, result.repair_iterations);
     println!("  Polish: {}ms ({} iterations)", result.polish_time_ms, result.polish_iterations);
 
-    // Export results
+    // Engine stats
     let final_stats = solver.engine.stats();
     println!();
     println!("=== Engine Stats ===");
     println!("  Propagations: {}", final_stats.propagations);
     println!("  Domain prunes: {}", final_stats.domain_prunes);
+
+    // Export to CSV
+    let output_path = data_dir.join("../student_schedules_rust.csv");
+    match export::export_schedule(&solver.engine, &output_path) {
+        Ok(count) => println!("\nExported {} assignments to {:?}", count, output_path),
+        Err(e) => eprintln!("\nFailed to export: {}", e),
+    }
 }
