@@ -21,7 +21,7 @@ impl Default for SolverConfig {
     fn default() -> Self {
         Self {
             seed: 42,
-            max_repair_iterations: 1000,
+            max_repair_iterations: 500,
             max_polish_iterations: 5000,
             initial_temperature: 100.0,
             cooling_rate: 0.995,
@@ -102,11 +102,27 @@ impl Solver {
         // Phase 4: Second pass of greedy for any remaining gaps
         self.second_pass_greedy();
 
+        let stats = self.engine.stats();
+        println!(
+            "After second pass: coverage={:.1}%",
+            stats.coverage * 100.0
+        );
+
+        // Phase 5: Simulated annealing polish
+        let polish_start = std::time::Instant::now();
+        let polish_iterations = self.simulated_annealing_polish();
+        let polish_time = polish_start.elapsed().as_millis() as u64;
+
+        // Final greedy pass after SA
+        self.second_pass_greedy();
+
         let (hard_final, soft_final) = self.engine.score();
         let stats = self.engine.stats();
 
         println!(
-            "Final: hard={}, soft={}, coverage={:.1}%",
+            "Final (after SA {}iter, {}ms): hard={}, soft={}, coverage={:.1}%",
+            polish_iterations,
+            polish_time,
             hard_final,
             soft_final,
             stats.coverage * 100.0
@@ -120,9 +136,9 @@ impl Solver {
             soft_cost: soft_final,
             construction_time_ms: construction_time,
             repair_time_ms: repair_time,
-            polish_time_ms: 0,
+            polish_time_ms: polish_time,
             repair_iterations,
-            polish_iterations: swap_iterations,
+            polish_iterations,
         }
     }
 
@@ -509,6 +525,187 @@ impl Solver {
                     }
                 }
             }
+        }
+    }
+
+    /// Simulated annealing polish: try random moves to escape local optima.
+    /// Key strategy: remove a random assignment to free up a slot, then try to
+    /// place unassigned courses in the freed slot.
+    fn simulated_annealing_polish(&mut self) -> u32 {
+        let mut temperature = self.config.initial_temperature;
+        let mut iterations = 0;
+        let mut improvements = 0;
+
+        while iterations < self.config.max_polish_iterations && temperature > 0.1 {
+            iterations += 1;
+
+            // Alternate between two move types
+            if self.rng.gen_bool(0.7) {
+                // Move type 1: Try to place an unassigned course by swapping
+                if self.try_place_by_ejection() {
+                    improvements += 1;
+                }
+            } else {
+                // Move type 2: Try moving an assignment to a different section
+                self.try_section_swap(temperature);
+            }
+
+            temperature *= self.config.cooling_rate;
+        }
+
+        iterations
+    }
+
+    /// Try to place an unassigned course by ejecting a conflicting assignment
+    /// and relocating it to another section.
+    fn try_place_by_ejection(&mut self) -> bool {
+        // Find students with unassigned courses
+        let mut unassigned: Vec<(StudentId, CourseId)> = Vec::new();
+        for (&student_id, student) in &self.engine.data.students {
+            let assigned = self.engine.student_courses.get(&student_id);
+            for &course_id in &student.requests {
+                if assigned.map(|a| !a.contains(&course_id)).unwrap_or(true) {
+                    unassigned.push((student_id, course_id));
+                }
+            }
+        }
+
+        if unassigned.is_empty() {
+            return false;
+        }
+
+        use rand::seq::SliceRandom;
+        let &(student_id, course_id) = unassigned.choose(&mut self.rng).unwrap();
+
+        // Get sections for this course
+        let sections = self.engine.data.get_sections_for_course(course_id).to_vec();
+        if sections.is_empty() {
+            return false;
+        }
+
+        // Try each section
+        for section_id in sections.iter().cloned() {
+            // Check if we can directly place
+            let result = self.engine.try_assign(student_id, section_id);
+            if result.feasible {
+                self.engine.commit_assign(student_id, section_id);
+                return true;
+            }
+
+            // Find what's blocking: check for slot conflict
+            let section = match self.engine.data.sections.get(&section_id) {
+                Some(s) => s.clone(),
+                None => continue,
+            };
+
+            let student_sections = self.engine.student_sections.get(&student_id).cloned().unwrap_or_default();
+
+            for &blocking_sid in &student_sections {
+                let blocking = match self.engine.data.sections.get(&blocking_sid) {
+                    Some(s) => s.clone(),
+                    None => continue,
+                };
+
+                // Check slot conflict
+                let has_overlap = blocking.slots.iter().any(|s| section.slots.contains(s));
+                if !has_overlap || self.engine.data.is_term_pair(course_id, blocking.course_id) {
+                    continue;
+                }
+
+                // Found a conflict - try to relocate the blocking course
+                let alt_sections = self.engine.data.get_sections_for_course(blocking.course_id).to_vec();
+
+                for alt_sid in alt_sections {
+                    if alt_sid == blocking_sid {
+                        continue;
+                    }
+
+                    // Unassign blocking, try alt section
+                    self.engine.unassign(student_id, blocking_sid);
+
+                    let alt_result = self.engine.try_assign(student_id, alt_sid);
+                    if alt_result.feasible {
+                        self.engine.commit_assign(student_id, alt_sid);
+
+                        // Now try placing the target course
+                        let target_result = self.engine.try_assign(student_id, section_id);
+                        if target_result.feasible {
+                            self.engine.commit_assign(student_id, section_id);
+                            return true;
+                        } else {
+                            // Failed - restore
+                            self.engine.unassign(student_id, alt_sid);
+                            self.engine.commit_assign(student_id, blocking_sid);
+                        }
+                    } else {
+                        // Restore
+                        self.engine.commit_assign(student_id, blocking_sid);
+                    }
+                }
+            }
+        }
+
+        false
+    }
+
+    /// Try swapping an assignment to a different section (standard SA move).
+    fn try_section_swap(&mut self, temperature: f64) {
+        let student_sections: Vec<(StudentId, SectionId)> = self
+            .engine
+            .student_sections
+            .iter()
+            .flat_map(|(&sid, secs)| secs.iter().map(move |&sec| (sid, sec)))
+            .collect();
+
+        if student_sections.is_empty() {
+            return;
+        }
+
+        use rand::seq::SliceRandom;
+        let &(student_id, current_section) = student_sections.choose(&mut self.rng).unwrap();
+
+        let course_id = match self.engine.data.sections.get(&current_section) {
+            Some(s) => s.course_id,
+            None => return,
+        };
+
+        let alt_sections: Vec<SectionId> = self
+            .engine
+            .data
+            .get_sections_for_course(course_id)
+            .iter()
+            .filter(|&&s| s != current_section)
+            .copied()
+            .collect();
+
+        if alt_sections.is_empty() {
+            return;
+        }
+
+        let &new_section = alt_sections.choose(&mut self.rng).unwrap();
+
+        let (old_hard, old_soft) = self.engine.score();
+
+        self.engine.unassign(student_id, current_section);
+
+        let result = self.engine.try_assign(student_id, new_section);
+        if result.feasible {
+            self.engine.commit_assign(student_id, new_section);
+
+            let (new_hard, new_soft) = self.engine.score();
+            let delta = (new_hard as i64 - old_hard as i64) * 10000
+                + (new_soft as i64 - old_soft as i64);
+
+            if delta > 0 {
+                let accept_prob = (-delta as f64 / temperature).exp();
+                if self.rng.gen::<f64>() >= accept_prob {
+                    // Reject
+                    self.engine.unassign(student_id, new_section);
+                    self.engine.commit_assign(student_id, current_section);
+                }
+            }
+        } else {
+            self.engine.commit_assign(student_id, current_section);
         }
     }
 }

@@ -67,7 +67,7 @@ fn main() {
             num_seeds,
             base_seed: seed,
             max_repair_iterations: 500,
-            max_polish_iterations: 1000,
+            max_polish_iterations: 3000,
         };
 
         let result = run_multi_seed(school_data, config);
@@ -111,9 +111,9 @@ fn main() {
     let config = SolverConfig {
         seed,
         max_repair_iterations: 500,
-        max_polish_iterations: 2000,
+        max_polish_iterations: 5000,
         initial_temperature: 100.0,
-        cooling_rate: 0.995,
+        cooling_rate: 0.998,
     };
 
     // Run solver

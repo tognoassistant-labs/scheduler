@@ -54,7 +54,8 @@ pub fn run_multi_seed(data: SchoolData, config: RunnerConfig) -> RunResult {
             seed,
             max_repair_iterations: config.max_repair_iterations,
             max_polish_iterations: config.max_polish_iterations,
-            ..Default::default()
+            initial_temperature: 100.0,
+            cooling_rate: 0.998,
         };
 
         let mut solver = Solver::new(engine, solver_config);
