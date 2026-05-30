@@ -224,7 +224,6 @@ def solve(data):
                         model.Add(v1 + v2 <= 1)
 
     # Objective: maximize weighted coverage using priority * flexibility weights
-    # Higher weight = more important to place
     objective_terms = []
     for (sid, sec_id), var in x.items():
         cid = data['sections'][sec_id]['course_id']
@@ -235,7 +234,7 @@ def solve(data):
         base = 10000 if is_required else 1
 
         # Flexibility weight (rigid courses like AP are more important)
-        flex = data['flexibility'].get((cid, grade), 1)
+        flex = data['flexibility'].get((cid, grade), 5)  # Default C=5
 
         weight = base * flex
         objective_terms.append(weight * var)
@@ -243,8 +242,9 @@ def solve(data):
 
     # Solve
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = 600
+    solver.parameters.max_time_in_seconds = 900
     solver.parameters.num_workers = 16
+    solver.parameters.log_search_progress = True
 
     print("Solving (max 120s)...")
     status = solver.Solve(model)
