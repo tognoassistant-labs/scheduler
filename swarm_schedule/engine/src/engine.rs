@@ -397,6 +397,55 @@ impl ConstraintEngine {
         self.propagate(student_id, section_id);
     }
 
+    /// Unassign a student from a section (for repair/local search).
+    pub fn unassign(&mut self, student_id: StudentId, section_id: SectionId) {
+        let section = match self.data.sections.get(&section_id) {
+            Some(s) => s.clone(),
+            None => return,
+        };
+
+        // Remove from student_sections
+        if let Some(sections) = self.student_sections.get_mut(&student_id) {
+            sections.retain(|&s| s != section_id);
+        }
+
+        // Remove slots
+        if let Some(slots) = self.student_slots.get_mut(&student_id) {
+            for slot in &section.slots {
+                slots.remove(slot);
+            }
+        }
+
+        // Remove course
+        if let Some(courses) = self.student_courses.get_mut(&student_id) {
+            courses.remove(&section.course_id);
+        }
+
+        // Decrease enrollment
+        if let Some(enrollment) = self.section_enrollment.get_mut(&section_id) {
+            *enrollment = enrollment.saturating_sub(1);
+        }
+
+        // Remove from section_students
+        if let Some(students) = self.section_students.get_mut(&section_id) {
+            students.remove(&student_id);
+        }
+
+        // Restore the domain for this course
+        self.domains
+            .entry((student_id, section.course_id))
+            .or_default()
+            .insert(section_id);
+
+        // Also restore other sections of this course to domain
+        for &other_sid in self.data.get_sections_for_course(section.course_id) {
+            self.domains
+                .entry((student_id, section.course_id))
+                .or_default()
+                .insert(other_sid);
+        }
+    }
+
     /// Propagate constraints after an assignment.
     fn propagate(&mut self, student_id: StudentId, section_id: SectionId) {
         self.propagations += 1;
