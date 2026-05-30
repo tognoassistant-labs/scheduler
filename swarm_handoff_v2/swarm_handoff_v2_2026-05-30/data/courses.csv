@@ -1,0 +1,75 @@
+course_id,name,department,is_required,classification,grade_levels,max_size,meetings_per_week,required_room_type
+A0901,Biology 9,Science,0,core,9,25,3,standard
+A1006,Chemistry 10,Science,0,elective,10,25,3,standard
+A1105,Physics 11,Science,0,elective,11,25,3,standard
+A1204,Environmental Science,Science,0,elective,12,25,3,standard
+ADVHS01,Advisory HS,general,0,elective,"9,10,11,12",25,1,standard
+B0901,Social Studies 9,Social Stu,0,elective,9,25,3,standard
+B1001,Social Sciences 10,Social Stu,0,elective,10,25,3,standard
+B1006,Cultural Studies,Social Stu,0,elective,10,25,3,standard
+C0904,Band Level I,Arts,0,elective,"9,10,11,12",25,3,standard
+C0905,Band Level II,Arts,0,elective,"10,11,12",25,3,standard
+C0907,Band Level III,Arts,0,elective,"11,12",25,3,standard
+E0901,Physical Education and Health 9,PE,1,required,9,130,3,standard
+E1001,Physical Education and Health 10,PE,1,required,10,130,3,standard
+E1101,Physical Education and Health 11,PE,1,required,11,130,3,standard
+E1201,Physical Education and Health 12,PE,1,required,12,130,3,standard
+G0901,Español & Literatura 9,Spanish,0,elective,9,25,3,standard
+G0902,Spanish 9 (Foreign Language),Spanish,0,elective,"9,10",25,3,standard
+G1004,AP Spanish Language and Culture,Spanish,0,elective,10,25,3,standard
+G1201,Español & Literatura 12,Spanish,0,elective,12,25,3,standard
+G1202,AP Spanish Literature and Culture,Spanish,0,elective,"11,12",25,3,standard
+G1203,Español & Literatura 11,Spanish,0,elective,12,25,3,standard
+G1204,Spanish 10 (Foreign Language),Spanish,0,elective,12,25,3,standard
+G1205,Spanish 11 (Foreign Language),Spanish,0,elective,12,25,3,standard
+G1206,Spanish 12 (Foreign Language),Spanish,0,elective,12,25,3,standard
+H0904,English 9,English,0,elective,9,25,3,standard
+H1001,English 10,English,0,elective,10,25,3,standard
+H1201B,AP English Literature and Composition,English,0,elective,"11,12",25,3,standard
+H1206,AP English Language & Composition,English,0,elective,"10,11,12",25,3,standard
+I0903,Algebra I 9,Math,0,elective,9,25,3,standard
+I1003,Geometry,Math,0,elective,10,25,3,standard
+I1204,AP Calculus AB,Math,0,elective,"11,12",25,3,standard
+I1208,AP Calculus BC,Math,0,elective,12,25,3,standard
+I1211,AP Precalculus,Math,0,elective,"10,11,12",25,3,standard
+I1212,AP Macroeconomics,Social Stu,0,elective,"11,12",25,3,standard
+I1213,AP Microeconomics,Social Stu,0,elective,"11,12",25,3,standard
+I1214,AP Seminar,English,0,elective,"10,11,12",25,3,standard
+I1215,AP 3-D Art and Design,Arts,0,elective,12,25,3,standard
+J0901,Technology 9,Technology,0,elective,9,25,3,standard
+J0903,FRC 9,Technology,0,elective,9,25,3,standard
+J1203,Tech. and Innovation for Social Change,Technology,0,elective,12,25,3,standard
+L1301,AP Psychology,Social Stu,0,elective,"11,12",25,3,standard
+L1302,Introduction to Law,Social Stu,0,elective,"11,12",25,3,standard
+L1303,Pensar nuestro tiempo,Social Stu,0,elective,"11,12",25,3,standard
+L1304,Life Purpose,Social Stu,0,elective,"11,12",25,3,standard
+OA1304,AP Biology,Science,0,optative,12,25,3,standard
+OA1317,AP Chemistry,Science,0,optative,"11,12",25,3,standard
+OA1318,AP Environmental Science,Science,0,optative,12,25,3,standard
+OA1319,AP Physics 1,Science,0,optative,"11,12",25,3,standard
+OA1322,AP Physics 2,Science,0,optative,12,25,3,standard
+OB1520,AP Statistics,Math,0,optative,"11,12",25,3,standard
+OB1532,AP Research,Technology,0,optative,"11,12",26,3,standard
+OC1305,Painting I,Arts,0,optative,"9,10,11,12",25,3,standard
+OC1306,Sculpture I,Arts,0,optative,"9,10,11,12",25,3,standard
+OC1307,Drawing I,Arts,0,optative,"9,10,11,12",25,3,standard
+OC1310,Painting II,Arts,0,optative,"10,11,12",25,3,standard
+OC1311,Drawing II,Arts,0,elective,"10,11,12",25,3,standard
+OC1312,Sculpture II,Arts,0,elective,"10,11,12",25,3,standard
+OC1313,AP 2-D Art and Design,Arts,0,elective,"10,11,12",25,3,standard
+OC1314,AP Drawing,Arts,0,optative,"11,12",25,3,standard
+OH1305,Art of Fiction Intermediate Level,English,0,optative,11,25,3,standard
+OH1306,Art of Fiction Higher Level,English,0,optative,12,25,3,standard
+OH1401,Journalism Intermediate Level,English,0,optative,11,25,3,standard
+OH1501,Journalism Higher Level,English,0,optative,12,25,3,standard
+OI1003,Algebra II,Math,0,optative,"10,11",25,3,standard
+OI1303,Financial Math,Math,0,optative,"11,12",25,3,standard
+OI1305,Calculus,Math,0,optative,"11,12",25,3,standard
+OJ1203,Entrepreneurship Business Technology,Technology,0,optative,12,25,3,standard
+OJ1204,Creative Design,Technology,0,optative,12,25,3,standard
+OJ1306,AP Computer Science Principles,Technology,0,optative,"10,11,12",25,3,standard
+OZ1207,Anatomy and Physiology,Science,0,optative,12,25,3,standard
+OZ1313,AP Computer Science A,Technology,0,optative,"10,11,12",25,3,standard
+OZ1323,AP Human Geography,Social Stu,0,optative,"10,11,12",25,3,standard
+OZ1333,Teacher Aide,,0,elective,12,25,3,standard
+VHS0052,"Spanish Film, Art, and Literature",Spanish,0,elective,"10,11,12",25,3,standard

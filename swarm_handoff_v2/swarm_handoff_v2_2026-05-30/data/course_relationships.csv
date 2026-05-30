@@ -1,0 +1,8 @@
+course_a_id,course_b_id,relationship_type,relationship_code,notes
+OC1313,I1215,Block,Simultaneous,
+I1213,I1212,Block,Term,
+OC1307,OC1311,Block,Simultaneous,
+OC1306,OC1312,Block,Simultaneous,
+G1204,G0902,Block,Simultaneous,
+G1205,G0902,Block,Simultaneous,
+G1206,G0902,Block,Simultaneous,

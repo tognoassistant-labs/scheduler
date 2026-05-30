@@ -1,0 +1,49 @@
+teacher_id,teacher_name,department,max_load,qualified_course_ids
+3,"Angel Angel, Jorge Mario",Math,6,A0901|A0902
+4,"Arboleda Otalvaro, Oscar Andres",Math,5,ADVHS01|I1211|OI1003|OI1303
+5,"Arcila Fernandez, Sofia",Fine Arts,5,ADVHS01|OC1305|OC1306|OC1312|I1215|OC1313
+6,"Atehortua, Erika",Spanish,5,ADVHS01|G1201|G1202
+7,"Beauchamp, Bill",Science,5,A1006|A1105|ADVHS01|OA1304
+8,"Berrio Guzman, Sandro",Math,5,ADVHS01|OI1003
+9,"Betancur, Anibal",PE,6,E0901
+10,"Butterworth, Emily R",Technology,5,OB1532
+11,"Cadavid, Carlos Andres",—,5,
+12,"Castañeda Alvarez, Jiovana Andrea",PE,6,E1001
+13,"Dawkins, Blaire",Science,5,A1204|ADVHS01|OA1318|OZ1207
+14,"Diaz Sanchez, Alejandro",—,5,
+15,"English Teacher 1, New",English,5,ADVHS01|H0904|H1001
+16,"Forero Uribe, Andrés",Social Studies,5,
+17,"Garcia, Ana Isabel",—,5,
+18,"Gutierrez Quevedo, Reynis Herelth",—,5,
+19,"Gwinn, Samantha Nicole",English,5,ADVHS01|H1206|I1214
+20,"Henao Manco, Alejandro",Technology,5,ADVHS01|J0903|J1203
+21,"Higuita, John",Technology,5,ADVHS01|J0901|OJ1204
+22,"Hoyos, Camilo",Technology,5,ADVHS01|J1203|OJ1203
+23,"Jodoin, Alyssa",English,5,ADVHS01|H1201B|OH1305|OH1306
+24,"Ledezma Pito, Juan Carlos",Social Studies,5,ADVHS01|L1302|L1303|L1304
+25,"Leiva Bernal, Camila",Spanish,5,ADVHS01|B1001|G1201|VHS0052
+26,"Marin Franco, Karol Viviana",Social Studies,5,ADVHS01|B1001
+27,"Marin Mesa, Juan Esteban",PE,6,E1101
+28,"Martinez Cubillos, Clara Andrea",Spanish,5,ADVHS01|G0901|G0902|G1204|G1205|G1206
+29,"Mcpherson, Mitchell David",English,5,ADVHS01|H0904|H1001
+30,"Mesa, Urbano",PE,6,E1201
+31,"Mickens, Tamir Akil",Science,5,A1105|ADVHS01|OA1319|OA1322
+32,"Murphy, David",Social Studies,5,ADVHS01|B0901|B1006
+33,"Naranjo, Felipe",Social Studies,5,ADVHS01|L1301|L1304
+34,"Ortegon Valle, Andres Dario",Social Studies,9,ADVHS01|B0901|I1212|I1213
+35,"Quiroga Posada, Mauricio",Math,5,ADVHS01|I1003|OI1305
+36,"Restrepo Pineda, Johana",Spanish,5,ADVHS01|G1201|G1203
+37,"Rodriguez Restrepo, Juan Carlos",Math,5,ADVHS01|I0903|OB1520
+38,"Sabido, Jose Lucas V",Science,5,A1006|ADVHS01|OA1317
+39,"Salgado Betin, Manuela",—,5,
+40,"Schmalz, Nicholas Anthony",Social Studies,5,ADVHS01|B0901|OH1305
+41,"Science Teacher 1, New",—,5,A0901|A1105|ADVHS01
+42,"Sepulveda, Mauricio",Math,5,ADVHS01|I1003
+43,"Shainker, Andrew",English,5,ADVHS01|H1001|OH1401|OH1501
+44,"Stretton, Bradford",Math,5,ADVHS01|I1204|I1208|OI1305
+45,"Summers, Brian",Social Studies,5,ADVHS01|OZ1323
+46,"Velez Cardona, Gloria Isabel",Fine Arts,6,ADVHS01|OC1305|OC1307|OC1310|OC1311|OC1314
+47,"Villa, Norberto",Spanish,5,ADVHS01|G1004
+48,"Villamizar Muñoz, Sindy Margarita",Spanish,5,G1004|ADVHS01|G0901
+49,"Zuluaga Patiño, Valentina",Science,5,A0901|ADVHS01|OZ1207
+50,"Zuniga, Julian",Technology,5,OJ1306|OZ1313
