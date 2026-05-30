@@ -1,0 +1,39 @@
+room_id,name,department,capacity
+79,COLISEO,PE,25
+1,901,English,25
+2,902,English,25
+3,903,Spanish,25
+4,904,Social Stu,25
+5,905,Social Stu,25
+6,906,Math,25
+7,907,Math,25
+8,908,Social Stu,25
+9,909,Science,25
+10,910,Science,25
+11,911,Arts,25
+12,912,Science,25
+13,913,English,25
+15,921,Spanish,25
+16,922,Spanish,25
+17,923,Spanish,25
+18,924,Math,25
+19,925,Math,25
+20,926,Social Stu,25
+21,927,Social Stu,25
+22,928,Social Stu,25
+23,929,Science,25
+24,930A,Social Stu,25
+25,334,Arts,25
+27,931B,Math,25
+28,932,Science,25
+29,933,Spanish,25
+30,327,Arts,25
+151,930B,English,25
+152,931A,Math,25
+354,COLISEO,PE,25
+353,COLISEO,PE,25
+302,900B,Technology,25
+304,MAKER,Technology,25
+305,900A,Technology,25
+306,900C,Technology,25
+352,COLISEO,PE,25
